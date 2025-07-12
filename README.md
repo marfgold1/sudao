@@ -11,6 +11,13 @@ To learn more before you start working with `sudao`, see the following documenta
 - [Motoko Programming Language Guide](https://internetcomputer.org/docs/current/motoko/main/motoko)
 - [Motoko Language Quick Reference](https://internetcomputer.org/docs/current/motoko/main/language-manual)
 
+## Quick Start
+
+If you haven't installed IC SDK and mops already, please install it first.
+
+1. [IC SDK Install Guide](https://internetcomputer.org/docs/motoko/install). You can install the motoko vscode extension as well.
+2. [mops Install Guide](https://j4mwm-bqaaa-aaaam-qajbq-cai.ic0.app/docs/install). Make sure you run `mops install` in the end.
+
 If you want to start working on your project right away, you might want to try the following commands:
 
 ```bash
