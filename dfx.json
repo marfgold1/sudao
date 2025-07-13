@@ -3,6 +3,16 @@
     "sudao_backend": {
       "main": "src/sudao_backend/main.mo",
       "type": "motoko"
+    },
+    "sudao_frontend": {
+      "dependencies": [
+        "sudao_backend"
+      ],
+      "source": [
+        "src/sudao_frontend/dist"
+      ],
+      "type": "assets",
+      "workspace": "sudao_frontend"
     }
   },
   "defaults": {

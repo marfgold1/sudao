@@ -1,9 +1,11 @@
 {
-  "name": "my-app",
+  "name": "sudao_frontend",
   "private": true,
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "setup": "npm i && dfx canister create sudao_backend && dfx generate sudao_backend && dfx deploy",
+    "prebuild": "dfx generate",
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
@@ -15,15 +17,17 @@
     "@radix-ui/react-slot": "^1.2.3",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
+    "dotenv": "^17.2.0",
     "framer-motion": "^12.23.3",
     "lucide-react": "^0.453.0",
-    "my-app": "file:",
+    "sudao_frontend": "file:",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.27.0",
     "react-toastify": "^10.0.6",
     "tailwind-merge": "^2.5.4",
-    "tailwindcss-animate": "^1.0.7"
+    "tailwindcss-animate": "^1.0.7",
+    "vite-plugin-environment": "^1.1.3"
   },
   "devDependencies": {
     "@eslint/js": "^9.11.1",
