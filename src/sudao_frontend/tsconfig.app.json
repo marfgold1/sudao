@@ -9,7 +9,8 @@
     "paths": {
       "@/*": [
         "./src/*"
-      ]
+      ],
+      "declarations/*": ["../declarations/*"]
     },
 
     /* Bundler mode */

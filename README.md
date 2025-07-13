@@ -13,7 +13,7 @@ To learn more before you start working with `sudao`, see the following documenta
 
 ## Quick Start
 
-If you haven't installed IC SDK and mops already, please install it first.
+If you haven't installed IC SDK and mops already, please install them first. This applies to both BE and FE.
 
 1. [IC SDK Install Guide](https://internetcomputer.org/docs/motoko/install). You can install the motoko vscode extension as well.
 2. [mops Install Guide](https://j4mwm-bqaaa-aaaam-qajbq-cai.ic0.app/docs/install). Make sure you run `mops install` in the end.
@@ -40,21 +40,34 @@ dfx deploy
 
 Once the job completes, your application will be available at `http://localhost:4943?canisterId={asset_canister_id}`.
 
-If you have made changes to your backend canister, you can generate a new candid interface with
+Any subsequent changes to BE need to redeploy the canisters.
 
+Always don't forget to run the replica! If you encounter `Error: You are trying to connect to the local replica but dfx cannot connect to it` then you need to start the replica again.
+
+### Note for FE integration
+
+BE interface can be imported by
+```ts
+import { sudao_backend } from "declarations/sudao_backend";
+```
+Example:
+```ts
+const greeting = await sudao_backend.greet("hello");
+alert(greeting);
+```
+If typescript cannot find the source, you can run the following command to generate the interface:
 ```bash
-npm run generate
+dfx generate
 ```
 
-at any time. This is recommended before starting the frontend development server, and will be run automatically any time you run `dfx deploy`.
-
-If you are making frontend changes, you can start a development server with
+Whenever backend have changed, you need to redeploy the backend if you want to test it.
 
 ```bash
-npm start
+dfx deploy
 ```
 
-Which will start a server at `http://localhost:8080`, proxying API requests to the replica at port 4943.
+> `dfx deploy` will automatically generate interface as well, so you don't have to run `dfx generate`
+
 
 ### Note on frontend environment variables
 
