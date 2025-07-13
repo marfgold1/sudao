@@ -1,115 +1,159 @@
 import Principal "mo:base/Principal";
+import Trie "mo:base/Trie";
 import Time "mo:base/Time";
-import Nat "mo:base/Nat";
-import Map "mo:map/Map";
-import { phash } "mo:map/Map";
+import ProposalManager "Proposal";
+import TrieUtils "TrieUtils";
+import Result "mo:base/Result";
 
-import Types "./Types";
-import Utils "./Utils";
-import UserService "./UserService";
-
+// This is the main actor for an individual DAO created by the platform.
+// It acts as a facade, orchestrating different modules like proposals, treasury, and membership.
 actor {
-  // Stable variable for user registry (keeping same name for migration)
-  private stable var userRegistry : Map.Map<Principal, Types.UserProfile> = Map.new<Principal, Types.UserProfile>();
 
-  // Initialize the user service with the registry
-  private let userService = UserService.UserService(?userRegistry);
-
-  // System startup time
-  private let systemStartTime = Time.now();
-
-  /**
-   * Registers the calling user in the system.
-   * This is idempotent - calling it multiple times has no additional effect.
-   */
-  public shared (msg) func register() : async Text {
-    let callerPrincipal = msg.caller;
-    Utils.logInfo("Registration request from: " # Principal.toText(callerPrincipal));
-
-    switch (userService.registerUser(callerPrincipal)) {
-      case (#Success(message)) {
-        Utils.logInfo("Registration successful");
-        message;
-      };
-      case (#AlreadyRegistered(message)) {
-        Utils.logInfo("User already registered");
-        message;
-      };
-      case (#Error(message)) {
-        Utils.logError("Registration failed: " # message);
-        "Registration failed: " # message;
-      };
+    public query func greet(name : Text) : async Text {
+        return "Hello, " # name # "!";
     };
-  };
 
-  /**
-   * Gets the profile of the calling user.
-   */
-  public shared query (msg) func getMyProfile() : async ?Types.UserProfile {
-    let callerPrincipal = msg.caller;
-    Utils.logInfo("Profile request from: " # Principal.toText(callerPrincipal));
-
-    switch (userService.getUserProfile(callerPrincipal)) {
-      case (#Found(profile)) {
-        ?profile;
-      };
-      case (#NotFound(_)) {
-        null;
-      };
+    // Debug function to check caller identity
+    public shared(msg) func whoAmI() : async Text {
+        return Principal.toText(msg.caller);
     };
-  };
 
-  /**
-   * Checks if the calling user is registered.
-   */
-  public shared query (msg) func isRegistered() : async Bool {
-    let callerPrincipal = msg.caller;
-    userService.userExists(callerPrincipal);
-  };
-
-  /**
-   * Gets system information (total users, etc.).
-   */
-  public query func getSystemInfo() : async Types.SystemInfo {
-    let info = userService.getSystemInfo();
-    {
-      totalUsers = info.totalUsers;
-      systemStartTime = systemStartTime; // Use actual system start time
+    // Function to add a member (for testing)
+    public shared(_msg) func addMember(member : Principal) : async Bool {
+        let newMember : Member = { joinedAt = Time.now() };
+        members := Trie.put(members, TrieUtils.principalKey(member), Principal.equal, newMember).0;
+        return true;
     };
-  };
 
-  /**
-   * Gets the total number of registered users.
-   */
-  public query func getUserCount() : async Nat {
-    userService.getUserCount();
-  };
+    // Function to check if someone is a member (for testing)
+    public shared(_msg) func checkMembership(p : Principal) : async Bool {
+        return await isMember(p);
+    };
 
-  /**
-   * Returns a greeting for the given name.
-   * This is a simple public function for testing.
-   */
-  public query func greet(name : Text) : async Text {
-    Utils.logInfo("Greeting request for: " # name);
-    "Hello, " # name # "! Welcome to the SUDAO backend.";
-  };
+    // Debug function to list all members
+    public query func listMembers() : async [Text] {
+        let membersArray = Trie.toArray<Principal, Member, Text>(members, func(k: Principal, v: Member) : Text = Principal.toText(k));
+        return membersArray;
+    };
 
-  /**
-   * Health check endpoint.
-   */
-  public query func health() : async Text {
-    "Backend is running. Total users: " # Nat.toText(userService.getUserCount());
-  };
+    // Debug function to check trie operations
+    public shared(_msg) func debugMembership(p : Principal) : async Text {
+        let trieResult = TrieUtils.getPrincipal(members, p);
+        let isAnon = Principal.isAnonymous(p);
+        let memberExists = trieResult != null;
+        
+        let result = "Principal: " # Principal.toText(p) # 
+                    ", Anonymous: " # debug_show(isAnon) # 
+                    ", Member exists: " # debug_show(memberExists) # 
+                    ", Final result: " # debug_show(not isAnon and memberExists);
+        
+        return result;
+    };
 
-  // System upgrade hooks
-  system func preupgrade() {
-    Utils.logInfo("System upgrade starting");
-    // Save the current registry state
-    userRegistry := userService.getRegistry();
-  };
+    // --- DUMMY IMPLEMENTATION for Required Dependencies ---
+    // The following state and functions are placeholders.
+    // In a real implementation, they would be part of a separate, more complex Membership module.
+    // The ProposalManager depends on a function `isMember` to authorize actions.
 
-  system func postupgrade() {
-    Utils.logInfo("System upgrade completed");
-    // Registry is automatically restored from userRegistryStable
-  };
+    // A simple record for member data. This would be more complex in a real DAO.
+    type Member = {
+        joinedAt : Time.Time;
+        // e.g., votingPower, role, etc.
+    };
+
+    // A trie to store the members of the DAO. The Principal is the key.
+    private var members : Trie.Trie<Principal, Member> = Trie.put(
+        Trie.empty<Principal, Member>(),
+        TrieUtils.principalKey(Principal.fromText("aaaaa-aa")),
+        Principal.equal,
+        { joinedAt = 0 }
+    ).0;
+
+    // Proposal state management
+    private var proposalState : ProposalManager.ProposalState = ProposalManager.emptyState();
+
+    /**
+     * DUMMY function to check if a principal is a member of the DAO.
+     * The `ProposalManager` class requires this function to be passed during its instantiation.
+     * @param p The principal to check.
+     * @returns A boolean indicating membership status.
+     */
+    // Configuration for allowing anonymous principals (for testing)
+    private var ALLOW_ANONYMOUS_FOR_TESTING = true; // Set this based on your environment
+    
+    // Function to toggle testing mode (only for development)
+    public shared(_msg) func setTestingMode(enabled : Bool) : async Bool {
+        ALLOW_ANONYMOUS_FOR_TESTING := enabled;
+        return ALLOW_ANONYMOUS_FOR_TESTING;
+    };
+    
+    // Function to check current testing mode
+    public query func getTestingMode() : async Bool {
+        return ALLOW_ANONYMOUS_FOR_TESTING;
+    };
+
+    private func isMember(p : Principal) : async Bool {
+        // For this dummy implementation, we just check if the principal exists in the `members` trie.
+        let memberExists = TrieUtils.getPrincipal(members, p) != null;
+        
+        if (ALLOW_ANONYMOUS_FOR_TESTING) {
+            // In testing mode, allow any principal that exists in members trie
+            return memberExists;
+        } else {
+            // In production mode, deny anonymous principals
+            return not Principal.isAnonymous(p) and memberExists;
+        };
+    };
+
+    // --- Module Instantiation ---
+
+    // No need to instantiate ProposalManager as it's now a module
+
+    // --- Public Interface for Proposals ---
+    // These functions expose the functionality of the `proposalManager` module to the outside world.
+    // This follows the Facade pattern, keeping the main actor clean and easy to read.
+
+    public shared(msg) func createProposal(title : Text, description : Text, votingDurationSeconds : Nat) : async Result.Result<Nat, ProposalManager.ProposalError> {
+        switch (await ProposalManager.create(proposalState, msg.caller, isMember, title, description, votingDurationSeconds)) {
+            case (#ok((newState, proposalId))) {
+                proposalState := newState;
+                return #ok(proposalId);
+            };
+            case (#err(error)) {
+                return #err(error);
+            };
+        };
+    };
+
+    public shared(msg) func voteOnProposal(proposalId : Nat, choice : ProposalManager.Vote) : async Result.Result<Bool, ProposalManager.ProposalError> {
+        switch (await ProposalManager.vote(proposalState, msg.caller, isMember, proposalId, choice)) {
+            case (#ok(newState)) {
+                proposalState := newState;
+                return #ok(true);
+            };
+            case (#err(error)) {
+                return #err(error);
+            };
+        };
+    };
+
+    public shared(_msg) func endProposal(proposalId : Nat) : async Result.Result<ProposalManager.ProposalStatus, ProposalManager.ProposalError> {
+        switch (ProposalManager.end(proposalState, proposalId)) {
+            case (#ok((newState, status))) {
+                proposalState := newState;
+                return #ok(status);
+            };
+            case (#err(error)) {
+                return #err(error);
+            };
+        };
+    };
+
+    public query func getProposal(proposalId : Nat) : async ?ProposalManager.Proposal {
+        return ProposalManager.get(proposalState, proposalId);
+    };
+
+    public query func listProposals() : async [ProposalManager.Proposal] {
+        return ProposalManager.list(proposalState);
+    }
 };
