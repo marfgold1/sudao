@@ -4,10 +4,13 @@ import { RouterProvider } from "react-router-dom";
 import "./App.css";
 import router from "./routes";
 
-import { ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
+import { ConnectWallet } from "@nfid/identitykit/react";
 
 function App() {
+  
   return (
     <>
       <ToastContainer
@@ -23,6 +26,7 @@ function App() {
         theme="light"
       />
       <RouterProvider router={router} />
+      <ConnectWallet />
     </>
   );
 }

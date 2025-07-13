@@ -15,5 +15,10 @@
   "type": "module",
   "workspaces": [
     "src/sudao_frontend"
-  ]
+  ],
+  "dependencies": {
+    "@dfinity/agent": "^2.4.1",
+    "@dfinity/candid": "^2.4.1",
+    "@nfid/identitykit": "^1.0.14"
+  }
 }
