@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { createAnonymousBackendAPI } from "../../api";
+import { sudao_backend } from "declarations/sudao_backend";
 
 const Greet: React.FC = () => {
   const [name, setName] = useState("");
@@ -14,8 +14,7 @@ const Greet: React.FC = () => {
 
     setIsLoading(true);
     try {
-      const api = await createAnonymousBackendAPI();
-      const greeting = await api.greet(name);
+      const greeting = await sudao_backend.greet(name);
       alert(greeting);
     } catch (error) {
       console.error("Error calling greet:", error);
