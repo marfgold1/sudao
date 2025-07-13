@@ -1,6 +1,6 @@
 import { Outlet, RouteObject, createBrowserRouter } from "react-router-dom";
 import { Home } from "@/pages";
-import { Navbar, Footer } from "@/components";
+import { Navbar, /* Footer */ } from "@/components";
 // import { AuthProvider } from "@/contexts/AuthContext";
 
 const MainLayout = () => {
@@ -8,7 +8,7 @@ const MainLayout = () => {
         <>
             <Navbar />
             <Outlet />
-            <Footer />
+            {/* <Footer /> */}
         </>
     );
 };
