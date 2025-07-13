@@ -7,8 +7,6 @@ import router from "./routes";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-import { ConnectWallet } from "@nfid/identitykit/react";
-
 function App() {
   
   return (
@@ -26,7 +24,6 @@ function App() {
         theme="light"
       />
       <RouterProvider router={router} />
-      <ConnectWallet />
     </>
   );
 }
