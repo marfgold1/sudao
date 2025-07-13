@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useIdentity, useAccounts, useAgent } from "@nfid/identitykit/react";
-import { createBackendAPI, type UserProfile } from "../../api";
+import { sudao_backend } from "declarations/sudao_backend";
+import type { UserProfile } from "declarations/sudao_backend/sudao_backend.did";
 
 export default function UserProfile() {
   const identity = useIdentity();
@@ -50,17 +51,20 @@ export default function UserProfile() {
 
     setIsLoading(true);
     try {
-      const api = createBackendAPI(agent);
-
       // First, try to register the user
       console.log("register");
-      const registrationResult = await api.register();
+      const registrationResult = await sudao_backend.register();
       setRegistrationStatus(registrationResult);
       console.log("Registration Result:", registrationResult);
 
       // Then, fetch the user profile
-      const profile = await api.getMyProfile();
-      setUserProfile(profile);
+      const profile = await sudao_backend.getMyProfile();
+      if (profile && profile.length > 0) {
+        const res = profile[0];
+        if (res) {
+          setUserProfile(res);
+        }
+      }
       console.log("Profile:", profile);
     } catch (error) {
       console.error("Error during registration/profile fetch:", error);
@@ -80,9 +84,13 @@ export default function UserProfile() {
 
     setIsLoading(true);
     try {
-      const api = createBackendAPI(agent);
-      const profile = await api.getMyProfile();
-      setUserProfile(profile);
+      const profile = await sudao_backend.getMyProfile();
+      if (profile && profile.length > 0) {
+        const res = profile[0];
+        if (res) {
+          setUserProfile(res);
+        }
+      }
     } catch (error) {
       console.error("Error refreshing profile:", error);
     } finally {
@@ -134,7 +142,7 @@ export default function UserProfile() {
       {userProfile && (
         <div className="mb-4 p-2 bg-blue-100 border border-blue-300 rounded">
           <h3 className="font-semibold">Profile Information:</h3>
-          <p>Principal: {userProfile.principal}</p>
+          <p>Principal: {userProfile.principal.toString()}</p>
           <p>
             First Registered:{" "}
             {new Date(
