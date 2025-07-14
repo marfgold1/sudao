@@ -1,6 +1,8 @@
 import { motion } from 'framer-motion';
 import { Menu } from 'lucide-react';
 import React, { useState } from 'react';
+import { ConnectWallet } from "@nfid/identitykit/react";
+import { GitHubLogoIcon } from '@radix-ui/react-icons';
 
 const Navbar: React.FC = () => {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -37,9 +39,10 @@ const Navbar: React.FC = () => {
                     </div>
 
                     <div className="flex items-center space-x-4">
-                        <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center text-sm font-bold text-slate-900">
-                            57
-                        </div>
+                        <ConnectWallet />
+                        <button className="p-2 px-4 bg-gradient-to-r from-blue-100 to-blue-50 hover:bg-blue-300 rounded-lg flex items-center justify-center">
+                            <GitHubLogoIcon className="w-6 h-6" />
+                        </button>
                         <button className="md:hidden text-white" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
                             <Menu className="w-6 h-6" />
                         </button>
