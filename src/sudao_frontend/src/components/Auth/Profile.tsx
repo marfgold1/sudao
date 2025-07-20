@@ -1,16 +1,22 @@
 import { useEffect, useState } from "react";
 import { useIdentity, useAccounts, useAgent } from "@nfid/identitykit/react";
-import { sudao_backend } from "declarations/sudao_backend";
-import type { UserProfile } from "declarations/sudao_backend/sudao_backend.did";
+import { idlFactory, canisterId } from "declarations/sudao_backend";
+import type {
+  UserProfile,
+  _SERVICE,
+} from "declarations/sudao_backend/sudao_backend.did";
+import { Actor, ActorSubclass } from "@dfinity/agent";
 
 export default function UserProfile() {
   const identity = useIdentity();
   const accounts = useAccounts();
-  const agent = useAgent();
+  const authenticatedAgent = useAgent();
   const [userPrincipal, setUserPrincipal] = useState<string | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [registrationStatus, setRegistrationStatus] = useState<string>("");
+
+  const [actor, setActor] = useState<ActorSubclass<_SERVICE> | null>(null);
 
   useEffect(() => {
     // This effect runs whenever the identity or account objects change
@@ -31,41 +37,68 @@ export default function UserProfile() {
       return;
     }
 
-    if (principal && agent) {
+    if (authenticatedAgent) {
+      console.log(
+        "Authenticated agent is available. Creating authenticated actor..."
+      );
+
+      // Create actor asynchronously to handle root key fetching
+      const createAuthenticatedActor = async () => {
+        try {
+          // For local development, fetch the root key first
+          if (process.env.DFX_NETWORK !== "ic") {
+            console.log("Fetching root key for local development...");
+            await authenticatedAgent.fetchRootKey();
+            console.log("Root key fetched successfully");
+          }
+
+          const authenticatedActor = Actor.createActor<_SERVICE>(idlFactory, {
+            agent: authenticatedAgent,
+            canisterId: canisterId,
+          });
+          setActor(authenticatedActor);
+          console.log("Authenticated actor created successfully");
+        } catch (err) {
+          console.error("Failed to create authenticated actor:", err);
+        }
+      };
+
+      createAuthenticatedActor();
+    }
+
+    if (principal) {
       setUserPrincipal(principal.toString());
-      // Register and fetch user profile
-      handleUserRegistration();
       console.log(`Principal: ${principal}`);
     }
-  }, [identity, accounts, agent]); // Rerun when any auth state changes
+  }, [identity, accounts, authenticatedAgent]); // Rerun when any auth state changes
+
+  // Separate effect to handle registration when actor is ready
+  useEffect(() => {
+    if (actor && userPrincipal) {
+      console.log("Actor and principal ready, attempting registration...");
+      handleUserRegistration();
+    }
+  }, [actor, userPrincipal]); // Run when actor or principal changes
 
   // Handle user registration and profile fetching
   const handleUserRegistration = async () => {
-    console.log("handleUserRegistration", { identity, accounts, agent });
-
-    if (!agent) {
-      console.log("No NFID agent available");
-      setRegistrationStatus("Please log in with NFID to continue");
+    if (!actor) {
+      setRegistrationStatus("Authenticated actor not ready. Please log in.");
       return;
     }
 
+    console.log("handleUserRegistration called with authenticated actor.");
     setIsLoading(true);
     try {
       // First, try to register the user
-      console.log("register");
-      const registrationResult = await sudao_backend.register();
+      const registrationResult = await actor.register();
       setRegistrationStatus(registrationResult);
       console.log("Registration Result:", registrationResult);
 
       // Then, fetch the user profile
-      const profile = await sudao_backend.getMyProfile();
-      if (profile && profile.length > 0) {
-        const res = profile[0];
-        if (res) {
-          setUserProfile(res);
-        }
-      }
-      console.log("Profile:", profile);
+      const [profile] = await actor.getMyProfile();
+      setUserProfile(profile ?? null);
+      console.log("Profile:", userProfile);
     } catch (error) {
       console.error("Error during registration/profile fetch:", error);
       setRegistrationStatus(
@@ -77,14 +110,14 @@ export default function UserProfile() {
   };
 
   const refreshProfile = async () => {
-    if (!agent) {
-      console.log("No NFID agent available for refresh");
+    if (!actor) {
+      console.log("Authenticated actor not available for refresh.");
       return;
     }
 
     setIsLoading(true);
     try {
-      const profile = await sudao_backend.getMyProfile();
+      const profile = await actor?.getMyProfile();
       if (profile && profile.length > 0) {
         const res = profile[0];
         if (res) {
@@ -102,7 +135,7 @@ export default function UserProfile() {
     return (
       <div className="p-4 border rounded-lg">
         <p>Please log in with NFID to see your profile.</p>
-        {!agent && (
+        {!actor && (
           <p className="text-sm text-gray-600 mt-2">
             Waiting for NFID authentication...
           </p>
@@ -121,7 +154,7 @@ export default function UserProfile() {
 
       {/* Show authentication status */}
       <div className="mb-2 text-sm text-gray-600">
-        Authentication: {agent ? "✅ NFID Connected" : "❌ NFID Not Connected"}
+        Authentication: {actor ? "✅ NFID Connected" : "❌ NFID Not Connected"}
       </div>
 
       {isLoading && <p className="text-blue-500">Loading...</p>}
@@ -154,7 +187,7 @@ export default function UserProfile() {
 
       <button
         onClick={refreshProfile}
-        disabled={isLoading || !agent}
+        disabled={isLoading || !actor}
         className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:opacity-50 mr-2"
       >
         {isLoading ? "Refreshing..." : "Refresh Profile"}
@@ -163,7 +196,7 @@ export default function UserProfile() {
       <button
         onClick={handleUserRegistration}
         className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 disabled:opacity-50"
-        disabled={isLoading || !agent}
+        disabled={isLoading || !actor}
       >
         {isLoading ? "Registering..." : "Register"}
       </button>
