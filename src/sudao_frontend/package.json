@@ -15,6 +15,7 @@
     "@dfinity/agent": "^2.4.1",
     "@dfinity/auth-client": "^2.4.1",
     "@dfinity/candid": "^2.4.1",
+    "@dfinity/candid": "^2.4.1",
     "@dfinity/identity": "^2.4.1",
     "@dfinity/principal": "^2.4.1",
     "@nfid/identitykit": "^1.0.14",
