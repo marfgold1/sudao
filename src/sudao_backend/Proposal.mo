@@ -1,11 +1,14 @@
 // src/sudao_backend/Proposal.mo
 import Time "mo:base/Time";
-import Trie "mo:base/Trie"; 
+import Map "mo:map/Map";
+import { phash; thash } "mo:map/Map";
 import Principal "mo:base/Principal";
 import Result "mo:base/Result";
 import Int "mo:base/Int";
 import Nat "mo:base/Nat";
-import TrieUtils "TrieUtils";
+import Iter "mo:base/Iter";
+import Array "mo:base/Array";
+import UUIDUtils "UUIDUtils";
 
 // This module encapsulates all logic and state related to proposals.
 // It is designed as a module to be used by a parent canister (e.g., the main DAO canister).
@@ -30,12 +33,14 @@ module {
         #proposalNotFound;  // The specified proposal ID does not exist.
         #alreadyVoted;      // The voter has already cast a vote on this proposal.
         #votingPeriodOver;  // The voting period for this proposal has ended.
+        #votingJustEnded;   // Voting just ended, state already updated
         #votingStillActive; // The action cannot be performed while voting is active.
         #unauthorized;      // The caller is not authorized to perform this action (e.g., not a member).
+        #invalidUUID;       // The provided UUID is invalid.
     };
 
     public type Proposal = {
-        id : Nat;
+        id : Text; // UUID v4
         proposer : Principal;
         title : Text;
         description : Text;
@@ -44,25 +49,37 @@ module {
         status : ProposalStatus;
         votesFor : Nat;
         votesAgainst : Nat;
-        voters : Trie.Trie<Principal, Vote>;
+        voters : [(Principal, Vote)]; // Changed from Map to Array for serializability
     };
 
     // --- State Types ---
     public type ProposalState = {
-        proposals : Trie.Trie<Nat, Proposal>;
-        nextProposalId : Nat;
+        var proposals : Map.Map<Text, Proposal>; // UUID -> Proposal
     };
 
     // --- Helper Functions ---
     public func emptyState() : ProposalState {
         {
-            proposals = Trie.empty<Nat, Proposal>();
-            nextProposalId = 0;
+            var proposals = Map.new<Text, Proposal>();
         }
     };
 
+    // Helper function to check if principal already voted
+    private func hasVoted(voters : [(Principal, Vote)], principal : Principal) : Bool {
+        switch (Array.find<(Principal, Vote)>(voters, func((p, _)) = Principal.equal(p, principal))) {
+            case (?_) true;
+            case null false;
+        }
+    };
+
+    // Helper function to add vote
+    private func addVote(voters : [(Principal, Vote)], principal : Principal, vote : Vote) : [(Principal, Vote)] {
+        Array.append(voters, [(principal, vote)])
+    };
+
     /**
-     * Creates a new proposal.
+     * Creates a new proposal with UUID v4 ID.
+     * Mutates state directly, returns only the proposal ID.
      */
     public func create(
         state : ProposalState,
@@ -71,15 +88,16 @@ module {
         title : Text, 
         description : Text, 
         votingDurationSeconds : Nat
-    ) : async Result.Result<(ProposalState, Nat), ProposalError> {
+    ) : async Result.Result<Text, ProposalError> {
         let memberCheck = await isMember(caller);
         if (not memberCheck) {
             return #err(#unauthorized);
         };
 
+        let proposalId = await UUIDUtils.generateUUIDv4();
         let now = Time.now();
         let newProposal : Proposal = {
-            id = state.nextProposalId;
+            id = proposalId;
             proposer = caller;
             title = title;
             description = description;
@@ -88,34 +106,34 @@ module {
             status = #active;
             votesFor = 0;
             votesAgainst = 0;
-            voters = Trie.empty<Principal, Vote>();
+            voters = [];
         };
 
-        let newProposals = TrieUtils.putNat(state.proposals, newProposal.id, newProposal);
-        let newState = {
-            proposals = newProposals;
-            nextProposalId = state.nextProposalId + 1;
-        };
-
-        return #ok((newState, newProposal.id));
+        Map.set(state.proposals, thash, proposalId, newProposal);
+        return #ok(proposalId);
     };
 
     /**
      * Casts a vote on an active proposal.
+     * Mutates state directly.
      */
     public func vote(
         state : ProposalState,
         caller : Principal, 
         isMember : (Principal) -> async Bool, 
-        proposalId : Nat, 
+        proposalId : Text, 
         choice : Vote
-    ) : async Result.Result<ProposalState, ProposalError> {
+    ) : async Result.Result<Bool, ProposalError> {
         let memberCheck = await isMember(caller);
         if (not memberCheck) {
             return #err(#unauthorized);
         };
 
-        switch (TrieUtils.getNat(state.proposals, proposalId)) {
+        if (not UUIDUtils.isValidUUID(proposalId)) {
+            return #err(#invalidUUID);
+        };
+
+        switch (Map.get(state.proposals, thash, proposalId)) {
             case (null) { return #err(#proposalNotFound); };
             case (?proposal) {
                 if (proposal.status != #active) { return #err(#votingPeriodOver); };
@@ -134,13 +152,11 @@ module {
                         votesAgainst = proposal.votesAgainst;
                         voters = proposal.voters;
                     };
-                    let newProposals = TrieUtils.putNat(state.proposals, proposalId, endedProposal);
-                    let _newState = { proposals = newProposals; nextProposalId = state.nextProposalId; };
-                    return #err(#votingPeriodOver);
+                    Map.set(state.proposals, thash, proposalId, endedProposal);
+                    return #err(#votingJustEnded);
                 };
-                if (TrieUtils.getPrincipal(proposal.voters, caller) != null) { return #err(#alreadyVoted); };
+                if (hasVoted(proposal.voters, caller)) { return #err(#alreadyVoted); };
 
-                let updatedVoters = TrieUtils.putPrincipal(proposal.voters, caller, choice);
                 let (newVotesFor, newVotesAgainst) = switch (choice) {
                     case (#yes) { (proposal.votesFor + 1, proposal.votesAgainst) };
                     case (#no) { (proposal.votesFor, proposal.votesAgainst + 1) };
@@ -156,21 +172,25 @@ module {
                     status = proposal.status;
                     votesFor = newVotesFor;
                     votesAgainst = newVotesAgainst;
-                    voters = updatedVoters;
+                    voters = addVote(proposal.voters, caller, choice);
                 };
 
-                let newProposals = TrieUtils.putNat(state.proposals, proposalId, updatedProposal);
-                let newState = { proposals = newProposals; nextProposalId = state.nextProposalId; };
-                return #ok(newState);
+                Map.set(state.proposals, thash, proposalId, updatedProposal);
+                return #ok(true);
             };
         };
     };
 
     /**
      * Ends a proposal's voting period if the time has expired.
+     * Mutates state directly.
      */
-    public func end(state : ProposalState, proposalId : Nat) : Result.Result<(ProposalState, ProposalStatus), ProposalError> {
-        switch (TrieUtils.getNat(state.proposals, proposalId)) {
+    public func end(state : ProposalState, proposalId : Text) : Result.Result<ProposalStatus, ProposalError> {
+        if (not UUIDUtils.isValidUUID(proposalId)) {
+            return #err(#invalidUUID);
+        };
+
+        switch (Map.get(state.proposals, thash, proposalId)) {
             case (null) { return #err(#proposalNotFound); };
             case (?proposal) {
                 if (proposal.status != #active) { return #err(#votingPeriodOver); };
@@ -194,25 +214,26 @@ module {
                     votesAgainst = proposal.votesAgainst;
                     voters = proposal.voters;
                 };
-                let newProposals = TrieUtils.putNat(state.proposals, proposalId, updatedProposal);
-                let newState = { proposals = newProposals; nextProposalId = state.nextProposalId; };
-
-                return #ok((newState, finalStatus));
+                Map.set(state.proposals, thash, proposalId, updatedProposal);
+                return #ok(finalStatus);
             };
         };
     };
 
     /**
-     * Retrieves a proposal by its ID.
+     * Retrieves a proposal by its UUID.
      */
-    public func get(state : ProposalState, proposalId : Nat) : ?Proposal {
-        return TrieUtils.getNat(state.proposals, proposalId);
+    public func get(state : ProposalState, proposalId : Text) : ?Proposal {
+        if (not UUIDUtils.isValidUUID(proposalId)) {
+            return null;
+        };
+        return Map.get(state.proposals, thash, proposalId);
     };
 
     /**
      * Retrieves all proposals.
      */
     public func list(state : ProposalState) : [Proposal] {
-        return Trie.toArray(state.proposals, func(_k: Nat, v: Proposal) : Proposal = v);
+        return Map.vals(state.proposals) |> Iter.toArray(_);
     };
 }; 
