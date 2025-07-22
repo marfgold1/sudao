@@ -3,6 +3,7 @@ import { sudao_backend } from "declarations/sudao_backend";
 
 const Greet: React.FC = () => {
   const [name, setName] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -10,11 +11,16 @@ const Greet: React.FC = () => {
       alert("Please enter a name.");
       return;
     }
+
+    setIsLoading(true);
     try {
       const greeting = await sudao_backend.greet(name);
       alert(greeting);
     } catch (error) {
-      alert("Failed to greet. Please try again.");
+      console.error("Error calling greet:", error);
+      alert("Failed to greet. Please check console for details.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -27,15 +33,17 @@ const Greet: React.FC = () => {
         id="name-input"
         type="text"
         value={name}
-        onChange={e => setName(e.target.value)}
+        onChange={(e) => setName(e.target.value)}
         className="border rounded px-2 py-1"
         placeholder="Your name"
+        disabled={isLoading}
       />
       <button
         type="submit"
-        className="bg-blue-500 text-white rounded px-4 py-1 hover:bg-blue-600"
+        className="bg-blue-500 text-white rounded px-4 py-1 hover:bg-blue-600 disabled:opacity-50"
+        disabled={isLoading}
       >
-        Greet
+        {isLoading ? "Greeting..." : "Greet"}
       </button>
     </form>
   );
