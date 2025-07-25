@@ -10,7 +10,7 @@ import { Actor, ActorSubclass } from "@dfinity/agent";
 export default function UserProfile() {
   const identity = useIdentity();
   const accounts = useAccounts();
-  const authenticatedAgent = useAgent({host: "http://localhost:4943"});
+  const authenticatedAgent = useAgent();
 
   const [userPrincipal, setUserPrincipal] = useState<string | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
@@ -75,7 +75,8 @@ export default function UserProfile() {
       setStatus({ type: "success", message: registrationResult });
       const [profile] = await actor.getMyProfile();
       setUserProfile(profile ?? null);
-    } catch {
+    } catch (e) {
+      console.error(e);
       setStatus({
         type: "error",
         message: "Failed to register or fetch profile.",

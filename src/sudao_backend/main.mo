@@ -6,10 +6,34 @@ import ProposalManager "Proposal";
 import UserService "UserService";
 import Types "Types";
 import Result "mo:base/Result";
+import Utils "Utils";
 
 // This is the main actor for an individual DAO created by the platform.
 // It acts as a facade, orchestrating different modules like proposals, treasury, and membership.
 actor {
+    public query func icrc28_trusted_origins() : async {
+        trusted_origins : [Text];
+    } {
+        return {
+            trusted_origins = [
+                "http://localhost:3000",
+                "http://localhost:4943",
+            ];
+        };
+    };
+
+    public query func icrc28_supported_standards() : async [{
+        name : Text;
+        url : Text;
+    }] {
+        return [{
+            name = "ICRC-28";
+            url = "https://github.com/dfinity/ICRC/tree/main/ICRCs/ICRC-28/ICRC-28.md";
+        }, {
+            name = "ICRC-10";
+            url = "https://github.com/dfinity/ICRC/blob/main/ICRCs/ICRC-10/ICRC-10.md";
+        }];
+    };
 
     public query func greet(name : Text) : async Text {
         return "Hello, " # name # "!";
@@ -27,8 +51,9 @@ actor {
 
     // Public user management functions
     public shared (msg) func register() : async Text {
-        
+        Utils.logInfo("Registering user: " # Principal.toText(msg.caller));
         let result = userService.registerUser(msg.caller);
+        
         switch (result) {
             case (#Success(message)) message;
             case (#AlreadyRegistered(message)) message;
