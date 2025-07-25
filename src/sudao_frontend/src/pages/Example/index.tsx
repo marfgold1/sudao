@@ -1,25 +1,33 @@
-import React from "react";
+import React, { useEffect } from "react";
 import Greet from "./greet";
 import { useAccounts } from "@nfid/identitykit/react";
+import Profile from "@/components/Auth/Profile";
 
 const Example: React.FC = () => {
   const account = useAccounts();
-  console.log(account);
+
+  useEffect(() => {
+    console.log(`Account: ${account}`);
+  }, [account]);
+
   return (
     <main className="flex flex-col w-full min-h-screen pt-20">
-        {account && (
+      {account && (
+        <div>
+          {account.length > 0 && (
             <div>
-                {account.length > 0 && (
-                    <div>
-                        {account.map((account) => (
-                            <div key={account.principal.toString()}>{account.principal.toString()}</div>
-                        ))}
-                    </div>
-                )}
+              {account.map((account) => (
+                <div key={account.principal.toString()}>
+                  {account.principal.toString()}
+                </div>
+              ))}
             </div>
-        )}
-        <p>HALO INI EXAMPLE PAGE</p>
-        <Greet />
+          )}
+        </div>
+      )}
+      <p>HALO INI EXAMPLE PAGE</p>
+      <Profile />
+      <Greet />
     </main>
   );
 };
