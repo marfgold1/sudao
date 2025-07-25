@@ -8,7 +8,10 @@ import { IdentityKitAuthType } from "@nfid/identitykit";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <IdentityKitProvider authType={IdentityKitAuthType.ACCOUNTS}>
+    <IdentityKitProvider 
+      signerClientOptions={{targets: ["localhost:4943"]}}
+      authType={IdentityKitAuthType.ACCOUNTS} // ACCOUNTS, DELEGATION (by default)
+    >
       <App />
     </IdentityKitProvider>
   </StrictMode>
