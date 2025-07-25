@@ -6,13 +6,78 @@ import ProposalManager "Proposal";
 import UserService "UserService";
 import Types "Types";
 import Result "mo:base/Result";
+import Middleware "../common/Middleware";
 
 // This is the main actor for an individual DAO created by the platform.
 // It acts as a facade, orchestrating different modules like proposals, treasury, and membership.
-actor {
+actor DAO {
+    // ------ DAO MANAGEMENT ------
+    // DAO Information - initialized during canister creation
+    private stable var daoInfo : ?Types.DAOInfo = null;
+    private stable var controllers : ?[Principal] = null;
+
+    private func getControllers() : async [Principal] {
+        switch (controllers) {
+            case (?controllers) controllers;
+            case null await Middleware.getControllers(Principal.fromActor(DAO));
+        }
+    };
+
+    private func isController(caller : Principal) : async Bool {
+            await Middleware.isController(caller, await getControllers())
+    };
+
+    // Initialize DAO with information (called by deployer)
+    public shared(msg) func initializeDAO(
+        name : Text,
+        description : Text,
+        tags : [Text],
+        creator : Principal,
+    ) : async Result.Result<(), Text> {
+        if (not (await isController(msg.caller))) {
+            return #err("Caller is not this canister's controller");
+        };
+
+        switch (daoInfo) {
+            case (null) {
+                daoInfo := ?{
+                    name = name;
+                    description = description;
+                    tags = tags;
+                    creator = creator;
+                    createdAt = Time.now();
+                    controller = msg.caller;
+                };
+                #ok
+            };
+            case (?_) {
+                #err("DAO already initialized")
+            };
+        }
+    };
+
+    // Get DAO information
+    public query func getDAOInfo() : async ?Types.DAOInfo {
+        return daoInfo;
+    };
 
     public query func greet(name : Text) : async Text {
-        return "Hello, " # name # "!";
+        switch (daoInfo) {
+            case (?info) {
+                return "Hello, " # name # "! Welcome to " # info.name # " DAO.";
+            };
+            case (null) {
+                return "Hello, " # name # "!";
+            };
+        }
+    };
+
+    // Check if the caller is the creator of the DAO
+    private func isCreator(caller : Principal) : async Bool {
+        switch (daoInfo) {
+            case (?info) info.creator == caller;
+            case null false;
+        }
     };
 
     // Debug function to check caller identity
@@ -44,7 +109,12 @@ actor {
     };
 
     public query func getSystemInfo() : async Types.SystemInfo {
-        return userService.getSystemInfo();
+        let baseInfo = userService.getSystemInfo();
+        return {
+            totalUsers = baseInfo.totalUsers;
+            systemStartTime = baseInfo.systemStartTime;
+            daoInfo = daoInfo;
+        };
     };
 
     // --- MEMBER MANAGEMENT ---

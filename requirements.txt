@@ -1,0 +1,1 @@
+pocket-ic==3.1 # run with pocket-ic binary ver 9.0/9.0.1/9.0.2

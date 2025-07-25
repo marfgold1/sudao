@@ -1,12 +1,17 @@
 {
   "canisters": {
+    "sudao_be_explorer": {
+      "main": "src/sudao_be_explorer/main.mo",
+      "type": "motoko"
+    },
     "sudao_backend": {
       "main": "src/sudao_backend/main.mo",
       "type": "motoko"
     },
     "sudao_frontend": {
       "dependencies": [
-        "sudao_backend"
+        "sudao_backend",
+        "sudao_be_explorer"
       ],
       "source": [
         "src/sudao_frontend/dist"

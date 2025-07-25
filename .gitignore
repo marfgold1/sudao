@@ -27,3 +27,5 @@ dist/
 .mops
 
 *.tsbuildinfo
+
+venv
