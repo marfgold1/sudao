@@ -8,14 +8,17 @@
       "main": "src/sudao_backend/main.mo",
       "type": "motoko"
     },
+    "sudao_ledger": {
+      "main": "src/sudao_ledger/main.mo",
+      "type": "motoko"
+    },
+    "sudao_swap": {
+      "main": "src/sudao_swap/main.mo",
+      "type": "motoko"
+    },
     "sudao_frontend": {
-      "dependencies": [
-        "sudao_backend",
-        "sudao_be_explorer"
-      ],
-      "source": [
-        "src/sudao_frontend/dist"
-      ],
+      "dependencies": ["sudao_backend", "sudao_be_explorer"],
+      "source": ["src/sudao_frontend/dist"],
       "type": "assets",
       "workspace": "sudao_frontend"
     }
