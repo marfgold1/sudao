@@ -23,7 +23,6 @@ dfx deploy sudao_be_explorer
 # Get the explorer canister ID
 EXPLORER_ID=$(dfx canister id sudao_be_explorer)
 echo "✅ DAO Explorer deployed with ID: $EXPLORER_ID"
-dfx cycles top-up $EXPLORER_ID 100T
 
 # Step 3: Build the sudao_backend WASM
 echo "🔧 Building sudao_backend WASM..."
