@@ -6,8 +6,8 @@ import Result "mo:base/Result";
 import Nat "mo:base/Nat";
 import Iter "mo:base/Iter";
 
-import Types "./Types";
-import Utils "./Utils";
+import Types "../Types";
+import Utils "../Utils";
 
 module {
   public type UserRegistry = Map.Map<Principal, Types.UserProfile>;
