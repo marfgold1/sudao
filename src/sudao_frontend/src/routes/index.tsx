@@ -1,5 +1,5 @@
 import { Outlet, RouteObject, createBrowserRouter } from "react-router-dom";
-import { Home, Example, Proposal, Transaction } from "@/pages";
+import { Home, Example, Proposal, Transaction, DiscoverCollectives, Profile } from "@/pages";
 import { DynamicNavbar, /* Footer */ } from "@/components";
 // import { AuthProvider } from "@/contexts/AuthContext";
 
@@ -27,8 +27,8 @@ const routes: RouteObject[] = [
                 element: <Home />,
             },
             {
-                path: "/proposal",
-                element: <Proposal />,
+                path: "/discover",
+                element: <DiscoverCollectives />,
             },
             {
                 path: "/home/:daoId",
@@ -37,6 +37,10 @@ const routes: RouteObject[] = [
             {
                 path: "/proposal/:daoId",
                 element: <Proposal />,
+            },
+            {
+                path: "/profile",
+                element: <Profile />,
             },
             {
                 path: "/example",
