@@ -52,6 +52,16 @@ export const mockProposals: Proposal[] = [
         votes: 73,
         fundingAmount: 252,
     },
+    {
+        id: 'draft-example-001',
+        title: 'Mobile App Development for Community Engagement',
+        description: 'This is a draft proposal for developing a mobile application to enhance community engagement and participation in environmental conservation activities. The app will feature tracking, gamification, and social sharing capabilities.',
+        status: 'Draft',
+        publishedDate: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
+        deadline: '25 December 2025',
+        votes: 0,
+        fundingAmount: 500,
+    },
 ];
 
 export const statCards = [

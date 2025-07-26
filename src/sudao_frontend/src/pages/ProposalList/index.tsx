@@ -139,7 +139,7 @@ const ProposalList: React.FC<any> = ({ proposals, onProposalClick, onCreateClick
                                         </motion.div>
                                     )}
                                 </div>
-                                <Button className="gap-2 bg-blue-600 hover:bg-blue-700">
+                                <Button onClick={onCreateClick} className="gap-2 bg-blue-600 hover:bg-blue-700">
                                     Make a New Proposal
                                 </Button>
                             </div>

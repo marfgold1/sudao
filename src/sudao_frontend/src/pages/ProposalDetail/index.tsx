@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/breadcrumb"
 import { Proposal } from "@/types"
 import { motion } from "framer-motion"
-import { AlertTriangle, ArrowLeft, Calendar, Eye, MessageCircle, ChevronDown, ChevronUp } from "lucide-react"
+import { AlertTriangle, ArrowLeft, Calendar, Eye, MessageCircle, ChevronDown, ChevronUp, Edit, FileText } from "lucide-react"
 import { useState, useEffect } from "react"
 import { Link } from "react-router-dom"
 
@@ -28,7 +28,7 @@ interface Comment {
     userReactions: string[];
 }
 
-const ProposalDetail: React.FC<{ proposal: Proposal, onBack: any }> = ({ proposal, onBack }) => {
+const ProposalDetail: React.FC<{ proposal: Proposal, onBack: any, onEdit?: (proposal: Proposal) => void, onPublish?: (proposal: Proposal) => void }> = ({ proposal, onBack, onEdit, onPublish }) => {
     const [vote, setVote] = useState<"support" | "against" | null>(null)
     const [comment, setComment] = useState("")
     const [showComments, setShowComments] = useState(true)
@@ -39,26 +39,35 @@ const ProposalDetail: React.FC<{ proposal: Proposal, onBack: any }> = ({ proposa
         against: 30,
         totalVotes: proposal.votes
     })
-    const [comments, setComments] = useState<Comment[]>([
-        {
-            id: 1,
-            author: "Charles Neine",
-            avatar: "CN",
-            date: "June 25, 2025",
-            content: "I think that this is a fine proposal. Not sure about the numbers of the fishermen though since it got quite expensive recently...",
-            reactions: { "👍": 298, "👎": 48, "❤️": 12, "😊": 5, "😢": 2 },
-            userReactions: []
-        },
-        {
-            id: 2,
-            author: "Samuel Samantha",
-            avatar: "SS",
-            date: "June 25, 2025",
-            content: "Not going to agree with this. Do better.",
-            reactions: { "👍": 320, "👎": 0, "❤️": 8, "😊": 15, "😢": 3 },
-            userReactions: []
-        },
-    ])
+    // Initialize comments based on proposal - new projects start with 0 comments
+    const [comments, setComments] = useState<Comment[]>(() => {
+        // For new proposals (created through the form), start with empty array
+        if (proposal.id.startsWith('draft-') || proposal.id.startsWith('proposal-')) {
+            return [];
+        }
+        
+        // Default comments for existing mock proposals
+        return [
+            {
+                id: 1,
+                author: "Charles Neine",
+                avatar: "CN",
+                date: "June 25, 2025",
+                content: "I think that this is a fine proposal. Not sure about the numbers of the fishermen though since it got quite expensive recently...",
+                reactions: { "👍": 298, "👎": 48, "❤️": 12, "😊": 5, "😢": 2 },
+                userReactions: []
+            },
+            {
+                id: 2,
+                author: "Samuel Samantha",
+                avatar: "SS",
+                date: "June 25, 2025",
+                content: "Not going to agree with this. Do better.",
+                reactions: { "👍": 320, "👎": 0, "❤️": 8, "😊": 15, "😢": 3 },
+                userReactions: []
+            },
+        ];
+    })
 
     // Scroll to top when component mounts
     useEffect(() => {
@@ -182,43 +191,85 @@ const ProposalDetail: React.FC<{ proposal: Proposal, onBack: any }> = ({ proposa
                 </div>
 
                 {/* Author Info */}
-                <div className="flex items-center space-x-10 mb-10 text-sm text-gray-600">
-                    <div className="flex items-center space-x-3">
-                        <Avatar className="w-10 h-10 bg-blue-50 text-blue-600 dark:text-blue-400">
-                            <AvatarFallback>CN</AvatarFallback>
-                        </Avatar>
-                        <div>
-                            <p>Published by</p>
-                            <p className="font-medium">{proposal.id}</p>
-                        </div>
+                <div className="flex items-center justify-between mb-10 text-sm text-gray-600">
+                    <div className="flex items-center space-x-10">
+                        {proposal.status === 'Draft' ? (
+                            <div className="flex items-center space-x-3">
+                                <div className="w-10 h-10 bg-blue-50 rounded-3xl flex justify-center items-center">
+                                    <Calendar className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                                </div>
+                                <div>
+                                    <p>Last edited</p>
+                                    <p className="font-medium">{proposal.publishedDate}</p>
+                                </div>
+                            </div>
+                        ) : (
+                            <>
+                                <div className="flex items-center space-x-3">
+                                    <Avatar className="w-10 h-10 bg-blue-50 text-blue-600 dark:text-blue-400">
+                                        <AvatarFallback>CN</AvatarFallback>
+                                    </Avatar>
+                                    <div>
+                                        <p>Published by</p>
+                                        <p className="font-medium">{proposal.id}</p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center space-x-3">
+                                    <div className="w-10 h-10 bg-blue-50 rounded-3xl flex justify-center items-center">
+                                        <Calendar className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                                    </div>
+                                    <div>
+                                        <p>Published in</p>
+                                        <p className="font-medium">{proposal.publishedDate}</p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center space-x-3">
+                                    <div className="w-10 h-10 bg-blue-50 rounded-3xl flex justify-center items-center">
+                                        <Calendar className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                                    </div>
+                                    <div>
+                                        <p>Last edited</p>
+                                        <p className="font-medium">{proposal.publishedDate}</p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center space-x-3">
+                                    <div className="w-10 h-10 bg-blue-50 rounded-3xl flex justify-center items-center">
+                                        <Eye className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                                    </div>
+                                    <div>
+                                        <p>Viewed by</p>
+                                        <p className="font-medium">3 Members</p>
+                                    </div>
+                                </div>
+                            </>
+                        )}
                     </div>
-                    <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 bg-blue-50 rounded-3xl flex justify-center items-center">
-                            <Calendar className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                    
+                    {/* Edit and Publish buttons for Draft status */}
+                    {proposal.status === 'Draft' && (onEdit || onPublish) && (
+                        <div className="flex items-center space-x-3">
+                            {onEdit && (
+                                <Button
+                                    variant="outline"
+                                    size="lg"
+                                    onClick={() => onEdit(proposal)}
+                                    className="flex items-center gap-2 px-6"
+                                >
+                                    <Edit className="w-4 h-4" />
+                                </Button>
+                            )}
+                            {onPublish && (
+                                <Button
+                                    size="lg"
+                                    onClick={() => onPublish(proposal)}
+                                    className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 px-16"
+                                >
+                                    <FileText className="w-4 h-4" />
+                                    Publish
+                                </Button>
+                            )}
                         </div>
-                        <div>
-                            <p>Published in</p>
-                            <p className="font-medium">{proposal.publishedDate}</p>
-                        </div>
-                    </div>
-                    <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 bg-blue-50 rounded-3xl flex justify-center items-center">
-                            <Calendar className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                        </div>
-                        <div>
-                            <p>Last edited</p>
-                            <p className="font-medium">{proposal.publishedDate}</p>
-                        </div>
-                    </div>
-                    <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 bg-blue-50 rounded-3xl flex justify-center items-center">
-                            <Eye className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                        </div>
-                        <div>
-                            <p>Viewed by</p>
-                            <p className="font-medium">3 Members</p>
-                        </div>
-                    </div>
+                    )}
                 </div>
 
                 <div className="grid grid-cols-3 gap-6">
@@ -228,31 +279,25 @@ const ProposalDetail: React.FC<{ proposal: Proposal, onBack: any }> = ({ proposa
                             <CardContent className="p-6">
                             <h1 className="text-2xl font-bold mb-4">{proposal.title}</h1>
                             <div className="prose max-w-none">
-                                <p className="mb-4">
-                                    This proposal aims to organize a hands-on coral restoration workshop for local fishermen in Lombok
-                                    this August. The workshop will include training on sustainable fishing practices, coral gardening
-                                    techniques, and marine ecosystem awareness.
-                                </p>
-                                <p>
-                                    We plan to invite 50 fishermen from four coastal villages, provide materials and equipment, and cover
-                                    transportation and meals. The goal is to empower the local community to actively protect and restore
-                                    nearby reefs while creating alternative income opportunities through eco-tourism.
+                                <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
+                                    {proposal.description}
                                 </p>
                             </div>
                             </CardContent>
                         </Card>
 
-                        {/* Comments Section Toggle */}
-                        <div className="mt-6">
-                            <Button
-                                variant="outline"
-                                onClick={() => setShowComments(!showComments)}
-                                className="mb-4 flex items-center gap-2"
-                            >
-                                <MessageCircle className="w-4 h-4" />
-                                {showComments ? 'Hide' : 'Show'} Comments ({comments.length})
-                                {showComments ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                            </Button>
+                        {/* Comments Section Toggle - Hidden for Draft proposals */}
+                        {proposal.status !== 'Draft' && (
+                            <div className="mt-6">
+                                <Button
+                                    variant="outline"
+                                    onClick={() => setShowComments(!showComments)}
+                                    className="mb-4 flex items-center gap-2"
+                                >
+                                    <MessageCircle className="w-4 h-4" />
+                                    {showComments ? 'Hide' : 'Show'} Comments ({comments.length})
+                                    {showComments ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                                </Button>
                             
                             {showComments && (
                                 <motion.div
@@ -268,7 +313,7 @@ const ProposalDetail: React.FC<{ proposal: Proposal, onBack: any }> = ({ proposa
                                                     placeholder="Type out a comment...."
                                                     value={comment}
                                                     onChange={(e) => setComment(e.target.value)}
-                                                    className="mb-3"
+                                                    className="mb-3 resize-none"
                                                     rows={3}
                                                 />
                                                 <Button 
@@ -365,13 +410,14 @@ const ProposalDetail: React.FC<{ proposal: Proposal, onBack: any }> = ({ proposa
                                     </Card>
                                 </motion.div>
                             )}
-                        </div>
+                            </div>
+                        )}
                     </div>
 
                     {/* Sidebar */}
                     <div className="space-y-6">
-                        {/* Voting Section */}
-                        {hasVoted || proposal.status === "Approved" ? (
+                        {/* Voting Section - Hidden for Draft proposals */}
+                        {proposal.status !== 'Draft' && (hasVoted || proposal.status === "Approved") ? (
                             <Card>
                                 <CardHeader>
                                     <CardTitle className="text-lg">
@@ -420,7 +466,7 @@ const ProposalDetail: React.FC<{ proposal: Proposal, onBack: any }> = ({ proposa
                                     </div>
                                 </CardContent>
                             </Card>
-                        ) : (
+                        ) : proposal.status !== 'Draft' ? (
                             <Card>
                                 <CardHeader>
                                     <CardTitle className="text-lg">Voting</CardTitle>
@@ -453,7 +499,7 @@ const ProposalDetail: React.FC<{ proposal: Proposal, onBack: any }> = ({ proposa
                                     </div>
                                 </CardContent>
                             </Card>
-                        )}
+                        ) : null}
 
                         {/* Proposal Details */}
                         <Card>
