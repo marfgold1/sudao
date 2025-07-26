@@ -25,7 +25,6 @@ export default function UserProfile() {
   const identity = useIdentity();
   const accounts = useAccounts();
   const authenticatedAgent = useAgent();
-
   const [userPrincipal, setUserPrincipal] = useState<string | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [isRegistering, setIsRegistering] = useState(false);
@@ -34,10 +33,6 @@ export default function UserProfile() {
     type: "success" | "error" | "info";
     message: string;
   } | null>(null);
-
-  // Set principal on login/logout
-  const [isLoading, setIsLoading] = useState(false);
-  const [registrationStatus, setRegistrationStatus] = useState<string>("");
   const [numberValue, setNumberValue] = useState<number>(0);
   const [actorGovernance, setActorGovernance] =
     useState<ActorSubclass<_SERVICE_GOVERNANCE> | null>(null);
@@ -46,6 +41,7 @@ export default function UserProfile() {
   const [actorICP, setActorICP] =
     useState<ActorSubclass<_SERVICE_ICP_LEDGER> | null>(null);
 
+  // Set principal on login/logout
   useEffect(() => {
     let principal = null;
     if (accounts && accounts.length > 0) {
@@ -60,54 +56,63 @@ export default function UserProfile() {
     }
   }, [identity, accounts]);
 
-  // Helper to create an authenticated actor
-  const getAuthenticatedActor =
-    useCallback(async (): Promise<ActorSubclass<_SERVICE> | null> => {
-      if (!authenticatedAgent) {
-        setStatus({
-          type: "error",
-          message: "Not authenticated. Please log in.",
-        });
-        return null;
-      }
-      console.log("DFX_NETWORK variable is:", process.env.DFX_NETWORK); 
-      if (process.env.DFX_NETWORK !== "ic") {
-        try {
-          await authenticatedAgent.fetchRootKey();
-        } catch {
-          setStatus({ type: "error", message: "Could not fetch root key." });
-          return null;
-        }
-      }
-      return Actor.createActor<_SERVICE>(idlFactory, {
-        agent: authenticatedAgent,
-        canisterId,
-      });
-    }, [authenticatedAgent]);
+  // Initialize actors when agent changes
+  const initializeActors = useCallback(async () => {
+    if (!authenticatedAgent) {
+      setActorGovernance(null);
+      setActorICP(null);
+      setActorLedger(null);
+      return;
+    }
+    try {
+      setActorGovernance(
+        Actor.createActor<_SERVICE_GOVERNANCE>(idlFactoryGovernance, {
+          agent: authenticatedAgent,
+          canisterId: canisterIdGovernance,
+        })
+      );
+      setActorLedger(
+        Actor.createActor<_SERVICE_DAO_LEDGER>(idlFactoryLedger, {
+          agent: authenticatedAgent,
+          canisterId: ledgerCanisterId,
+        })
+      );
+      setActorICP(
+        Actor.createActor<_SERVICE_ICP_LEDGER>(idlFactoryICP, {
+          agent: authenticatedAgent,
+          canisterId: icpCanisterId,
+        })
+      );
+    } catch (err) {
+      setActorGovernance(null);
+      setActorLedger(null);
+      setActorICP(null);
+      console.error("Failed to create actors:", err);
+    }
+  }, [authenticatedAgent]);
+
+  useEffect(() => {
+    initializeActors();
+  }, [initializeActors]);
 
   // Register user and fetch profile
   const handleUserRegistration = useCallback(async () => {
     setIsRegistering(true);
     setStatus(null);
-    const actor = await getAuthenticatedActor();
-    if (!actor) {
+    if (!actorGovernance) {
       setIsRegistering(false);
+      setStatus({
+        type: "error",
+        message: "Authenticated actor not ready. Please log in.",
+      });
       return;
     }
     try {
-      const registrationResult = await actor.register();
-      setStatus({ type: "success", message: registrationResult });
-      const [profile] = await actor.getMyProfile();
-      // First, try to register the user
       const registrationResult = await actorGovernance.register();
-      setRegistrationStatus(registrationResult);
-      console.log("Registration Result:", registrationResult);
-
-      // Then, fetch the user profile
+      setStatus({ type: "success", message: registrationResult });
       const [profile] = await actorGovernance.getMyProfile();
       setUserProfile(profile ?? null);
-    } catch (e) {
-      console.error(e);
+    } catch {
       setStatus({
         type: "error",
         message: "Failed to register or fetch profile.",
@@ -115,26 +120,38 @@ export default function UserProfile() {
     } finally {
       setIsRegistering(false);
     }
-  };
+  }, [actorGovernance]);
 
-  const handleMint = async () => {
-    if (!actorLedger) {
-      console.log("Authenticated actor not available for mint.");
+  // Refresh profile
+  const refreshProfile = useCallback(async () => {
+    setIsRefreshing(true);
+    setStatus(null);
+    if (!actorGovernance) {
+      setIsRefreshing(false);
+      setStatus({
+        type: "error",
+        message: "Authenticated actor not ready. Please log in.",
+      });
       return;
     }
-    // const mintResult = await actorLedger.mint(
-    //   {
-    //     owner: Principal.fromText("vqluh-coqli-j2ase-mhzal-aop7e-ccajg-wl44c-lmvb7-4umu4-z4vu4-fqe"),
-    //     subaccount: [],
-    //   },
-    //   1_000_000n,
-    // );
-    // console.log("Mint Result:", mintResult);
-  };
+    try {
+      const [profile] = await actorGovernance.getMyProfile();
+      setUserProfile(profile ?? null);
+      setStatus({ type: "success", message: "Profile refreshed." });
+    } catch {
+      setStatus({ type: "error", message: "Failed to refresh profile." });
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [actorGovernance]);
 
+  // Approve logic
   const handleApprove = async () => {
     if (!actorICP) {
-      console.log("Authenticated actor not available for approve.");
+      setStatus({
+        type: "error",
+        message: "Authenticated actor not ready. Please log in.",
+      });
       return;
     }
     const acc = {
@@ -143,14 +160,12 @@ export default function UserProfile() {
       ),
       subaccount: [] as [],
     };
-
     const acc2 = {
       owner: Principal.fromText(
         "5thol-pwfmc-monwz-xbfkw-rqzfe-xgjf5-canhq-uc7nr-ihpsu-h6exb-jae"
       ),
       subaccount: [] as [],
     };
-
     const icrc2_approve_args = {
       from_subaccount: [] as [],
       spender: acc,
@@ -161,9 +176,6 @@ export default function UserProfile() {
       expected_allowance: [0n] as [bigint],
       expires_at: [BigInt((Date.now() + 10000000000000) * 1000000)] as [bigint],
     };
-
-    console.log("icrc2_approve_args", icrc2_approve_args);
-
     try {
       const balance = await actorICP.icrc1_balance_of(acc);
       console.log("Balance:", balance, acc, acc.owner.toString());
@@ -171,30 +183,11 @@ export default function UserProfile() {
       console.log("Balance2:", balance2, acc2, acc2.owner.toString());
       const response = await actorICP.icrc2_approve(icrc2_approve_args);
       console.log("Approve Result:", response);
-    } catch (error) {
-      console.error("Error during approve:", error);
+      setStatus({ type: "success", message: "Approve transaction sent." });
+    } catch {
+      setStatus({ type: "error", message: "Approve failed." });
     }
   };
-
-  // Refresh profile
-  const refreshProfile = useCallback(async () => {
-    setIsRefreshing(true);
-    setStatus(null);
-    const actor = await getAuthenticatedActor();
-    if (!actor) {
-      setIsRefreshing(false);
-      return;
-    }
-    try {
-      const [profile] = await actor.getMyProfile();
-      setUserProfile(profile ?? null);
-      setStatus({ type: "success", message: "Profile refreshed." });
-    } catch {
-      setStatus({ type: "error", message: "Failed to refresh profile." });
-    } finally {
-      setIsRefreshing(false);
-    }
-  }, [getAuthenticatedActor]);
 
   const isLoggedIn = !!authenticatedAgent;
 
@@ -202,15 +195,12 @@ export default function UserProfile() {
     return (
       <div className="p-4 border rounded-lg">
         <p>Please log in with NFID to see your profile.</p>
-        {!actorGovernance && (
-          <p className="text-sm text-gray-600 mt-2">
-            Waiting for NFID authentication...
-          </p>
-        )}
+        <p className="text-sm text-gray-600 mt-2">
+          Waiting for NFID authentication...
+        </p>
       </div>
     );
   }
-
 
   return (
     <div className="p-4 border rounded-lg">
@@ -221,9 +211,8 @@ export default function UserProfile() {
       </p>
       <div className="mb-2 text-sm text-gray-600">
         Authentication:{" "}
-        {actorGovernance ? "✅ NFID Connected" : "❌ NFID Not Connected"}
+        {isLoggedIn ? "✅ NFID Connected" : "❌ NFID Not Connected"}
       </div>
-
       {status && (
         <div
           className={`my-4 p-2 border rounded ${
@@ -237,7 +226,6 @@ export default function UserProfile() {
           <p>{status.message}</p>
         </div>
       )}
-
       {userProfile && (
         <div className="my-4 p-2 bg-blue-100 border border-blue-300 rounded">
           <h3 className="font-semibold">Profile Information:</h3>
@@ -250,7 +238,6 @@ export default function UserProfile() {
           </p>
         </div>
       )}
-
       <div className="flex space-x-2">
         <button
           onClick={refreshProfile}
@@ -266,30 +253,14 @@ export default function UserProfile() {
         >
           {isRegistering ? "Registering..." : "Register"}
         </button>
+        <button
+          onClick={handleApprove}
+          className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 disabled:opacity-50"
+        >
+          Approve
+        </button>
       </div>
-      <button
-        onClick={refreshProfile}
-        disabled={isLoading || !actorGovernance}
-        className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:opacity-50 mr-2"
-      >
-        {isLoading ? "Refreshing..." : "Refresh Profile"}
-      </button>
-
-      <button
-        onClick={handleUserRegistration}
-        className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 disabled:opacity-50"
-        disabled={isLoading || !actorGovernance}
-      >
-        {isLoading ? "Registering..." : "Register"}
-      </button>
-
-      <button
-        onClick={handleMint}
-        className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 disabled:opacity-50"
-      >
-        Mint
-      </button>
-      <div className="mb-4">
+      <div className="mb-4 mt-2">
         <label htmlFor="numberInput" className="mr-2 font-medium">
           Enter a number:
         </label>
@@ -301,13 +272,6 @@ export default function UserProfile() {
           className="border rounded px-2 py-1"
         />
       </div>
-
-      <button
-        onClick={handleApprove}
-        className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 disabled:opacity-50"
-      >
-        Approve
-      </button>
     </div>
   );
 }
