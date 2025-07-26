@@ -46,22 +46,32 @@ dfx canister --help
 ```
 
 ## Running the project locally
-
+### Backend
 If you want to test your project locally, you can use the following commands:
 
 ```bash
-# Starts the replica, running in the background
-dfx start --background
-
-# Deploys your canisters to the replica and generates your candid interface
-dfx deploy
+./explorer.sh --reset
 ```
+
+It will automatically spin up the explorer backend, plus building the wasm for backend, ledger, and swap, which then will be uploaded to the explorer.
+
 
 Once the job completes, your application will be available at `http://localhost:4943?canisterId={asset_canister_id}`.
 
-Any subsequent changes to BE need to redeploy the canisters.
+If you change only the explorer, run `./explorer.sh` to redeploy only explorer.
 
-Always don't forget to run the replica! If you encounter `Error: You are trying to connect to the local replica but dfx cannot connect to it` then you need to start the replica again.
+If you change anything else but you don't want to destroy the current instance (upgrade code), run `./build-and-deploy.sh`.
+
+If you wish to reset everything and deploy them again (install), run `./explorer.sh --reset` again.
+
+### Frontend
+You can run frontend by running the following commands:
+
+```bash
+npm run dev
+```
+
+Don't forget to run `npm install` to install FE packages.
 
 ## DAO Creation Flow
 
