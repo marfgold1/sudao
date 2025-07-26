@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import Greet from "./greet";
 import { useAccounts } from "@nfid/identitykit/react";
 import UserProfile from "@/components/Auth/Profile";

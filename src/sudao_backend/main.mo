@@ -85,6 +85,7 @@ actor DAO {
 
     // Debug function to check caller identity
     public shared (msg) func whoAmI() : async Text {
+    public shared (msg) func whoAmI() : async Text {
         return Principal.toText(msg.caller);
     };
 
@@ -115,18 +116,22 @@ actor DAO {
     // Public user management functions (adapted for frontend expectations)
     public shared (msg) func register() : async Text {
         let result = userService.registerUser(msg.caller);
+        
         switch (result) {
             case (#Success(message)) message;
             case (#AlreadyRegistered(message)) message;
             case (#Error(message)) message;
         };
+        };
     };
 
+    public shared (msg) func getMyProfile() : async [Types.UserProfile] {
     public shared (msg) func getMyProfile() : async [Types.UserProfile] {
         let result = userService.getUserProfile(msg.caller);
         switch (result) {
             case (#Found(profile)) [profile];
             case (#NotFound(_)) [];
+        };
         };
     };
 
@@ -142,6 +147,7 @@ actor DAO {
     // --- MEMBER MANAGEMENT ---
     // For now, registered users are automatically members
     // In the future, this could be expanded with roles, permissions, etc.
+
 
     // Stable storage for proposals with migration handling
     private stable var proposalsEntries : [(Text, ProposalManager.Proposal)] = [];
@@ -205,6 +211,7 @@ actor DAO {
 
     // Create a draft proposal
     public shared (msg) func createDraftProposal(
+    public shared (msg) func createDraftProposal(
         title : Text,
         description : Text,
         proposalType : ProposalManager.ProposalType,
@@ -213,9 +220,22 @@ actor DAO {
         votingDurationSeconds : Nat,
         minimumParticipation : Nat,
         minimumApproval : Nat,
+        minimumApproval : Nat,
     ) : async Result.Result<Text, ProposalManager.ProposalError> {
         let totalEligible = await getTotalEligibleVoters();
         return await ProposalManager.createDraft(
+            proposalState,
+            msg.caller,
+            isMember,
+            title,
+            description,
+            proposalType,
+            beneficiaryAddress,
+            requestedAmount,
+            votingDurationSeconds,
+            minimumParticipation,
+            minimumApproval,
+            totalEligible,
             proposalState,
             msg.caller,
             isMember,
@@ -233,15 +253,18 @@ actor DAO {
 
     // Publish a draft proposal to make it active
     public shared (msg) func publishProposal(proposalId : Text) : async Result.Result<Bool, ProposalManager.ProposalError> {
+    public shared (msg) func publishProposal(proposalId : Text) : async Result.Result<Bool, ProposalManager.ProposalError> {
         return await ProposalManager.publishProposal(proposalState, msg.caller, proposalId);
     };
 
     // Vote on an active proposal
     public shared (msg) func voteOnProposal(proposalId : Text, choice : ProposalManager.Vote) : async Result.Result<Bool, ProposalManager.ProposalError> {
+    public shared (msg) func voteOnProposal(proposalId : Text, choice : ProposalManager.Vote) : async Result.Result<Bool, ProposalManager.ProposalError> {
         return await ProposalManager.vote(proposalState, msg.caller, isMember, proposalId, choice);
     };
 
     // Finalize a proposal (determine result based on voting period end)
+    public shared (_msg) func finalizeProposal(proposalId : Text) : async Result.Result<ProposalManager.ProposalStatus, ProposalManager.ProposalError> {
     public shared (_msg) func finalizeProposal(proposalId : Text) : async Result.Result<ProposalManager.ProposalStatus, ProposalManager.ProposalError> {
         return ProposalManager.finalizeProposal(proposalState, proposalId);
     };
@@ -297,10 +320,12 @@ actor DAO {
 
     // Add comment to a proposal
     public shared (msg) func addComment(proposalId : Text, content : Text) : async Result.Result<Text, ProposalManager.ProposalError> {
+    public shared (msg) func addComment(proposalId : Text, content : Text) : async Result.Result<Text, ProposalManager.ProposalError> {
         return await ProposalManager.addComment(proposalState, msg.caller, isMember, proposalId, content);
     };
 
     // Add reaction to a comment
+    public shared (msg) func addReaction(proposalId : Text, commentId : Text, reactionType : ProposalManager.ReactionType) : async Result.Result<Bool, ProposalManager.ProposalError> {
     public shared (msg) func addReaction(proposalId : Text, commentId : Text, reactionType : ProposalManager.ReactionType) : async Result.Result<Bool, ProposalManager.ProposalError> {
         return await ProposalManager.addReaction(proposalState, msg.caller, isMember, proposalId, commentId, reactionType);
     };
@@ -519,6 +544,7 @@ actor DAO {
     // These maintain compatibility with existing frontend code
 
     public shared (msg) func createProposal(title : Text, description : Text, votingDurationSeconds : Nat) : async Result.Result<Text, ProposalManager.ProposalError> {
+    public shared (msg) func createProposal(title : Text, description : Text, votingDurationSeconds : Nat) : async Result.Result<Text, ProposalManager.ProposalError> {
         // Create a governance proposal with default parameters
         let totalEligible = await getTotalEligibleVoters();
         return await ProposalManager.createDraft(
@@ -534,9 +560,22 @@ actor DAO {
             50,
             51,
             totalEligible // 50% participation, 51% approval
+            proposalState,
+            msg.caller,
+            isMember,
+            title,
+            description,
+            #governance,
+            null,
+            null,
+            votingDurationSeconds,
+            50,
+            51,
+            totalEligible // 50% participation, 51% approval
         );
     };
 
+    public shared (_msg) func endProposal(proposalId : Text) : async Result.Result<ProposalManager.ProposalStatus, ProposalManager.ProposalError> {
     public shared (_msg) func endProposal(proposalId : Text) : async Result.Result<ProposalManager.ProposalStatus, ProposalManager.ProposalError> {
         return ProposalManager.finalizeProposal(proposalState, proposalId);
     };
