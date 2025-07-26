@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { ConnectWallet } from "@nfid/identitykit/react";
 import { GitHubLogoIcon } from '@radix-ui/react-icons';
 
-const Navbar: React.FC = () => {
+const NavbarSUDAO: React.FC = () => {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
     
     return (
@@ -20,13 +20,13 @@ const Navbar: React.FC = () => {
                     <div className="flex items-center space-x-10">
                         <div className="w-6 h-6 border-2 border-blue-200 rotate-45"></div>
                         <div className="hidden md:flex items-center space-x-8 text-sm">
-                            <a href="#" className="text-white hover:text-blue-200 transition-colors font-semibold">
+                            <a href="/" className="text-white hover:text-blue-200 transition-colors font-semibold">
                                 Home
                             </a>
-                            <a href="#" className="text-white hover:text-blue-200 transition-colors">
+                            <a href="/discover" className="text-white hover:text-blue-200 transition-colors">
                                 Discover Collectives
                             </a>
-                            <a href="#" className="text-white hover:text-blue-200 transition-colors">
+                            {/* <a href="#" className="text-white hover:text-blue-200 transition-colors">
                                 How it Works
                             </a>
                             <a href="#" className="text-white hover:text-blue-200 transition-colors">
@@ -34,7 +34,7 @@ const Navbar: React.FC = () => {
                             </a>
                             <a href="#" className="text-white hover:text-blue-200 transition-colors">
                                 Meet Us
-                            </a>
+                            </a> */}
                         </div>
                     </div>
 
@@ -53,4 +53,4 @@ const Navbar: React.FC = () => {
     )
 };
 
-export default Navbar;
+export default NavbarSUDAO;
