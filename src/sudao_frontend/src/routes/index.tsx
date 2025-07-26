@@ -1,12 +1,12 @@
 import { Outlet, RouteObject, createBrowserRouter } from "react-router-dom";
-import { Home, Example } from "@/pages";
-import { Navbar, /* Footer */ } from "@/components";
+import { Home, Example, Proposal, Transaction, DiscoverCollectives, Profile } from "@/pages";
+import { DynamicNavbar, /* Footer */ } from "@/components";
 // import { AuthProvider } from "@/contexts/AuthContext";
 
 const MainLayout = () => {
     return (
         <>
-            <Navbar />
+            <DynamicNavbar />
             <Outlet />
             {/* <Footer /> */}
         </>
@@ -25,6 +25,22 @@ const routes: RouteObject[] = [
             {
                 path: "/",
                 element: <Home />,
+            },
+            {
+                path: "/discover",
+                element: <DiscoverCollectives />,
+            },
+            {
+                path: "/home/:daoId",
+                element: <Transaction />,
+            },
+            {
+                path: "/proposal/:daoId",
+                element: <Proposal />,
+            },
+            {
+                path: "/profile",
+                element: <Profile />,
             },
             {
                 path: "/example",

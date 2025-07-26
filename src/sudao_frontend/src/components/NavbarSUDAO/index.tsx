@@ -3,9 +3,19 @@ import { Menu } from 'lucide-react';
 import React, { useState } from 'react';
 import { ConnectWallet } from "@nfid/identitykit/react";
 import { GitHubLogoIcon } from '@radix-ui/react-icons';
+import { useLocation } from 'react-router-dom';
+import Logo from '@/assets/logos/SUDAOWhite.png';
 
-const Navbar: React.FC = () => {
+const NavbarSUDAO: React.FC = () => {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+
+    const location = useLocation();
+    const isActive = (path: string) => {
+        if (path === '/') {
+            return location.pathname === '/';
+        }
+        return location.pathname.includes(path);
+    };
     
     return (
         <>
@@ -18,15 +28,27 @@ const Navbar: React.FC = () => {
             >
                 <div className="max-w-7xl mx-auto flex items-center justify-between">
                     <div className="flex items-center space-x-10">
-                        <div className="w-6 h-6 border-2 border-blue-200 rotate-45"></div>
-                        <div className="hidden md:flex items-center space-x-8 text-sm">
-                            <a href="#" className="text-white hover:text-blue-200 transition-colors font-semibold">
+                        <div className="w-12 h-12">
+                            <img src={Logo} />
+                        </div>
+                        <div className="hidden md:flex items-center space-x-10">
+                            <a  
+                                href="/" 
+                                className={`transition-colors ${
+                                    isActive('/') ? 'text-blue-200 font-semibold' : 'text-white hover:text-blue-200'
+                                }`}
+                            >
                                 Home
                             </a>
-                            <a href="#" className="text-white hover:text-blue-200 transition-colors">
+                            <a  
+                                href="/discover" 
+                                className={`transition-colors ${
+                                    isActive('/discover') ? 'text-blue-200 font-semibold' : 'text-white hover:text-blue-200'
+                                }`}
+                            >
                                 Discover Collectives
                             </a>
-                            <a href="#" className="text-white hover:text-blue-200 transition-colors">
+                            {/* <a href="#" className="text-white hover:text-blue-200 transition-colors">
                                 How it Works
                             </a>
                             <a href="#" className="text-white hover:text-blue-200 transition-colors">
@@ -34,7 +56,7 @@ const Navbar: React.FC = () => {
                             </a>
                             <a href="#" className="text-white hover:text-blue-200 transition-colors">
                                 Meet Us
-                            </a>
+                            </a> */}
                         </div>
                     </div>
 
@@ -53,4 +75,4 @@ const Navbar: React.FC = () => {
     )
 };
 
-export default Navbar;
+export default NavbarSUDAO;
