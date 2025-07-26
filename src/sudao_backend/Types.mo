@@ -9,7 +9,6 @@ module {
     tags : [Text];
     creator : Principal;
     createdAt : Time.Time;
-    controller : Principal;
   };
 
   // User-related types

@@ -1,15 +1,17 @@
 import Principal "mo:base/Principal";
 import Map "mo:map/Map";
-import { thash } "mo:map/Map";
 import Time "mo:base/Time";
 import Result "mo:base/Result";
+import Blob "mo:base/Blob";
+import Iter "mo:base/Iter";
 
 // Import our modular components
 import Types "Types";
-import DAOManager "DAOManager";
 import DeploymentManager "DeploymentManager";
 import Middleware "../common/Middleware";
 import BinaryManager "BinaryManager";
+import DaoManager "DAOManager";
+import CommonTypes "../common/Types";
 
 /**
  * DAO Explorer - A management canister for creating and deploying DAOs
@@ -27,38 +29,20 @@ import BinaryManager "BinaryManager";
  * 4. Use listDAOs() to see all managed DAOs
  * 5. Each deployed DAO becomes an independent canister with the sudao_backend functionality
  */
-actor DAOExplorer {
-
+persistent actor DAOExplorer {
     // Stable storage for upgrades
     private stable var systemStartTime : Time.Time = Time.now();
     private stable var canisterId : Principal = Principal.fromActor(DAOExplorer);
     private stable var admins : ?[Principal] = null;
 
-    // Initialize managers with stable data
-    private stable var daoEntries : [(Text, Types.DAOEntry)] = [];
-    private stable var nextDAOId : Nat = 1;
-    private var daoManager = DAOManager.DAOManager(Map.fromIter(daoEntries.vals(), thash));
-
-    private stable var wasmInfo : ?Types.WasmInfo = null;
-    private var binaryManager = BinaryManager.BinaryManager();
-
-    private var deploymentManager = DeploymentManager.DeploymentManager();
-
-    // System hooks for stable variables
-    system func preupgrade() {
-        let daoData = daoManager.stableGet();
-        daoEntries := Map.toArray(daoData.0);
-        nextDAOId := daoData.1;
-
-        wasmInfo := binaryManager.stableGet();
+    private stable var daoState : DaoManager.DAOState = {
+        daoEntries = Map.new<Text, CommonTypes.DAOEntry>();
+        nextDAOId = 0;
     };
 
-    system func postupgrade() {
-        daoManager.stableSet(nextDAOId);
-        daoEntries := [];
-
-        binaryManager.stableSet(wasmInfo);
-        wasmInfo := null;
+    private stable var deploymentState : DeploymentManager.DeploymentState = {
+        deploymentMap = Map.new<Text, DeploymentManager.DeploymentInfo>();
+        wasmCodeMap = Map.new<Nat8, Types.WasmInfo>();
     };
 
     private func getControllers() : async [Principal] {
@@ -76,20 +60,35 @@ actor DAOExplorer {
      * Set WASM code for DAO deployments (admin only)
      * This should be called after building the sudao_backend
      */
-    public shared(msg) func setWasmCode(wasmCode: Blob, version: Text) : async Result.Result<(), Text> {
+    public shared(msg) func setWasmCode(codeType : Types.WasmCodeType, wasmCode: Blob, version: Text) : async Result.Result<(), Text> {
         // Check if caller is a controller of this canister
         if (not (await isController(msg.caller))) {
             return #err("Only canister controllers can set WASM code");
         };
         
-        binaryManager.setWasmCode(wasmCode, version, msg.caller)
+        BinaryManager.setWasmCode(deploymentState.wasmCodeMap, {
+            codeType = codeType;
+            code = wasmCode;
+            version = version;
+            uploader = msg.caller;
+        })
     };
 
     /**
      * Get WASM info
      */
-    public query func getWasmInfo() : async ?Types.WasmInfo {
-        binaryManager.getWasmInfo()
+    public query func getWasmInfo(key : Types.WasmCodeType) : async ?Types.WasmInfo {
+        switch (BinaryManager.getWasmInfo(deploymentState.wasmCodeMap, key)) {
+            case (?info) {
+                ?{
+                    code = Blob.fromArray([]);
+                    uploadedAt = info.uploadedAt;
+                    uploadedBy = info.uploadedBy;
+                    version = info.version;
+                };
+            };
+            case null null;
+        }
     };
 
     // --- PUBLIC API ---
@@ -97,16 +96,21 @@ actor DAOExplorer {
      * Add a new DAO to the platform and automatically start deployment
      * Returns immediately with the DAO ID while deployment happens asynchronously
      */
-    public shared(msg) func addDAO(request : Types.CreateDAORequest) : async Result.Result<Text, Text> {
+    public shared(msg) func addDAO(request : DaoManager.CreateDAORequest) : async Result.Result<Text, Text> {
         // Check if WASM code is available
-        let (?wasmCode) = binaryManager.getWasmCode() else {
-            return #err("No WASM code available for deployment. Please upload WASM code first.");
+        switch (DeploymentManager.checkWasmForDeployment(deploymentState)) {
+            case (#err(error)) return #err(error);
+            case (#ok) {};
         };
         
-        switch (daoManager.addDAO(request, msg.caller)) {
-            case (#ok(dao)) {
+        switch (DaoManager.addDAO(daoState, request, msg.caller)) {
+            case (#ok((newDaoState, dao))) {
                 // Trigger deployment asynchronously (fire and forget)
-                await* deploymentManager.deploy(daoManager, dao, canisterId, wasmCode);
+                daoState := newDaoState;
+                ignore DeploymentManager.deploy(deploymentState, {
+                    dao = dao;
+                    controller = canisterId;
+                });
                 #ok(dao.id)
             };
             case (#err(error)) {
@@ -119,46 +123,55 @@ actor DAOExplorer {
      * Get DAO with current deployment status
      * Use this to check deployment progress
      */
-    public query func getDAO(daoId : Text) : async ?Types.DAOEntry {
-        daoManager.getDAO(daoId)
+    public query func getDAO(daoId : Text) : async (?CommonTypes.DAOEntry, ?DeploymentManager.DeploymentInfo) {
+        (DaoManager.getDAO(daoState, daoId), DeploymentManager.getDeploymentInfo(deploymentState, daoId))
     };
 
     /**
      * List all DAOs
      */
-    public query func listDAOs() : async [Types.DAOEntry] {
-        daoManager.listDAOs()
+    public query func listDAOs() : async [(CommonTypes.DAOEntry, ?DeploymentManager.DeploymentInfo)] {
+        Iter.toArray(Iter.map<CommonTypes.DAOEntry, (CommonTypes.DAOEntry, ?DeploymentManager.DeploymentInfo)>(
+            DaoManager.listDAOs(daoState), func (dao) { (dao, DeploymentManager.getDeploymentInfo(deploymentState, dao.id)) }
+        ))
     };
 
     /**
      * Get canister ID for a deployed DAO
      */
     public query func getCanisterId(daoId : Text) : async ?Principal {
-        daoManager.getCanisterId(daoId)
+        DeploymentManager.getCanisterId(deploymentState, daoId)
     };
 
     /**
      * Check if WASM code is available
      */
-    public query func hasWasmCode() : async Bool {
-        binaryManager.hasWasmCode()
+    public query func hasWasmCode(wasmCodeType : Types.WasmCodeType) : async Bool {
+        BinaryManager.hasWasmCode(deploymentState.wasmCodeMap, wasmCodeType)
+    };
+
+    public query func isDeploymentReady() : async Result.Result<(), Text> {
+        DeploymentManager.checkWasmForDeployment(deploymentState)
     };
 
     /**
      * Get system information
      */
     public query func getSystemInfo() : async {
-        totalDAOs : Nat;
+        daoStats : DaoManager.DAOStats;
         systemStartTime : Time.Time;
         explorerPrincipal : Principal;
-        hasWasmCode : Bool;
+        deploymentStats : DeploymentManager.DeploymentStats;
+        wasmReady : Result.Result<(), Text>;
     } {
-        let stats = daoManager.getStats(systemStartTime);
+        let deploymentStats = DeploymentManager.getDeploymentStats(deploymentState);
+        let daoStats = DaoManager.getDAOsStats(daoState);
         {
-            totalDAOs = stats.totalDAOs;
+            daoStats = daoStats;
             systemStartTime = systemStartTime;
-            explorerPrincipal = Principal.fromActor(DAOExplorer);
-            hasWasmCode = binaryManager.hasWasmCode();
+            explorerPrincipal = canisterId;
+            deploymentStats = deploymentStats;
+            wasmReady = DeploymentManager.checkWasmForDeployment(deploymentState);
         }
     };
 };

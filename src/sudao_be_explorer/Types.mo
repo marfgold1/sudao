@@ -1,68 +1,36 @@
 import Principal "mo:base/Principal";
 import Time "mo:base/Time";
+import Nat8 "mo:base/Nat8";
+import Array "mo:base/Array";
+import Map "mo:map/Map";
+import List "mo:base/List";
 
 module {
-    // Enhanced deployment status with more granular tracking
-    public type DeploymentStatus = {
-        #deploying : DeploymentProgress;    // Currently being deployed with details
-        #deployed : DeployedInfo;           // Successfully deployed
-        #failed : FailureInfo;              // Deployment failed with details
-    };
-
-    public type DeploymentProgress = {
-        step : DeploymentStep;
-        startedAt : Time.Time;
-        lastUpdate : Time.Time;
-    };
-
-    public type DeploymentStep = {
-        #queued;
-        #creating_canister;
-        #installing_code;
-        #initializing;
-    };
-
-    public type DeployedInfo = {
-        canisterId : Principal;
-        deployedAt : Time.Time;
-    };
-
-    public type FailureInfo = {
-        error : Text;
-        failedAt : Time.Time;
-    };
-
-    // DAO-related types
-    public type DAOEntry = {
-        id : Text;
-        name : Text;
-        description : Text;
-        tags : [Text];
-        deploymentStatus : DeploymentStatus;
-        createdAt : Time.Time;
-        creator : Principal;
-    };
-
-    // Request/Response types
-    public type CreateDAORequest = {
-        name : Text;
-        description : Text;
-        tags : [Text];
-    };
-
-    public type PlatformStats = {
-        totalDAOs : Nat;
-        deployedDAOs : Nat;
-        pendingDAOs : Nat;  // This now represents "deploying" DAOs
-        failedDAOs : Nat;
-        systemStartTime : Time.Time;
-    };
-
-    // WASM management types
+    public type WasmCodeMap = Map.Map<Nat8, WasmInfo>;
+    public type CodeCanisterList = List.List<(WasmCodeType, Principal)>;
     public type WasmInfo = {
         code : Blob;
         version : Text;
         uploadedAt : Time.Time;
         uploadedBy : Principal;
+    };
+
+    public type WasmCodeType = {
+        #backend;
+        #ledger;
+        #swap;
+    };
+
+    public let wasmCodeTypes : [WasmCodeType] = [
+        #backend,
+        #ledger,
+        #swap,
+    ];
+
+    public func getWasmCodeKey(codeType : WasmCodeType) : Nat8 {
+        switch (Array.indexOf<WasmCodeType>(codeType, wasmCodeTypes, func (a, b) = a == b)) {
+            case (?i) Nat8.fromNat(i);
+            case null 0; // fallback, should not happen
+        }
     };
 };

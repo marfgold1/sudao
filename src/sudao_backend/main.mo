@@ -1,7 +1,6 @@
 import Principal "mo:base/Principal";
 import Map "mo:map/Map";
 import { phash; thash } "mo:map/Map";
-import Time "mo:base/Time";
 import ProposalManager "Proposal";
 import UserService "service/UserService";
 import PaymentService "service/PaymentService";
@@ -10,13 +9,23 @@ import Types "Types";
 import Result "mo:base/Result";
 import Float "mo:base/Float";
 import Middleware "../common/Middleware";
+import CommonTypes "../common/Types";
 
 // This is the main actor for an individual DAO created by the platform.
 // It acts as a facade, orchestrating different modules like proposals, treasury, and membership.
-actor DAO {
+// The DAOEntry is passed as an argument at canister install time.
+shared ({ caller }) actor class DAO(initDAO : CommonTypes.DAOEntry) = this {
+
     // ------ DAO MANAGEMENT ------
-    // DAO Information - initialized during canister creation
-    private stable var daoInfo : ?Types.DAOInfo = null;
+    // DAO Information - initialiszed during canister creation
+    private stable var daoInfo : ?Types.DAOInfo = ?{
+        name = initDAO.name;
+        description = initDAO.description;
+        tags = initDAO.tags;
+        creator = initDAO.creator;
+        createdAt = initDAO.createdAt;
+    };
+
     private stable var controllers : ?[Principal] = null;
     
     // Ledger canister ID for token-based voting
@@ -25,41 +34,12 @@ actor DAO {
     private func getControllers() : async [Principal] {
         switch (controllers) {
             case (?controllers) controllers;
-            case null await Middleware.getControllers(Principal.fromActor(DAO));
+            case null await Middleware.getControllers(Principal.fromActor(this));
         };
     };
 
     private func isController(caller : Principal) : async Bool {
         await Middleware.isController(caller, await getControllers());
-    };
-
-    // Initialize DAO with information (called by deployer)
-    public shared (msg) func initializeDAO(
-        name : Text,
-        description : Text,
-        tags : [Text],
-        creator : Principal,
-    ) : async Result.Result<(), Text> {
-        if (not (await isController(msg.caller))) {
-            return #err("Caller is not this canister's controller");
-        };
-
-        switch (daoInfo) {
-            case (null) {
-                daoInfo := ?{
-                    name = name;
-                    description = description;
-                    tags = tags;
-                    creator = creator;
-                    createdAt = Time.now();
-                    controller = msg.caller;
-                };
-                #ok;
-            };
-            case (?_) {
-                #err("DAO already initialized");
-            };
-        };
     };
 
     // Get DAO information
@@ -79,7 +59,7 @@ actor DAO {
     };
 
     // Check if the caller is the creator of the DAO
-    private func isCreator(caller : Principal) : async Bool {
+    private func _isCreator(caller : Principal) : async Bool {
         switch (daoInfo) {
             case (?info) info.creator == caller;
             case null false;
