@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -145,6 +145,11 @@ const TransactionPage: React.FC = () => {
             setShowConfirmationModal(true)
         }
     }
+
+    // Scroll to top when component mounts
+    useEffect(() => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, []);
 
     const handleFinalContribution = () => {
         // Add new transaction to the list
