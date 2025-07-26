@@ -12,6 +12,7 @@ import {thash; n8hash} "mo:map/Map";
 import Types "Types";
 import CommonTypes "../common/Types";
 import {ic} "mo:ic";
+import Utils "../common/Utils";
 
 module {
     public type DeployingStep = {
@@ -175,10 +176,12 @@ module {
 
             // Create all required canisters
             var canisterIds : Types.CodeCanisterList = List.nil();
+            var ledgerCanisterId : Principal = Principal.fromText(Utils.anonymous);
             for (key in Types.wasmCodeTypes.vals()) {
                 updateDeployingStep(state, daoId, #creating_canister(key));
                 let canisterId = await? createCanisterWithCycles();
                 canisterIds := List.push((key, canisterId), canisterIds);
+                if (key == #ledger) { ledgerCanisterId := canisterId; };
             };
             setCanisterIds(state, daoId, canisterIds);
             Debug.print("Created Canister " # debug_show(daoId));
@@ -210,7 +213,7 @@ module {
                                     controller_id = controller;
                                 };
                             });
-                            case (#backend) to_candid(request.dao);
+                            case (#backend) to_candid(dao, ledgerCanisterId);
                             case _ to_candid();
                         };
                         let wasmCode = wasmInfo.code;

@@ -14,8 +14,7 @@ import CommonTypes "../common/Types";
 // This is the main actor for an individual DAO created by the platform.
 // It acts as a facade, orchestrating different modules like proposals, treasury, and membership.
 // The DAOEntry is passed as an argument at canister install time.
-shared ({ caller }) actor class DAO(initDAO : CommonTypes.DAOEntry) = this {
-
+shared ({ caller }) actor class DAO(initDAO : CommonTypes.DAOEntry, ledgerCanisterId_ : Principal) = this {
     // ------ DAO MANAGEMENT ------
     // DAO Information - initialiszed during canister creation
     private stable var daoInfo : ?Types.DAOInfo = ?{
@@ -29,7 +28,7 @@ shared ({ caller }) actor class DAO(initDAO : CommonTypes.DAOEntry) = this {
     private stable var controllers : ?[Principal] = null;
     
     // Ledger canister ID for token-based voting
-    private let ledgerCanisterId : Principal = Principal.fromText("ulvla-h7777-77774-qaacq-cai"); // Default, will be updated
+    private let ledgerCanisterId : Principal = ledgerCanisterId_;
 
     private func getControllers() : async [Principal] {
         switch (controllers) {

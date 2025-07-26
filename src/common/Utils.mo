@@ -7,4 +7,6 @@ module {
         };
         null;
     };
+
+    public let anonymous : Text = "2vxsx-fae";
 }
