@@ -4,7 +4,7 @@ import { CircleUserRound, Copy } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useState } from "react";
 
-export const ProposalItem: React.FC<{ proposal: Proposal }> = ({ proposal }) => {
+export const ProposalItem: React.FC<{ proposal: Proposal, onProposalClick: any }> = ({ proposal, onProposalClick }) => {
     const [copied, setCopied] = useState(false);
 
     const handleCopy = () => {
@@ -15,10 +15,11 @@ export const ProposalItem: React.FC<{ proposal: Proposal }> = ({ proposal }) => 
 
     return (
         <motion.div 
-            className="border-t border-gray-200 dark:border-gray-700 py-6"
+            className="border-t border-gray-200 dark:border-gray-700 py-6 cursor-pointer"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
+            onClick={() => onProposalClick(proposal)}
         >
             <div className="flex justify-between items-center mb-2">
                 <Badge variant={proposal.status}>{proposal.status}</Badge>
