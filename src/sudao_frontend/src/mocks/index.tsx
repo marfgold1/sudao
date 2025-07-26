@@ -71,3 +71,27 @@ export const statCards = [
     { title: 'Draft', value: '10', icon: File, color: 'text-yellow-500', bgColor: 'bg-yellow-100 dark:bg-yellow-900/50' },
     { title: 'Executed', value: '5', icon: Hammer, color: 'text-gray-500', bgColor: 'bg-gray-200 dark:bg-gray-700' },
 ];
+
+export const members = [
+    {
+        id: 1,
+        name: "Alisha Listya",
+        address: "h3b5k-c2a...aad-aaa",
+        avatar: "CN",
+        isCurrentUser: true,
+    },
+    {
+        id: 2,
+        name: "Alisha Listya",
+        address: "h3b5k-c2a...aad-aaa",
+        avatar: "CN",
+        isCurrentUser: false,
+    },
+    {
+        id: 3,
+        name: "Alisha Listya",
+        address: "h3b5k-c2a...aad-aaa",
+        avatar: "CN",
+        isCurrentUser: false,
+    },
+]

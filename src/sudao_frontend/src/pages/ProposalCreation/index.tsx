@@ -5,10 +5,11 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { motion } from "framer-motion"
-import { ArrowLeft } from "lucide-react"
+import { ArrowLeft, Search } from "lucide-react"
 import { useState, useEffect } from "react"
 import { Link } from "react-router-dom"
 import { Proposal } from "@/types"
+import { members } from "@/mocks"
 
 interface FormData {
     title: string;
@@ -40,6 +41,8 @@ const ProposalCreation: React.FC<{ onBack: any, onDraftCreated?: (proposal: Prop
     const [validationErrors, setValidationErrors] = useState<ValidationErrors>({})
     const [showConfirmation, setShowConfirmation] = useState(false)
     const [_, setIsDraft] = useState(false)
+    const [showBeneficiaryDropdown, setShowBeneficiaryDropdown] = useState(false)
+    const [beneficiarySearch, setBeneficiarySearch] = useState("")
 
     // Scroll to top when component mounts or step changes
     useEffect(() => {
@@ -205,7 +208,7 @@ const ProposalCreation: React.FC<{ onBack: any, onDraftCreated?: (proposal: Prop
                         transition={{ duration: 0.3 }}
                     >
                         {currentStep === 1 && (
-                            <div className="space-y-6">
+                            <div className="space-y-6 max-h-[80vh] overflow-y-auto">
                                 <div>
                                     <Label htmlFor="title" className="block text-sm font-medium mb-2">Proposal title *</Label>
                                     <Input
@@ -251,14 +254,116 @@ const ProposalCreation: React.FC<{ onBack: any, onDraftCreated?: (proposal: Prop
 
                                 <div>
                                     <label className="block text-sm font-medium mb-2">Beneficiary Address</label>
-                                    <div className="flex items-center space-x-2">
-                                        <Avatar>
-                                            <AvatarFallback>CN</AvatarFallback>
-                                        </Avatar>
-                                        <div className="flex-1">
-                                            <p className="font-medium">{formData.beneficiary}</p>
-                                            <p className="text-sm text-gray-500">h3b5k-c2a...aad-aaa</p>
+                                    <div className="relative">
+                                        <div
+                                            className="flex items-center space-x-2 p-3 border rounded-lg cursor-pointer hover:bg-gray-50"
+                                            onClick={() => setShowBeneficiaryDropdown(!showBeneficiaryDropdown)}
+                                        >
+                                            <Avatar>
+                                                <AvatarFallback>CN</AvatarFallback>
+                                            </Avatar>
+                                            <div className="flex-1">
+                                                <p className="font-medium">{formData.beneficiary}</p>
+                                                <p className="text-sm text-gray-500">h3b5k-c2a...aad-aaa</p>
+                                            </div>
+                                            <motion.div
+                                                animate={{ rotate: showBeneficiaryDropdown ? 180 : 0 }}
+                                                transition={{ duration: 0.2 }}
+                                            >
+                                                <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                                </svg>
+                                            </motion.div>
                                         </div>
+
+                                        {showBeneficiaryDropdown && (
+                                            <motion.div
+                                                initial={{ opacity: 0, y: -10 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                exit={{ opacity: 0, y: -10 }}
+                                                className="absolute top-full mt-2 w-full bg-white border rounded-lg shadow-lg z-10 p-4"
+                                            >
+                                                <div className="mb-4">
+                                                    <div className="relative">
+                                                        <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                                                        <Input
+                                                        placeholder="Search for members..."
+                                                        value={beneficiarySearch}
+                                                        onChange={(e) => setBeneficiarySearch(e.target.value)}
+                                                        className="pl-10"
+                                                        />
+                                                    </div>
+                                                </div>
+
+                                                <div className="space-y-4">
+                                                    <div>
+                                                        <h3 className="text-sm font-medium text-gray-700 mb-2">My profile</h3>
+                                                        {members
+                                                            .filter((member) => member.isCurrentUser)
+                                                            .filter(
+                                                                (member) =>
+                                                                member.name.toLowerCase().includes(beneficiarySearch.toLowerCase()) ||
+                                                                member.address.toLowerCase().includes(beneficiarySearch.toLowerCase()),
+                                                            )
+                                                            .map((member) => (
+                                                                <motion.div
+                                                                    key={member.id}
+                                                                    whileHover={{ backgroundColor: "#f9fafb" }}
+                                                                    className="flex items-center space-x-3 p-2 rounded-lg cursor-pointer"
+                                                                    onClick={() => {
+                                                                        setFormData({ ...formData, beneficiary: member.name })
+                                                                        setShowBeneficiaryDropdown(false)
+                                                                    }}
+                                                                >
+                                                                    <Avatar className="w-8 h-8">
+                                                                        <AvatarFallback className="bg-blue-100 text-blue-600">
+                                                                            {member.avatar}
+                                                                        </AvatarFallback>
+                                                                    </Avatar>
+                                                                    <div>
+                                                                        <p className="font-medium text-sm">{member.name}</p>
+                                                                        <p className="text-xs text-gray-500">{member.address}</p>
+                                                                    </div>
+                                                                </motion.div>
+                                                        ))}
+                                                    </div>
+
+                                                    <div>
+                                                        <h3 className="text-sm font-medium text-gray-700 mb-2">Collective Members</h3>
+                                                        <div className="space-y-1">
+                                                            {members
+                                                                .filter((member) => !member.isCurrentUser)
+                                                                .filter(
+                                                                (member) =>
+                                                                    member.name.toLowerCase().includes(beneficiarySearch.toLowerCase()) ||
+                                                                    member.address.toLowerCase().includes(beneficiarySearch.toLowerCase()),
+                                                                )
+                                                                .map((member) => (
+                                                                    <motion.div
+                                                                        key={member.id}
+                                                                        whileHover={{ backgroundColor: "#f9fafb" }}
+                                                                        className="flex items-center space-x-3 p-2 rounded-lg cursor-pointer"
+                                                                        onClick={() => {
+                                                                        setFormData({ ...formData, beneficiary: member.name })
+                                                                        setShowBeneficiaryDropdown(false)
+                                                                        }}
+                                                                    >
+                                                                        <Avatar className="w-8 h-8">
+                                                                            <AvatarFallback className="bg-blue-100 text-blue-600">
+                                                                                {member.avatar}
+                                                                            </AvatarFallback>
+                                                                        </Avatar>
+                                                                        <div>
+                                                                            <p className="font-medium text-sm">{member.name}</p>
+                                                                            <p className="text-xs text-gray-500">{member.address}</p>
+                                                                        </div>
+                                                                    </motion.div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </motion.div>
+                                        )}
                                     </div>
                                 </div>
                             </div>
