@@ -94,9 +94,9 @@ actor Ledger {
     swap_canister := ?swap;
 
     // Mint initial supply to the minting account
-    if (initial_supply > 0) {
-      balances.put(minter.owner, initial_supply);
-      totalSupply := initial_supply;
+    if (minter_supply > 0) {
+      balances.put(minter.owner, minter_supply);
+      totalSupply := minter_supply;
     };
 
     if (governance_supply > 0) {
