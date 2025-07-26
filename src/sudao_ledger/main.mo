@@ -47,7 +47,8 @@ actor Ledger {
   private stable var transferFee : Nat = 0;
   private stable var minting_account : ?Account = null;
   private stable var governance_canister : ?Principal = null;
-
+  private stable var swap_canister : ?Principal = null;
+  
   // Simple balance storage using stable arrays
   private stable var balanceEntries : [(Principal, Nat)] = [];
   private var balances = HashMap.HashMap<Principal, Nat>(10, Principal.equal, Principal.hash);
@@ -72,10 +73,13 @@ actor Ledger {
     name : Text,
     symbol : Text,
     decimals : Nat8,
-    initial_supply : Nat,
+    minter_supply : Nat,
     fee : Nat,
     minter : Account,
     governance : Principal,
+    governance_supply: Nat,
+    swap: Principal,
+    swap_supply: Nat
   ) : async Result.Result<(), Text> {
     if (tokenName != "") {
       return #err("Ledger already initialized");
@@ -87,11 +91,22 @@ actor Ledger {
     transferFee := fee;
     minting_account := ?minter;
     governance_canister := ?governance;
+    swap_canister := ?swap;
 
     // Mint initial supply to the minting account
     if (initial_supply > 0) {
       balances.put(minter.owner, initial_supply);
       totalSupply := initial_supply;
+    };
+
+    if (governance_supply > 0) {
+      balances.put(governance, governance_supply);
+      totalSupply += governance_supply;
+    };
+
+    if (swap_supply > 0) {
+      balances.put(swap, swap_supply);
+      totalSupply += swap_supply;
     };
 
     #ok();
