@@ -63,6 +63,10 @@ Any subsequent changes to BE need to redeploy the canisters.
 
 Always don't forget to run the replica! If you encounter `Error: You are trying to connect to the local replica but dfx cannot connect to it` then you need to start the replica again.
 
+## DAO Creation Flow
+
+![DAO Creation Flow](public/DAO-flow.jpg)
+
 ## Application Snapshots
 
 ![SUDAO Demo Screenshot 1](public/screen1.png)
