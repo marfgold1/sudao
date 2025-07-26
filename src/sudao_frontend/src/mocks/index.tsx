@@ -8,6 +8,9 @@ export const mockProposals: Proposal[] = [
         description: 'This proposal aims to organize a hands-on coral restoration workshop for local fishermen in Lombok this August. The workshop will include training on sustainable fishing practices, coral gardening techniques, and marine ecosystem awareness....',
         status: 'Approved',
         publishedDate: '22 April 2025',
+        deadline: '25 December 2025',
+        votes: 73,
+        fundingAmount: 252,
     },
     {
         id: 'abcde-1fghi-2jklm-3nopq',
@@ -15,6 +18,9 @@ export const mockProposals: Proposal[] = [
         description: 'Proposal to fund the development of a new staking module that allows for more flexible governance participation and reward distribution. This will enhance decentralization and community engagement.',
         status: 'Active',
         publishedDate: '15 May 2025',
+        deadline: '25 December 2025',
+        votes: 73,
+        fundingAmount: 252,
     },
     {
         id: 'rstuv-5wxyz-6abcd-7efgh',
@@ -22,6 +28,9 @@ export const mockProposals: Proposal[] = [
         description: 'Funding request for a community-led marketing campaign to increase brand awareness and user adoption in the Asian market. Focus on social media, content creation, and local meetups.',
         status: 'Rejected',
         publishedDate: '10 April 2025',
+        deadline: '25 December 2025',
+        votes: 73,
+        fundingAmount: 252,
     },
     {
         id: 'ijklm-9nopq-0rstu-1vwxy',
@@ -29,6 +38,9 @@ export const mockProposals: Proposal[] = [
         description: 'Technical proposal to integrate our protocol with the Solar DEX aggregator, aiming to increase liquidity and provide users with better trading rates. Includes audit and development costs.',
         status: 'Executed',
         publishedDate: '01 March 2025',
+        deadline: '25 December 2025',
+        votes: 73,
+        fundingAmount: 252,
     },
     {
         id: 'zabcd-3efgh-4ijkl-5mnop',
@@ -36,6 +48,9 @@ export const mockProposals: Proposal[] = [
         description: 'A draft proposal for a complete overhaul of the main user dashboard to improve user experience, streamline workflows, and introduce a new, modern design system.',
         status: 'Draft',
         publishedDate: '28 May 2025',
+        deadline: '25 December 2025',
+        votes: 73,
+        fundingAmount: 252,
     },
 ];
 

@@ -1,6 +1,6 @@
 import Home from "./Home";
 import Example from "./Example";
-import Proposal from "./Proposals";
+import Proposal from "./Proposal";
 
 export {
     Home, Proposal, Example
