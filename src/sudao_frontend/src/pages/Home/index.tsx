@@ -249,8 +249,8 @@ const Home: React.FC = () => {
                         viewport={{ once: true }}
                         className="text-center mb-16 justify-center"
                     >
-                        <h2 className="text-4xl font-bold text-slate-800 mb-4">[BRAND NAME] HELPS YOU CREATE GREAT DAO</h2>
-                        <p className="text-slate-600 text-lg max-w-2xl mx-auto">From transparent governance and fair funding to community-focused support, [Brand Name] helps movements of any size grow and thrive.</p>
+                        <h2 className="text-4xl font-bold text-slate-800 mb-4">SUDAO HELPS YOU CREATE GREAT DAO</h2>
+                        <p className="text-slate-600 text-lg max-w-2xl mx-auto">From transparent governance and fair funding to community-focused support, SUDAO helps movements of any size grow and thrive.</p>
                     </motion.div>
 
                     <motion.div

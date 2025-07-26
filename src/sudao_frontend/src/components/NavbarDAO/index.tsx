@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
 import {  Menu, Settings } from 'lucide-react';
 import React, { useState } from 'react';
-import { useParams, useLocation } from 'react-router-dom';
+import { useParams, useLocation, Link } from 'react-router-dom';
 import { Avatar, AvatarFallback } from '../ui/avatar';
 
 const NavbarDAO: React.FC = () => {
@@ -23,22 +23,22 @@ const NavbarDAO: React.FC = () => {
                 <div className="px-6 mx-auto flex items-center justify-between">
                     <div className="flex items-center space-x-10">
                         <div className="hidden md:flex items-center space-x-10">
-                            <a 
-                                href={`/home/${daoId}`} 
+                            <Link 
+                                to={`/home/${daoId}`} 
                                 className={`transition-colors ${
                                     isActive('/home/') ? 'text-blue-200 font-semibold' : 'text-white hover:text-blue-200'
                                 }`}
                             >
                                 Home
-                            </a>
-                            <a 
-                                href={`/proposal/${daoId}`} 
+                            </Link>
+                            <Link 
+                                to={`/proposal/${daoId}`} 
                                 className={`transition-colors ${
                                     isActive('/proposal/') ? 'text-blue-200 font-semibold' : 'text-white hover:text-blue-200'
                                 }`}
                             >
                                 Proposals
-                            </a>
+                            </Link>
                         </div>
                     </div>
 
@@ -50,9 +50,15 @@ const NavbarDAO: React.FC = () => {
                             <Settings className="w-4 h-4" />
                             <span>Creator Dashboard</span>
                         </motion.button>
-                        <Avatar>
-                            <AvatarFallback className="bg-white/60 text-black">CN</AvatarFallback>
-                        </Avatar>
+                        <Link to={"/profile"}>
+                            <motion.button
+                                whileHover={{ scale: 1.05 }}
+                            >
+                                <Avatar>
+                                    <AvatarFallback className="bg-white/60 text-black">CN</AvatarFallback>
+                                </Avatar>
+                            </motion.button>
+                        </Link>
                         <button className="md:hidden text-white" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
                             <Menu className="w-6 h-6" />
                         </button>

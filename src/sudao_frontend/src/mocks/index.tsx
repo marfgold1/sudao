@@ -182,3 +182,107 @@ export const mockTransactions: Transaction[] = [
         date: "2024-06-03",
     },
 ]
+
+// Discover Collective
+export const userCollectives = [
+    {
+        id: "yh1",
+        name: "Yayasan HMIF",
+        description:
+        "Transforming city rooftops and abandoned lots into lush community gardens and green spaces for sustainable urban living.",
+        avatar: "/placeholder.svg?height=40&width=40&text=YH",
+        members: 410,
+        tags: ["Urban", "Gardening", "Sustainability"],
+        isOwned: true,
+    },
+]
+
+export const discoverCollectives = [
+    {
+        id: "art-change",
+        name: "Art for Change Network",
+        description:
+        "Uniting artists worldwide to fund public art projects and social campaigns that inspire positive change in communities.",
+        avatar: "/placeholder.svg?height=40&width=40&text=AC",
+        members: 720,
+        tags: ["Art", "Activism", "Community"],
+        category: "Art & Culture",
+    },
+    {
+        id: "farmers-future",
+        name: "Farmers for Future",
+        description:
+        "Supporting regenerative agriculture projects and providing training to small farmers for sustainable food production.",
+        avatar: "/placeholder.svg?height=40&width=40&text=FF",
+        members: 520,
+        tags: ["Agriculture", "Sustainability", "Climate"],
+        category: "Environment",
+    },
+    {
+        id: "blue-ocean",
+        name: "Blue Ocean Watch",
+        description: "Funding marine conservation missions and citizen-led ocean cleanups around the world.",
+        avatar: "/placeholder.svg?height=40&width=40&text=BO",
+        members: 950,
+        tags: ["Ocean", "Conservation", "Cleanups"],
+        category: "Environment",
+    },
+    {
+        id: "renewable-hub",
+        name: "Renewable Innovators Hub",
+        description: "Accelerating community-led renewable energy projects and local green tech startups.",
+        avatar: "/placeholder.svg?height=40&width=40&text=RI",
+        members: 840,
+        tags: ["Energy", "Innovation", "Climate"],
+        category: "Technology",
+    },
+    {
+        id: "coral-revival",
+        name: "Coral Revival Collective",
+        description:
+        "Dedicated to restoring coral reefs across Southeast Asia through large-scale restoration and community education programs.",
+        avatar: "/placeholder.svg?height=40&width=40&text=CR",
+        members: 46,
+        tags: ["Environment", "Restoration", "Ocean"],
+        category: "Environment",
+    },
+    {
+        id: "urban-greenmakers",
+        name: "Urban Greenmakers",
+        description:
+        "Transforming city rooftops and abandoned lots into lush community gardens and green spaces for sustainable urban living.",
+        avatar: "/placeholder.svg?height=40&width=40&text=UG",
+        members: 410,
+        tags: ["Urban", "Gardening", "Sustainability"],
+        category: "Environment",
+    },
+    {
+        id: "women-tech",
+        name: "Women in Tech Connect",
+        description: "Empowering women in tech through mentorship, workshops, and funding for groundbreaking projects.",
+        avatar: "/placeholder.svg?height=40&width=40&text=WT",
+        members: 950,
+        tags: ["Technology", "Diversity", "Education"],
+        category: "Technology",
+    },
+    {
+        id: "open-school",
+        name: "Open School Alliance",
+        description:
+        "Building free, open-source educational materials and supporting local teachers in underserved communities.",
+        avatar: "/placeholder.svg?height=40&width=40&text=OS",
+        members: 360,
+        tags: ["Education", "Open-Source", "Community"],
+        category: "Education",
+    },
+]
+
+export const floatingCards = [
+    { id: 1, x: 100, y: 80, delay: 0 },
+    { id: 2, x: 200, y: 110, delay: 0.2 },
+    { id: 3, x: 300, y: 90, delay: 0.4 },
+    { id: 4, x: 400, y: 120, delay: 0.6 },
+    { id: 5, x: 500, y: 100, delay: 0.8 },
+    { id: 6, x: 600, y: 115, delay: 1.0 },
+    { id: 7, x: 700, y: 85, delay: 1.2 },
+]
