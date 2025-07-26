@@ -6,6 +6,8 @@ import type {
   _SERVICE,
 } from "declarations/sudao_backend/sudao_backend.did";
 import { Actor, ActorSubclass } from "@dfinity/agent";
+import { createActor as createLedgerActor, canisterId as ledgerCanisterId } from "declarations/sudao_ledger/index";
+import { Principal } from "@dfinity/principal";
 
 export default function UserProfile() {
   const identity = useIdentity();
@@ -109,6 +111,22 @@ export default function UserProfile() {
     }
   };
 
+  const handleMint = async () => {
+    if (!actor) {
+      console.log("Authenticated actor not available for mint.");
+      return;
+    }
+    const ledger = createLedgerActor(ledgerCanisterId);
+    const mintResult = await ledger.mint(
+      {
+        owner: Principal.fromText("vqluh-coqli-j2ase-mhzal-aop7e-ccajg-wl44c-lmvb7-4umu4-z4vu4-fqe"),
+        subaccount: [],
+      },
+      1_000_000n,
+    );
+    console.log("Mint Result:", mintResult);
+  };
+
   const refreshProfile = async () => {
     if (!actor) {
       console.log("Authenticated actor not available for refresh.");
@@ -201,7 +219,9 @@ export default function UserProfile() {
         {isLoading ? "Registering..." : "Register"}
       </button>
 
-      {/* Payment button would go here */}
+      <button onClick={handleMint}>
+        Mint
+      </button>
     </div>
   );
 }
