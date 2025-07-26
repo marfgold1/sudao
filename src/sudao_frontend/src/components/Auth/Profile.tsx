@@ -55,45 +55,38 @@ export default function UserProfile() {
       setStatus(null);
     }
   }, [identity, accounts]);
-
-  // Initialize actors when agent changes
-  const initializeActors = useCallback(async () => {
-    if (!authenticatedAgent) {
-      setActorGovernance(null);
-      setActorICP(null);
-      setActorLedger(null);
-      return;
-    }
+  useEffect(() => {
     try {
-      setActorGovernance(
-        Actor.createActor<_SERVICE_GOVERNANCE>(idlFactoryGovernance, {
-          agent: authenticatedAgent,
-          canisterId: canisterIdGovernance,
-        })
-      );
-      setActorLedger(
+      const authenticatedActorGovernance =
+      Actor.createActor<_SERVICE_GOVERNANCE>(idlFactoryGovernance, {
+        agent: authenticatedAgent,
+        canisterId: canisterIdGovernance,
+      });
+      const authenticatedActorLedger =
         Actor.createActor<_SERVICE_DAO_LEDGER>(idlFactoryLedger, {
           agent: authenticatedAgent,
           canisterId: ledgerCanisterId,
-        })
-      );
-      setActorICP(
-        Actor.createActor<_SERVICE_ICP_LEDGER>(idlFactoryICP, {
+        });
+      const authenticatedActorICP = Actor.createActor<_SERVICE_ICP_LEDGER>(
+        idlFactoryICP,
+        {
           agent: authenticatedAgent,
           canisterId: icpCanisterId,
-        })
+        }
       );
+      // const authenticatedActorAMM = Actor.createActor<_SERVICE>(idlFactory, {
+      //   agent: authenticatedAgent,
+      //   canisterId: canisterId,
+      // });
+      setActorGovernance(authenticatedActorGovernance);
+      setActorLedger(authenticatedActorLedger);
+      setActorICP(authenticatedActorICP);
+      console.log("Authenticated actor created successfully");
     } catch (err) {
-      setActorGovernance(null);
-      setActorLedger(null);
-      setActorICP(null);
-      console.error("Failed to create actors:", err);
+      console.error("Failed to create authenticated actor:", err);
     }
-  }, [authenticatedAgent]);
+  }, [identity, accounts, authenticatedAgent]); // Rerun when any auth state changes
 
-  useEffect(() => {
-    initializeActors();
-  }, [initializeActors]);
 
   // Register user and fetch profile
   const handleUserRegistration = useCallback(async () => {
@@ -148,10 +141,7 @@ export default function UserProfile() {
   // Approve logic
   const handleApprove = async () => {
     if (!actorICP) {
-      setStatus({
-        type: "error",
-        message: "Authenticated actor not ready. Please log in.",
-      });
+      console.log("Authenticated actor not available for approve.");
       return;
     }
     const acc = {
@@ -160,12 +150,14 @@ export default function UserProfile() {
       ),
       subaccount: [] as [],
     };
+
     const acc2 = {
       owner: Principal.fromText(
         "5thol-pwfmc-monwz-xbfkw-rqzfe-xgjf5-canhq-uc7nr-ihpsu-h6exb-jae"
       ),
       subaccount: [] as [],
     };
+
     const icrc2_approve_args = {
       from_subaccount: [] as [],
       spender: acc,
@@ -176,6 +168,9 @@ export default function UserProfile() {
       expected_allowance: [0n] as [bigint],
       expires_at: [BigInt((Date.now() + 10000000000000) * 1000000)] as [bigint],
     };
+
+    console.log("icrc2_approve_args", icrc2_approve_args);
+
     try {
       const balance = await actorICP.icrc1_balance_of(acc);
       console.log("Balance:", balance, acc, acc.owner.toString());
@@ -183,9 +178,8 @@ export default function UserProfile() {
       console.log("Balance2:", balance2, acc2, acc2.owner.toString());
       const response = await actorICP.icrc2_approve(icrc2_approve_args);
       console.log("Approve Result:", response);
-      setStatus({ type: "success", message: "Approve transaction sent." });
-    } catch {
-      setStatus({ type: "error", message: "Approve failed." });
+    } catch (error) {
+      console.error("Error during approve:", error);
     }
   };
 
