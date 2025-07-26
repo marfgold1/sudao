@@ -34,6 +34,12 @@ module {
         #no;
     };
 
+    public type VoteRecord = {
+        voter : Principal;
+        choice : Vote;
+        weight : Nat; // Token balance at time of voting
+    };
+
     public type ReactionType = {
         #like;
         #fire;
@@ -85,8 +91,10 @@ module {
         // Voting results
         votesFor : Nat;
         votesAgainst : Nat;
+        weightedVotesFor : Nat; // Weighted votes (token-based)
+        weightedVotesAgainst : Nat; // Weighted votes (token-based)
         totalEligibleVoters : Nat; // For participation calculation
-        voters : [(Principal, Vote)];
+        voters : [VoteRecord]; // Updated to include weight
         
         // Comments
         comments : [Comment];
@@ -105,16 +113,21 @@ module {
     };
 
     // Helper function to check if principal already voted
-    private func hasVoted(voters : [(Principal, Vote)], principal : Principal) : Bool {
-        switch (Array.find<(Principal, Vote)>(voters, func((p, _)) = Principal.equal(p, principal))) {
+    private func hasVoted(voters : [VoteRecord], principal : Principal) : Bool {
+        switch (Array.find<VoteRecord>(voters, func(v) = Principal.equal(v.voter, principal))) {
             case (?_) true;
             case null false;
         }
     };
 
-    // Helper function to add vote
-    private func addVote(voters : [(Principal, Vote)], principal : Principal, vote : Vote) : [(Principal, Vote)] {
-        Array.append(voters, [(principal, vote)])
+    // Helper function to add vote with weight
+    private func addVote(voters : [VoteRecord], principal : Principal, vote : Vote, weight : Nat) : [VoteRecord] {
+        let voteRecord : VoteRecord = {
+            voter = principal;
+            choice = vote;
+            weight = weight;
+        };
+        Array.append(voters, [voteRecord])
     };
 
     // Helper function to calculate participation rate
@@ -169,6 +182,8 @@ module {
             minimumApproval = minimumApproval;
             votesFor = 0;
             votesAgainst = 0;
+            weightedVotesFor = 0;
+            weightedVotesAgainst = 0;
             totalEligibleVoters = totalEligibleVoters;
             voters = [];
             comments = [];
@@ -216,6 +231,8 @@ module {
                     minimumApproval = proposal.minimumApproval;
                     votesFor = proposal.votesFor;
                     votesAgainst = proposal.votesAgainst;
+                    weightedVotesFor = proposal.weightedVotesFor;
+                    weightedVotesAgainst = proposal.weightedVotesAgainst;
                     totalEligibleVoters = proposal.totalEligibleVoters;
                     voters = proposal.voters;
                     comments = proposal.comments;
@@ -228,14 +245,15 @@ module {
     };
 
     /**
-     * Casts a vote on an active proposal.
+     * Casts a vote on an active proposal with token-based weighting.
      */
     public func vote(
         state : ProposalState,
         caller : Principal,
         isMember : (Principal) -> async Bool,
         proposalId : Text,
-        choice : Vote
+        choice : Vote,
+        tokenBalance : Nat
     ) : async Result.Result<Bool, ProposalError> {
         let memberCheck = await isMember(caller);
         if (not memberCheck) {
@@ -255,9 +273,16 @@ module {
                 };
                 if (hasVoted(proposal.voters, caller)) { return #err(#alreadyVoted); };
 
-                let (newVotesFor, newVotesAgainst) = switch (choice) {
-                    case (#yes) { (proposal.votesFor + 1, proposal.votesAgainst) };
-                    case (#no) { (proposal.votesFor, proposal.votesAgainst + 1) };
+                // Calculate weighted votes based on token balance
+                let (newVotesFor, newVotesAgainst, newWeightedVotesFor, newWeightedVotesAgainst) = switch (choice) {
+                    case (#yes) { 
+                        (proposal.votesFor + 1, proposal.votesAgainst, 
+                         proposal.weightedVotesFor + tokenBalance, proposal.weightedVotesAgainst) 
+                    };
+                    case (#no) { 
+                        (proposal.votesFor, proposal.votesAgainst + 1, 
+                         proposal.weightedVotesFor, proposal.weightedVotesAgainst + tokenBalance) 
+                    };
                 };
 
                 let updatedProposal = {
@@ -276,8 +301,10 @@ module {
                     minimumApproval = proposal.minimumApproval;
                     votesFor = newVotesFor;
                     votesAgainst = newVotesAgainst;
+                    weightedVotesFor = newWeightedVotesFor;
+                    weightedVotesAgainst = newWeightedVotesAgainst;
                     totalEligibleVoters = proposal.totalEligibleVoters;
-                    voters = addVote(proposal.voters, caller, choice);
+                    voters = addVote(proposal.voters, caller, choice, tokenBalance);
                     comments = proposal.comments;
                 };
 
@@ -329,6 +356,8 @@ module {
                     minimumApproval = proposal.minimumApproval;
                     votesFor = proposal.votesFor;
                     votesAgainst = proposal.votesAgainst;
+                    weightedVotesFor = proposal.weightedVotesFor;
+                    weightedVotesAgainst = proposal.weightedVotesAgainst;
                     totalEligibleVoters = proposal.totalEligibleVoters;
                     voters = proposal.voters;
                     comments = proposal.comments;
@@ -373,6 +402,8 @@ module {
                     minimumApproval = proposal.minimumApproval;
                     votesFor = proposal.votesFor;
                     votesAgainst = proposal.votesAgainst;
+                    weightedVotesFor = proposal.weightedVotesFor;
+                    weightedVotesAgainst = proposal.weightedVotesAgainst;
                     totalEligibleVoters = proposal.totalEligibleVoters;
                     voters = proposal.voters;
                     comments = proposal.comments;
@@ -432,6 +463,8 @@ module {
                     minimumApproval = proposal.minimumApproval;
                     votesFor = proposal.votesFor;
                     votesAgainst = proposal.votesAgainst;
+                    weightedVotesFor = proposal.weightedVotesFor;
+                    weightedVotesAgainst = proposal.weightedVotesAgainst;
                     totalEligibleVoters = proposal.totalEligibleVoters;
                     voters = proposal.voters;
                     comments = Array.append(proposal.comments, [newComment]);
@@ -541,6 +574,8 @@ module {
                     minimumApproval = proposal.minimumApproval;
                     votesFor = proposal.votesFor;
                     votesAgainst = proposal.votesAgainst;
+                    weightedVotesFor = proposal.weightedVotesFor;
+                    weightedVotesAgainst = proposal.weightedVotesAgainst;
                     totalEligibleVoters = proposal.totalEligibleVoters;
                     voters = proposal.voters;
                     comments = updatedComments;

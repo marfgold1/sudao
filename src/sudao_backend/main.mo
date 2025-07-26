@@ -18,6 +18,9 @@ actor DAO {
     // DAO Information - initialized during canister creation
     private stable var daoInfo : ?Types.DAOInfo = null;
     private stable var controllers : ?[Principal] = null;
+    
+    // Ledger canister ID for token-based voting
+    private let ledgerCanisterId : Principal = Principal.fromText("ulvla-h7777-77774-qaacq-cai"); // Default, will be updated
 
     private func getControllers() : async [Principal] {
         switch (controllers) {
@@ -237,9 +240,22 @@ actor DAO {
         return await ProposalManager.publishProposal(proposalState, msg.caller, proposalId);
     };
 
-    // Vote on an active proposal
+    // Vote on an active proposal with token-based weighting
     public shared (msg) func voteOnProposal(proposalId : Text, choice : ProposalManager.Vote) : async Result.Result<Bool, ProposalManager.ProposalError> {
-        return await ProposalManager.vote(proposalState, msg.caller, isMember, proposalId, choice);
+        // Get voter's token balance for weighted voting
+        let voterAccount = {
+            owner = msg.caller;
+            subaccount = null;
+        };
+        
+        // Get balance from ledger canister
+        let ledgerActor : actor {
+            icrc1_balance_of : shared query (account : { owner : Principal; subaccount : ?[Nat8] }) -> async Nat;
+        } = actor(Principal.toText(ledgerCanisterId));
+        
+        let tokenBalance = await ledgerActor.icrc1_balance_of(voterAccount);
+        
+        return await ProposalManager.vote(proposalState, msg.caller, isMember, proposalId, choice, tokenBalance);
     };
 
     // Finalize a proposal (determine result based on voting period end)
