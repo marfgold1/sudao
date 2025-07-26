@@ -13,5 +13,17 @@ export interface Proposal {
     fundingAmount: number;
 }
 
+// Trnsaction Page
+export interface Transaction {
+    id: string
+    account: string
+    amount: number
+    type: "In" | "Out"
+    beneficiary: string
+    address: string
+    date: string
+    selected?: boolean
+}
+
 // Backend-related Types
 // Requests and Responses

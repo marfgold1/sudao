@@ -1,6 +1,7 @@
-import { Proposal } from "@/types";
+import { Proposal, Transaction } from "@/types";
 import { CheckCircle2, FileText, Hammer, XCircle, File } from "lucide-react";
 
+// Proposals
 export const mockProposals: Proposal[] = [
     {
         id: 'pjjjw-4laaa-aaa-aaa-cai',
@@ -93,5 +94,91 @@ export const members = [
         address: "h3b5k-c2a...aad-aaa",
         avatar: "CN",
         isCurrentUser: false,
+    },
+]
+
+// Transaction
+
+export const mockTransactions: Transaction[] = [
+    {
+        id: "1",
+        account: "2vxsx-fae...aaa-aaa",
+        amount: 10,
+        type: "Out",
+        beneficiary: "Michael Donner",
+        address: "rwlgt-iia...aai-aaa",
+        date: "2024-06-11",
+    },
+    {
+        id: "2",
+        account: "rwlgt-iia...aal-aaa",
+        amount: 80,
+        type: "In",
+        beneficiary: "Collective Treasury",
+        address: "2vxsx-faea...aaa",
+        date: "2024-06-10",
+    },
+    {
+        id: "3",
+        account: "pjlw-4la...aac-aaa",
+        amount: 80,
+        type: "Out",
+        beneficiary: "Austin Ridge",
+        address: "jv6dk-hya...aaa",
+        date: "2024-06-09",
+    },
+    {
+        id: "4",
+        account: "h3b5k-c2a...aad-aaa",
+        amount: 80,
+        type: "Out",
+        beneficiary: "Amar Lombardi",
+        address: "2vxsx-faea...aaa",
+        date: "2024-06-08",
+    },
+    {
+        id: "5",
+        account: "jv6dk-hya...aae-aaa",
+        amount: 80,
+        type: "Out",
+        beneficiary: "Kenneth Spikes",
+        address: "h3b5k-c2a...aad",
+        date: "2024-06-07",
+    },
+    {
+        id: "6",
+        account: "o7h6t-lia...aaf-aaa",
+        amount: 80,
+        type: "In",
+        beneficiary: "Collective Treasury",
+        address: "2vxsx-faea...aaa",
+        date: "2024-06-06",
+    },
+    {
+        id: "7",
+        account: "sg6tq-zia...aah-aaa",
+        amount: 80,
+        type: "In",
+        beneficiary: "Collective Treasury",
+        address: "2vxsx-faea...aaa",
+        date: "2024-06-05",
+    },
+    {
+        id: "8",
+        account: "TASK-7184",
+        amount: 80,
+        type: "In",
+        beneficiary: "Collective Treasury",
+        address: "2vxsx-faea...aaa",
+        date: "2024-06-03",
+    },
+    {
+        id: "9",
+        account: "TASK-5160",
+        amount: 80,
+        type: "In",
+        beneficiary: "Collective Treasury",
+        address: "2vxsx-faea...aaa",
+        date: "2024-06-03",
     },
 ]

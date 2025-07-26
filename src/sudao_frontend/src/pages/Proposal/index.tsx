@@ -5,7 +5,7 @@ import { mockProposals } from "@/mocks"
 import ProposalCreation from "../ProposalCreation"
 import { Proposal } from "@/types"
 
-export default function HomePage() {
+const ProposalPage: React.FC = () => {
     const [currentView, setCurrentView] = useState<"list" | "detail" | "create">("list")
     const [selectedProposal, setSelectedProposal] = useState<Proposal | null>(null)
     const [editingProposal, setEditingProposal] = useState<Proposal | null>(null)
@@ -123,3 +123,5 @@ export default function HomePage() {
         </div>
     )
 }
+
+export default ProposalPage
