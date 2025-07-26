@@ -30,6 +30,39 @@ SUDAO is a comprehensive DAO platform that allows communities to create, manage,
 - [Pitch Deck](https://drive.google.com/file/d/1ssQfTGgyZ3DV84S9qIPyU77ICzvQbND9/view?usp=sharing)
 - [Demo Video](https://youtu.be/3LeY-Os9cPs)
 
+## How To Use
+
+If you haven't installed IC SDK and mops already, please install them first. This applies to both BE and FE.
+
+1. [IC SDK Install Guide](https://internetcomputer.org/docs/motoko/install). You can install the motoko vscode extension as well.
+2. [mops Install Guide](https://j4mwm-bqaaa-aaaam-qajbq-cai.ic0.app/docs/install). Make sure you run `mops install` in the end.
+
+If you want to start working on your project right away, you might want to try the following commands:
+
+```bash
+cd sudao/
+dfx help
+dfx canister --help
+```
+
+## Running the project locally
+
+If you want to test your project locally, you can use the following commands:
+
+```bash
+# Starts the replica, running in the background
+dfx start --background
+
+# Deploys your canisters to the replica and generates your candid interface
+dfx deploy
+```
+
+Once the job completes, your application will be available at `http://localhost:4943?canisterId={asset_canister_id}`.
+
+Any subsequent changes to BE need to redeploy the canisters.
+
+Always don't forget to run the replica! If you encounter `Error: You are trying to connect to the local replica but dfx cannot connect to it` then you need to start the replica again.
+
 ## Application Snapshots
 
 ![SUDAO Demo Screenshot 1](public/screen1.png)
