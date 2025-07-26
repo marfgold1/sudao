@@ -5,14 +5,14 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
-import { Status } from '@/types';
-import { mockProposals, statCards } from '@/mocks';
+import { Proposal, Status } from '@/types';
+import { statCards } from '@/mocks';
 import { ProposalItem } from '@/components';
 
 
 const allStatuses: Status[] = ['Active', 'Approved', 'Rejected', 'Draft', 'Executed'];
 
-const Proposal: React.FC = () => {
+const ProposalList: React.FC<any> = ({ proposals, onProposalClick, onCreateClick, filterOpen, setFilterOpen }) => {
     const [searchTerm, setSearchTerm] = useState('');
     const [filters, setFilters] = useState<Record<Status, boolean>>({
         Active: false,
@@ -21,7 +21,6 @@ const Proposal: React.FC = () => {
         Draft: false,
         Executed: false,
     });
-    const [isFilterOpen, setFilterOpen] = useState(false);
 
     const handleFilterChange = (status: Status) => {
         setFilters(prev => ({ ...prev, [status]: !prev[status] }));
@@ -32,7 +31,7 @@ const Proposal: React.FC = () => {
         .map(([status]) => status as Status), [filters]);
 
     const filteredProposals = useMemo(() => {
-        return mockProposals.filter(proposal => {
+        return proposals.filter((proposal: Proposal) => {
             const matchesSearch = proposal.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                                   proposal.description.toLowerCase().includes(searchTerm.toLowerCase());
             
@@ -54,9 +53,9 @@ const Proposal: React.FC = () => {
     };
 
     return (
-        <div className="min-h-screen bg-slate-50 dark:bg-gray-950 font-sans text-gray-900 dark:text-gray-100">
+        <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
             {/* Main Content */}
-            <main className="container mx-auto p-4 md:p-8 mt-16">
+            <main className="container mx-auto px-6 py-4">
                 {/* Page Title */}
                 <div className="flex items-start gap-4 mb-8">
                     <div className="w-12 h-12 flex-shrink-0 bg-blue-100 dark:bg-blue-900/50 rounded-lg flex items-center justify-center">
@@ -83,7 +82,7 @@ const Proposal: React.FC = () => {
                                 <CardHeader className='pb-0 pt-4 flex flex-row w-full items-center justify-between'>
                                     <div className="text-sm font-medium text-gray-500 dark:text-gray-400">{card.title}</div>
                                     <div className={cn("p-1.5 rounded-md", card.bgColor)}>
-                                        <card.icon className={cn("w-5 h-5", card.color)} />
+                                        {React.createElement(card.icon, { className: cn("w-5 h-5", card.color) })}
                                     </div>
                                 </CardHeader>
                                 <CardContent className='mt-[-0.5rem]'>
@@ -110,12 +109,12 @@ const Proposal: React.FC = () => {
                             </div>
                             <div className="flex items-center gap-2">
                                 <div className="relative">
-                                    <Button variant="outline" className="gap-2 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800" onClick={() => setFilterOpen(!isFilterOpen)}>
+                                    <Button variant="outline" className="gap-2 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800" onClick={() => setFilterOpen(!filterOpen)}>
                                         <Filter className="w-4 h-4" />
                                         Filter
                                         {activeFilters.length > 0 && <span className="ml-1 bg-blue-600 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full">{activeFilters.length}</span>}
                                     </Button>
-                                    {isFilterOpen && (
+                                    {filterOpen && (
                                         <motion.div
                                             initial={{ opacity: 0, y: -10 }}
                                             animate={{ opacity: 1, y: 0 }} 
@@ -150,7 +149,7 @@ const Proposal: React.FC = () => {
 
                     <div className="px-6 pb-6">
                         {filteredProposals.length > 0 ? (
-                            filteredProposals.map(proposal => <ProposalItem key={proposal.id} proposal={proposal} />)
+                            filteredProposals.map((proposal: Proposal) => <ProposalItem key={proposal.id} proposal={proposal} onProposalClick={onProposalClick} />)
                         ) : (
                             <div className="text-center py-12 border-t border-gray-200 dark:border-gray-700">
                                 <p className="text-gray-500 dark:text-gray-400">No proposals found.</p>
@@ -160,8 +159,8 @@ const Proposal: React.FC = () => {
                     </div>
                 </div>
             </main>
-        </div>
+        </motion.div>
     );
 }
 
-export default Proposal;
+export default ProposalList;

@@ -8,6 +8,9 @@ export interface Proposal {
     description: string;
     status: Status;
     publishedDate: string;
+    deadline: string;
+    votes: number;
+    fundingAmount: number;
 }
 
 // Backend-related Types
