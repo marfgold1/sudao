@@ -8,7 +8,8 @@ const DynamicNavbar: React.FC = () => {
     
     // Check if current route is for a specific DAO
     const isDaoRoute = location.pathname.includes('/home/') || 
-                      location.pathname.includes('/proposal/');
+                      location.pathname.includes('/proposal/') ||
+                      location.pathname.includes('/profile');
     
     return isDaoRoute ? <NavbarDAO /> : <NavbarSUDAO />;
 };
