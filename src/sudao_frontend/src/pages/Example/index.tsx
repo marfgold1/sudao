@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React from "react";
 import Greet from "./greet";
 import { useAccounts } from "@nfid/identitykit/react";
 import UserProfile from "@/components/Auth/Profile";
@@ -9,9 +9,9 @@ const Example: React.FC = () => {
 
   return (
     <main className="flex flex-col w-full min-h-screen pt-20">
-        <UserProfile />
-        <p>HALO INI EXAMPLE PAGE</p>
-        <Greet />
+      <UserProfile />
+      <p>HALO INI EXAMPLE PAGE</p>
+      <Greet />
     </main>
   );
 };

@@ -7,6 +7,9 @@ import HashMap "mo:base/HashMap";
 import Iter "mo:base/Iter";
 import Float "mo:base/Float";
 import Error "mo:base/Error";
+import Text "mo:base/Text";
+import Time "mo:base/Time";
+import Nat64 "mo:base/Nat64";
 
 actor AMM {
 
@@ -49,6 +52,20 @@ actor AMM {
     };
   };
 
+  type TransferResultActual = {
+    #Ok : Nat;
+    #Err : {
+      #BadFee : { expected_fee : Nat };
+      #BadBurn : { min_burn_amount : Nat };
+      #InsufficientFunds : { balance : Nat };
+      #TooOld;
+      #CreatedInFuture : { ledger_time : Nat64 };
+      #Duplicate : { duplicate_of : Nat };
+      #TemporarilyUnavailable;
+      #GenericError : { error_code : Nat; message : Text };
+    };
+  };
+
   // AMM Types
   public type SwapArgs = {
     token_in_id : Principal;
@@ -77,6 +94,7 @@ actor AMM {
     #SlippageExceeded;
     #Unauthorized;
     #TransferFailed : Text;
+    #ApprovalRequired : Text;
   };
 
   public type LiquidityInfo = {
@@ -84,6 +102,15 @@ actor AMM {
     reserve1 : Nat;
     total_supply : Nat;
     user_balance : Nat;
+  };
+
+  public type SwapInfo = {
+    token_in_id : Principal;
+    token_out_id : Principal;
+    amount_in : Nat;
+    amount_out : Nat;
+    fee_paid : Nat;
+    timestamp : Nat64;
   };
 
   // State
@@ -95,6 +122,7 @@ actor AMM {
   private stable var owner : ?Principal = null;
   private stable var fee_rate : Nat = 3;
   private stable var is_initialized : Bool = false;
+  private stable var swap_count : Nat = 0;
 
   private stable var lp_balances_entries : [(Principal, Nat)] = [];
   private var lp_balances = HashMap.HashMap<Principal, Nat>(10, Principal.equal, Principal.hash);
@@ -131,7 +159,7 @@ actor AMM {
     owner := ?_owner;
     is_initialized := true;
 
-    Debug.print("AMM initialized");
+    Debug.print("AMM initialized with tokens: " # Principal.toText(_token0_ledger_id) # " and " # Principal.toText(_token1_ledger_id));
     #ok();
   };
 
@@ -151,6 +179,8 @@ actor AMM {
     let caller = msg.caller;
     let amount0_desired = args.amount0_desired;
     let amount1_desired = args.amount1_desired;
+
+    Debug.print("Adding liquidity: " # Nat.toText(amount0_desired) # " token0, " # Nat.toText(amount1_desired) # " token1");
 
     if (amount0_desired == 0 or amount1_desired == 0) {
       return #err(#InsufficientInputAmount);
@@ -183,11 +213,16 @@ actor AMM {
       };
     };
 
+    Debug.print("Optimal amounts: " # Nat.toText(amount0_optimal) # " token0, " # Nat.toText(amount1_optimal) # " token1");
+
     // Transfer tokens
     try {
+      Debug.print("Transferring token0 from user");
       await transfer_from_user(token0_id, caller, amount0_optimal);
+      Debug.print("Transferring token1 from user");
       await transfer_from_user(token1_id, caller, amount1_optimal);
     } catch (error) {
+      Debug.print("Transfer failed: " # Error.message(error));
       return #err(#TransferFailed(Error.message(error)));
     };
 
@@ -219,7 +254,7 @@ actor AMM {
     };
     lp_balances.put(caller, current_balance + liquidity);
 
-    Debug.print("Added liquidity: " # Nat.toText(liquidity) # " LP tokens");
+    Debug.print("Added liquidity: " # Nat.toText(liquidity) # " LP tokens. New reserves: " # Nat.toText(reserve0) # ", " # Nat.toText(reserve1));
     #ok(liquidity);
   };
 
@@ -241,6 +276,8 @@ actor AMM {
     let amount_in = args.amount_in;
     let min_amount_out = args.min_amount_out;
 
+    Debug.print("Swap initiated by " # Principal.toText(caller) # ": " # Nat.toText(amount_in) # " tokens from " # Principal.toText(token_in_id));
+
     if (amount_in == 0) {
       return #err(#InsufficientInputAmount);
     };
@@ -254,17 +291,23 @@ actor AMM {
       (reserve0, reserve1, token1_id);
     } else { (reserve1, reserve0, token0_id) };
 
+    Debug.print("Reserves: in=" # Nat.toText(reserve_in) # ", out=" # Nat.toText(reserve_out));
+
     if (reserve_in == 0 or reserve_out == 0) {
       return #err(#InsufficientReserve);
     };
 
     // Calculate output with fee
-    let amount_in_with_fee = amount_in * (FEE_DENOMINATOR - fee_rate);
+    let amount_in_with_fee = amount_in * (FEE_DENOMINATOR - fee_rate) / FEE_DENOMINATOR;
     let numerator = amount_in_with_fee * reserve_out;
     let denominator = (reserve_in * FEE_DENOMINATOR) + amount_in_with_fee;
     let amount_out = numerator / denominator;
+    let fee_paid = amount_in - amount_in_with_fee;
+
+    Debug.print("Calculated output: " # Nat.toText(amount_out) # " (fee: " # Nat.toText(fee_paid) # ")");
 
     if (amount_out < min_amount_out) {
+      Debug.print("Slippage exceeded: expected " # Nat.toText(min_amount_out) # ", got " # Nat.toText(amount_out));
       return #err(#SlippageExceeded);
     };
 
@@ -274,8 +317,11 @@ actor AMM {
 
     // Execute transfers
     try {
+      Debug.print("Pulling " # Nat.toText(amount_in) # " tokens from user");
       await transfer_from_user(token_in_id, caller, amount_in);
+      Debug.print("Successfully pulled tokens from user");
     } catch (error) {
+      Debug.print("Failed to pull tokens from user: " # Error.message(error));
       return #err(#TransferFailed("Input failed: " # Error.message(error)));
     };
 
@@ -288,9 +334,14 @@ actor AMM {
       reserve0 -= amount_out;
     };
 
+    Debug.print("Updated reserves: " # Nat.toText(reserve0) # ", " # Nat.toText(reserve1));
+
     try {
+      Debug.print("Pushing " # Nat.toText(amount_out) # " tokens to user");
       await transfer_to_user(token_out_id, caller, amount_out);
+      Debug.print("Successfully pushed tokens to user");
     } catch (error) {
+      Debug.print("Failed to push tokens to user: " # Error.message(error));
       // Revert reserves
       if (token_in_id == token0_id) {
         reserve0 -= amount_in;
@@ -302,7 +353,8 @@ actor AMM {
       return #err(#TransferFailed("Output failed: " # Error.message(error)));
     };
 
-    Debug.print("Swap completed: " # Nat.toText(amount_out) # " tokens");
+    swap_count += 1;
+    Debug.print("Swap completed successfully: " # Nat.toText(amount_out) # " tokens. Total swaps: " # Nat.toText(swap_count));
     #ok(amount_out);
   };
 
@@ -337,10 +389,18 @@ actor AMM {
       return #err(#InsufficientReserve);
     };
 
-    let amount_in_with_fee = amount_in * (FEE_DENOMINATOR - fee_rate);
+    Debug.print("Quote calculation - amount_in: " # Nat.toText(amount_in) # ", reserve_in: " # Nat.toText(reserve_in) # ", reserve_out: " # Nat.toText(reserve_out));
+    Debug.print("Quote calculation - fee_rate: " # Nat.toText(fee_rate) # ", FEE_DENOMINATOR: " # Nat.toText(FEE_DENOMINATOR));
+
+    let amount_in_with_fee = amount_in * (FEE_DENOMINATOR - fee_rate) / FEE_DENOMINATOR;
+    Debug.print("Quote calculation - amount_in_with_fee: " # Nat.toText(amount_in_with_fee));
+
     let numerator = amount_in_with_fee * reserve_out;
     let denominator = (reserve_in * FEE_DENOMINATOR) + amount_in_with_fee;
+    Debug.print("Quote calculation - numerator: " # Nat.toText(numerator) # ", denominator: " # Nat.toText(denominator));
+
     let amount_out = numerator / denominator;
+    Debug.print("Quote calculation - amount_out: " # Nat.toText(amount_out));
 
     #ok(amount_out);
   };
@@ -369,19 +429,23 @@ actor AMM {
     token1 : ?Principal;
     fee_rate : Nat;
     is_initialized : Bool;
+    swap_count : Nat;
   } {
     {
       token0 = token0_ledger_id;
       token1 = token1_ledger_id;
       fee_rate = fee_rate;
       is_initialized = is_initialized;
+      swap_count = swap_count;
     };
   };
 
   // Private helpers
   private func transfer_from_user(token_id : Principal, from : Principal, amount : Nat) : async () {
+    Debug.print("Transferring " # Nat.toText(amount) # " tokens from " # Principal.toText(from) # " via " # Principal.toText(token_id));
+
     let ledger : actor {
-      icrc2_transfer_from : (TransferFromArgs) -> async TransferResult;
+      icrc2_transfer_from : (TransferFromArgs) -> async Any;
     } = actor (Principal.toText(token_id));
 
     let args : TransferFromArgs = {
@@ -395,17 +459,14 @@ actor AMM {
     };
 
     let result = await ledger.icrc2_transfer_from(args);
-    switch (result) {
-      case (#Ok(_)) {};
-      case (#Err(_)) {
-        throw Error.reject("Transfer from user failed");
-      };
-    };
+    Debug.print("Transfer from user successful");
   };
 
   private func transfer_to_user(token_id : Principal, to : Principal, amount : Nat) : async () {
+    Debug.print("Transferring " # Nat.toText(amount) # " tokens to " # Principal.toText(to) # " via " # Principal.toText(token_id));
+
     let ledger : actor {
-      icrc1_transfer : (TransferArgs) -> async TransferResult;
+      icrc1_transfer : (TransferArgs) -> async Any;
     } = actor (Principal.toText(token_id));
 
     let args : TransferArgs = {
@@ -418,12 +479,7 @@ actor AMM {
     };
 
     let result = await ledger.icrc1_transfer(args);
-    switch (result) {
-      case (#Ok(_)) {};
-      case (#Err(_)) {
-        throw Error.reject("Transfer to user failed");
-      };
-    };
+    Debug.print("Transfer to user successful");
   };
 
   // Admin functions
@@ -441,6 +497,50 @@ actor AMM {
     };
 
     fee_rate := new_fee_rate;
+    Debug.print("Fee rate updated to: " # Nat.toText(new_fee_rate));
+    #ok();
+  };
+
+  // Emergency functions
+  public shared (msg) func emergency_withdraw(token_id : Principal, amount : Nat) : async Result.Result<(), Text> {
+    let (?current_owner) = owner else {
+      return #err("No owner set");
+    };
+
+    if (msg.caller != current_owner) {
+      return #err("Unauthorized");
+    };
+
+    try {
+      await transfer_to_user(token_id, current_owner, amount);
+      #ok();
+    } catch (error) {
+      #err("Transfer failed: " # Error.message(error));
+    };
+  };
+
+  // Debug function to reset AMM state
+  public shared (msg) func reset_state() : async Result.Result<(), Text> {
+    let (?current_owner) = owner else {
+      return #err("No owner set");
+    };
+
+    if (msg.caller != current_owner) {
+      return #err("Unauthorized");
+    };
+
+    // Reset all state
+    reserve0 := 0;
+    reserve1 := 0;
+    total_lp_supply := 0;
+    lp_balances := HashMap.HashMap<Principal, Nat>(0, Principal.equal, Principal.hash);
+    swap_count := 0;
+    is_initialized := false;
+    token0_ledger_id := null;
+    token1_ledger_id := null;
+    owner := null;
+
+    Debug.print("AMM state reset");
     #ok();
   };
 };

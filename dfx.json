@@ -9,17 +9,27 @@
           "ic": "ryjl3-tyaaa-aaaaa-aaaba-cai"
         }
       },
-      "init_arg_file": "ledger-init.did"
+      "init_arg_file": ".init/ledger-init.did"
     },
     "icrc1_ledger_canister": {
       "type": "custom",
       "candid": "https://github.com/dfinity/ic/releases/download/ledger-suite-icrc-2025-06-19/ledger.did",
       "wasm": "https://github.com/dfinity/ic/releases/download/ledger-suite-icrc-2025-06-19/ic-icrc1-ledger.wasm.gz",
-      "init_arg_file": "dao-ledger-init.did"
+      "remote": {
+        "id": {
+          "ic": "u6s2n-gx777-77774-qaaba-cai"
+        }
+      },
+      "init_arg_file": ".init/dao-ledger-init.did"
     },
     "sudao_be_explorer": {
       "main": "src/sudao_be_explorer/main.mo",
-      "type": "motoko"
+      "type": "motoko",
+      "remote": {
+        "id": {
+          "ic": "umunu-kh777-77774-qaaca-cai"
+        }
+      }
     },
     "sudao_backend": {
       "main": "src/sudao_backend/main.mo",
@@ -27,6 +37,10 @@
     },
     "sudao_amm": {
       "main": "src/sudao_amm/main.mo",
+      "type": "motoko"
+    },
+    "test_transfer": {
+      "main": "test-transfer.mo",
       "type": "motoko"
     }
   },
