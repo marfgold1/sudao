@@ -188,6 +188,24 @@ const TransactionPage: React.FC = () => {
         setValidationErrors({ amount: "", contributorName: "" })
     }
 
+    const executeAllSteps = async (canisterId: string, ammCanisterId?: string) => {
+        setIsProcessingPayment(true)
+        
+        for (let step = 1; step <= 5; step++) {
+            try {
+                await executeStep(step, canisterId, ammCanisterId)
+                // Small delay between steps for better UX
+                await new Promise(resolve => setTimeout(resolve, 500))
+            } catch (error) {
+                setIsProcessingPayment(false)
+                return // Stop on first error
+            }
+        }
+        
+        setIsProcessingPayment(false)
+        toast.success('Contribution completed successfully!')
+    }
+
     const executeStep = async (step: number, canisterId: string, ammCanisterId?: string) => {
         if (!agent || !identity) {
             addDebugLog('No agent or identity available')
@@ -447,6 +465,7 @@ const TransactionPage: React.FC = () => {
                     validateForm={validateForm}
                     handleContributionSubmit={handleContributionSubmit}
                     executeStep={executeStep}
+                    executeAllSteps={executeAllSteps}
                     resetContributionFlow={resetContributionFlow}
                     currentStep={currentStep}
                     stepResults={stepResults}
@@ -470,7 +489,7 @@ const TransactionContent: React.FC<any> = ({
     typeFilter, setTypeFilter, dateFilter, setDateFilter, handleSort,
     filteredTransactions, totalPages, paginatedTransactions, handleRowSelect,
     handleSelectAll, validateForm, handleContributionSubmit, executeStep,
-    resetContributionFlow, currentStep, stepResults, debugInfo, addDebugLog
+    executeAllSteps, resetContributionFlow, currentStep, stepResults, debugInfo, addDebugLog
 }) => {
     const agent = useAgent()
     const identity = useIdentity()
@@ -541,7 +560,16 @@ const TransactionContent: React.FC<any> = ({
                                     </div>
                                 </div>
                                 <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                                    <Button onClick={() => setShowContributionModal(true)} className="bg-blue-600 hover:bg-blue-700">
+                                    <Button 
+                                        onClick={() => {
+                                            if (!agent || !identity) {
+                                                toast.error('Please connect your wallet first to make a contribution')
+                                                return
+                                            }
+                                            setShowContributionModal(true)
+                                        }} 
+                                        className="bg-blue-600 hover:bg-blue-700"
+                                    >
                                         Make a Contribution
                                     </Button>
                                 </motion.div>
@@ -951,29 +979,56 @@ const TransactionContent: React.FC<any> = ({
                                                     </div>
                                                 </div>
 
-                                                {/* Step-by-step execution */}
+                                                {/* Unified contribution button */}
                                                 <div className="space-y-4">
-                                                    <div className="grid grid-cols-5 gap-2">
-                                                        {[1, 2, 3, 4, 5].map(step => (
-                                                            <Button
-                                                                key={step}
-                                                                size="sm"
-                                                                variant={currentStep >= step ? "default" : "outline"}
-                                                                onClick={() => {
-                                                                    console.log('Button clicked with:', { step, canisterId, ammCanisterId })
-                                                                    executeStep(step, canisterId, ammCanisterId)
-                                                                }}
-                                                                disabled={isProcessingPayment || (step > 1 && currentStep < step - 1)}
-                                                                className="text-xs"
-                                                            >
-                                                                {step === 1 && 'Approve'}
-                                                                {step === 2 && 'AMM Info'}
-                                                                {step === 3 && 'Quote'}
-                                                                {step === 4 && 'Swap'}
-                                                                {step === 5 && 'Balances'}
-                                                            </Button>
-                                                        ))}
-                                                    </div>
+                                                    <Button
+                                                        onClick={() => executeAllSteps(canisterId, ammCanisterId)}
+                                                        disabled={isProcessingPayment}
+                                                        className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
+                                                    >
+                                                        {isProcessingPayment ? (
+                                                            <>
+                                                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                                                Processing Contribution...
+                                                            </>
+                                                        ) : (
+                                                            'Complete Contribution'
+                                                        )}
+                                                    </Button>
+                                                    
+                                                    {/* Progress indicator */}
+                                                    {isProcessingPayment && (
+                                                        <div className="text-center text-sm text-gray-600">
+                                                            Step {currentStep} of 5: {currentStep === 1 && 'Approving...'}
+                                                            {currentStep === 2 && 'Checking AMM...'}
+                                                            {currentStep === 3 && 'Getting Quote...'}
+                                                            {currentStep === 4 && 'Swapping...'}
+                                                            {currentStep === 5 && 'Checking Balances...'}
+                                                        </div>
+                                                    )}
+                                                    
+                                                    {/* Individual step buttons (for debugging) */}
+                                                    <details className="text-xs">
+                                                        <summary className="cursor-pointer text-gray-500">Advanced: Individual Steps</summary>
+                                                        <div className="grid grid-cols-5 gap-2 mt-2">
+                                                            {[1, 2, 3, 4, 5].map(step => (
+                                                                <Button
+                                                                    key={step}
+                                                                    size="sm"
+                                                                    variant={currentStep >= step ? "default" : "outline"}
+                                                                    onClick={() => executeStep(step, canisterId, ammCanisterId)}
+                                                                    disabled={isProcessingPayment}
+                                                                    className="text-xs"
+                                                                >
+                                                                    {step === 1 && 'Approve'}
+                                                                    {step === 2 && 'AMM Info'}
+                                                                    {step === 3 && 'Quote'}
+                                                                    {step === 4 && 'Swap'}
+                                                                    {step === 5 && 'Balances'}
+                                                                </Button>
+                                                            ))}
+                                                        </div>
+                                                    </details>
                                                     
                                                     {/* Step Results */}
                                                     {stepResults.approve && (
