@@ -10,6 +10,7 @@ import {
 } from "declarations/sudao_amm";
 import type { _SERVICE as ICPLedgerService } from "declarations/icp_ledger_canister/icp_ledger_canister.did";
 import type { _SERVICE as AMMService } from "declarations/sudao_amm/sudao_amm.did";
+import { checkUserBalances, type UserBalances } from "./balance";
 
 export interface ContributionRequest {
   amount: number;
@@ -21,6 +22,7 @@ export interface ContributionResult {
   success: boolean;
   transactionId?: string;
   governanceTokensReceived?: number;
+  balancesAfterSwap?: UserBalances;
   error?: string;
 }
 
@@ -109,10 +111,23 @@ export const makeContribution = async (
 
     const actualGovernanceTokens = Number(swapResult.ok);
 
+    // Step 4: Check updated balances after swap
+    console.log('[CONTRIBUTION] Step 4: Checking balances after swap');
+    let balancesAfterSwap: UserBalances | undefined;
+    try {
+      // Small delay to ensure balance updates are reflected
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      balancesAfterSwap = await checkUserBalances(agent, userPrincipal);
+      console.log('[CONTRIBUTION] Balances after swap:', balancesAfterSwap);
+    } catch (balanceError) {
+      console.warn('[CONTRIBUTION] Failed to check balances after swap:', balanceError);
+    }
+
     return {
       success: true,
       transactionId: approveResult.Ok?.toString(),
       governanceTokensReceived: actualGovernanceTokens,
+      balancesAfterSwap,
     };
 
   } catch (error) {
@@ -124,22 +139,24 @@ export const makeContribution = async (
   }
 };
 
+// Standalone function to check balances after any swap operation
+export const getBalancesAfterSwap = async (
+  agent: HttpAgent,
+  userPrincipal: string
+): Promise<UserBalances> => {
+  return await checkUserBalances(agent, userPrincipal);
+};
+
 export const checkUserBalance = async (
   agent: HttpAgent,
   userPrincipal: string
-): Promise<{ icp: number; error?: string }> => {
+): Promise<{ icp: number; governance?: number; error?: string }> => {
   try {
-    if (process.env.DFX_NETWORK !== "ic") {
-      await agent.fetchRootKey();
-    }
-
-    const icpActor = await createICPActor(agent);
-    const balance = await icpActor.icrc1_balance_of({
-      owner: Principal.fromText(userPrincipal),
-      subaccount: [] as [],
-    });
-
-    return { icp: Number(balance) };
+    const balances = await checkUserBalances(agent, userPrincipal);
+    return { 
+      icp: balances.icp, 
+      governance: balances.governance 
+    };
   } catch (error) {
     return {
       icp: 0,

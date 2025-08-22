@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react"
+import React, { useEffect, useState, useCallback } from "react"
 import { Link } from "react-router-dom"
 import { motion, AnimatePresence } from "framer-motion"
 import { Button } from "@/components/ui/button"
@@ -40,6 +40,7 @@ import {
 } from "declarations/sudao_amm/index"
 import type { _SERVICE as _SERVICE_ICP_LEDGER } from "declarations/icp_ledger_canister/icp_ledger_canister.did"
 import type { _SERVICE as _SERVICE_AMM } from "declarations/sudao_amm/sudao_amm.did"
+import { getBalancesAfterSwap, type UserBalances } from "../../services/contribution"
 
 const TransactionPage: React.FC = () => {
     const [transactions, setTransactions] = useState<Transaction[]>([])
@@ -55,6 +56,32 @@ const TransactionPage: React.FC = () => {
         contributorName: "",
     })
     const [isProcessingPayment, setIsProcessingPayment] = useState(false)
+    const [balancesAfterSwap, setBalancesAfterSwap] = useState<UserBalances | null>(null)
+    const [currentStep, setCurrentStep] = useState(0)
+    const [stepResults, setStepResults] = useState<{
+        approve?: any;
+        ammInfo?: any;
+        quote?: number;
+        swap?: any;
+        balances?: UserBalances;
+    }>({})
+    const [debugInfo, setDebugInfo] = useState<string[]>([])
+
+    const addDebugLog = useCallback((message: string) => {
+        console.log(`[DEBUG] ${message}`)
+        setDebugInfo((prev) => [
+            ...prev.slice(-9),
+            `${new Date().toLocaleTimeString()}: ${message}`,
+        ])
+    }, [])
+
+    const safeStringify = (obj: unknown) => {
+        return JSON.stringify(
+            obj,
+            (_, v) => (typeof v === "bigint" ? v.toString() : v),
+            2
+        )
+    }
     const [currentPage, setCurrentPage] = useState(1)
     const [rowsPerPage, setRowsPerPage] = useState(10)
     const [selectedRows, setSelectedRows] = useState<string[]>([])
@@ -152,161 +179,217 @@ const TransactionPage: React.FC = () => {
         }
     }
 
-    const handleFinalContribution = async (canisterId: string) => {
+    const resetContributionFlow = () => {
+        setCurrentStep(0)
+        setStepResults({})
+        setIsProcessingPayment(false)
+        setShowConfirmationModal(false)
+        setContributionData({ amount: "10000", contributorName: "" })
+        setValidationErrors({ amount: "", contributorName: "" })
+    }
+
+    const executeStep = async (step: number, canisterId: string, ammCanisterId?: string) => {
         if (!agent || !identity) {
+            addDebugLog('No agent or identity available')
             toast.error('Please connect your wallet first')
             return
         }
 
-        // Check if required canister IDs are available
-        if (!icpCanisterId || !ammCanisterId) {
-            toast.error('Canister IDs not available. Please ensure the local network is running.')
-            console.error('Missing canister IDs:', { icpCanisterId, ammCanisterId })
-            return
-        }
-
-        setIsProcessingPayment(true)
+        const userPrincipal = identity.getPrincipal().toString()
+        const numberValue = Number(contributionData.amount)
+        addDebugLog(`Starting step ${step} for user ${userPrincipal} with amount ${numberValue}`)
+        // Debug the ammCanisterId parameter
+        addDebugLog(`Received parameters - canisterId: ${canisterId}, ammCanisterId: ${ammCanisterId}`)
+        
+        // Force use the correct AMM canister ID if ammCanisterId is null/undefined
+        const actualAmmCanisterId = ammCanisterId && ammCanisterId !== canisterId ? ammCanisterId : 'vpyes-67777-77774-qaaeq-cai'
+        addDebugLog(`Using AMM canisterId: ${actualAmmCanisterId} (backend: ${canisterId})`)
         
         try {
-            const userPrincipal = identity.getPrincipal().toString()
-            const numberValue = Number(contributionData.amount)
-            console.log('[CONTRIBUTION] Starting contribution process:', { userPrincipal, numberValue, canisterId })
-            
-            // Validate minimum amount (10,000 ICP minimum like in Profile component)
-            if (numberValue < 10000) {
-                console.log('[CONTRIBUTION] Amount too small:', numberValue)
-                toast.error('Amount too small. Try at least 10,000 ICP for a meaningful contribution.')
-                return
-            }
-            
-            // Initialize actors with proper root key fetching
             if (process.env.DFX_NETWORK !== "ic") {
-                console.log('[CONTRIBUTION] Fetching root key for local development')
+                addDebugLog('Fetching root key for local development')
                 await agent.fetchRootKey()
-                console.log('[CONTRIBUTION] Root key fetched successfully')
-            }
-            
-            // Step 1: Approve AMM to spend ICP
-            console.log('[CONTRIBUTION] Creating ICP actor with canisterId:', icpCanisterId)
-            const actorICP = Actor.createActor<_SERVICE_ICP_LEDGER>(idlFactoryICP, {
-                agent,
-                canisterId: icpCanisterId,
-            })
-
-            const icrc2_approve_args = {
-                from_subaccount: [] as [],
-                spender: {
-                    owner: Principal.fromText(ammCanisterId),
-                    subaccount: [] as [],
-                },
-                fee: [BigInt(10000)] as [bigint],
-                memo: [] as [],
-                amount: BigInt(numberValue),
-                created_at_time: [BigInt(Date.now() * 1000000)] as [bigint],
-                expected_allowance: [] as [],
-                expires_at: [BigInt((Date.now() + 10000000000000) * 1000000)] as [bigint],
+                addDebugLog('Root key fetched successfully')
             }
 
-            console.log('[CONTRIBUTION] Calling icrc2_approve with args:', icrc2_approve_args)
-            const approveResult = await actorICP.icrc2_approve(icrc2_approve_args)
-            console.log('[CONTRIBUTION] Approve result:', approveResult)
-
-            // Step 2: Get swap quote and perform swap
-            console.log('[CONTRIBUTION] Creating AMM actor with canisterId:', ammCanisterId)
-            const actorAMM = Actor.createActor<_SERVICE_AMM>(idlFactoryAMM, {
-                agent,
-                canisterId: ammCanisterId,
-            })
-
-            console.log('[CONTRIBUTION] Getting swap quote for:', { icpCanisterId, amount: BigInt(numberValue) })
-            
-            let minAmountOut = 1 // Default minimum amount
-            
-            try {
-                // Try to get quote with short timeout
-                const quotePromise = actorAMM.get_swap_quote(
-                    Principal.fromText(icpCanisterId),
-                    BigInt(numberValue)
-                )
-                
-                const timeoutPromise = new Promise((_, reject) => 
-                    setTimeout(() => reject(new Error('Quote timeout')), 5000)
-                )
-                
-                const quoteResult = await Promise.race([quotePromise, timeoutPromise])
-                console.log('[CONTRIBUTION] Quote result:', quoteResult)
-                
-                if ("ok" in quoteResult) {
-                    const quote = Number(quoteResult.ok)
-                    console.log('[CONTRIBUTION] Quote received:', quote)
-                    if (quote > 0) {
-                        minAmountOut = Math.floor(quote * 0.99) // 1% slippage
-                        console.log('[CONTRIBUTION] Using quote-based minAmountOut:', minAmountOut)
+            switch (step) {
+                case 1: // Approve
+                    addDebugLog(`Creating ICP actor with canisterId: ${icpCanisterId}`)
+                    const actorICP = Actor.createActor<_SERVICE_ICP_LEDGER>(idlFactoryICP, {
+                        agent, canisterId: icpCanisterId
+                    })
+                    const approveArgs = {
+                        from_subaccount: [] as [],
+                        spender: { owner: Principal.fromText(actualAmmCanisterId), subaccount: [] as [] },
+                        fee: [BigInt(10000)] as [bigint],
+                        memo: [] as [],
+                        amount: BigInt(numberValue),
+                        created_at_time: [BigInt(Date.now() * 1000000)] as [bigint],
+                        expected_allowance: [BigInt(0)] as [bigint],
+                        expires_at: [BigInt((Date.now() + 10000000000000) * 1000000)] as [bigint],
                     }
-                }
-            } catch (error) {
-                console.log('[CONTRIBUTION] Quote failed or timed out, proceeding with minimal slippage:', error)
-                // Use minimal amount to allow swap to proceed
-                minAmountOut = 1
+                    addDebugLog(`Calling icrc2_approve with args: ${safeStringify(approveArgs)}`)
+                    const approveResult = await actorICP.icrc2_approve(approveArgs)
+                    addDebugLog(`Approve result: ${safeStringify(approveResult)}`)
+                    setStepResults(prev => ({ ...prev, approve: approveResult }))
+                    toast.success('Approval successful!')
+                    break
+
+                case 2: // Check AMM Info
+                    addDebugLog(`Creating AMM actor with DAO's AMM canisterId: ${actualAmmCanisterId}`)
+                    const actorAMM = Actor.createActor<_SERVICE_AMM>(idlFactoryAMM, {
+                        agent, canisterId: actualAmmCanisterId
+                    })
+                    
+                    // Try a simple canister status check first
+                    try {
+                        addDebugLog('Testing canister connectivity...')
+                        const statusResponse = await fetch(`http://localhost:4943/api/v2/canister/${actualAmmCanisterId}/read_state`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/cbor' },
+                            body: new Uint8Array([]) // Empty CBOR for basic connectivity test
+                        })
+                        addDebugLog(`Canister connectivity test: ${statusResponse.status} ${statusResponse.statusText}`)
+                    } catch (connectError) {
+                        addDebugLog(`Canister connectivity failed: ${connectError}`)
+                        throw new Error(`AMM canister not reachable: ${connectError}`)
+                    }
+                    
+                    addDebugLog('Calling get_token_info with timeout')
+                    const tokenInfoPromise = actorAMM.get_token_info()
+                    const tokenInfoTimeout = new Promise((_, reject) => 
+                        setTimeout(() => reject(new Error('get_token_info timeout after 5s - AMM canister may not be deployed or running')), 5000)
+                    )
+                    const info = await Promise.race([tokenInfoPromise, tokenInfoTimeout])
+                    addDebugLog(`Token info: ${safeStringify(info)}`)
+                    
+                    addDebugLog('Calling get_reserves with timeout')
+                    const reservesPromise = actorAMM.get_reserves()
+                    const reservesTimeout = new Promise((_, reject) => 
+                        setTimeout(() => reject(new Error('get_reserves timeout after 5s')), 5000)
+                    )
+                    const reserves = await Promise.race([reservesPromise, reservesTimeout])
+                    addDebugLog(`Reserves: ${safeStringify(reserves)}`)
+                    
+                    const ammInfo = {
+                        token0: info.token0?.[0]?.toString() || null,
+                        token1: info.token1?.[0]?.toString() || null,
+                        fee_rate: Number(info.fee_rate),
+                        is_initialized: info.is_initialized,
+                        reserve0: Number(reserves[0]),
+                        reserve1: Number(reserves[1])
+                    }
+                    addDebugLog(`Processed AMM info: ${safeStringify(ammInfo)}`)
+                    setStepResults(prev => ({ ...prev, ammInfo }))
+                    toast.success('AMM info loaded!')
+                    break
+
+                case 3: // Get Quote
+                    addDebugLog(`Getting quote for ${numberValue} ICP from ${icpCanisterId}`)
+                    const ammActor = Actor.createActor<_SERVICE_AMM>(idlFactoryAMM, {
+                        agent, canisterId: actualAmmCanisterId
+                    })
+                    const quoteResult = await ammActor.get_swap_quote(
+                        Principal.fromText(icpCanisterId),
+                        BigInt(numberValue)
+                    )
+                    addDebugLog(`Quote result: ${safeStringify(quoteResult)}`)
+                    if ('ok' in quoteResult) {
+                        const quote = Number(quoteResult.ok)
+                        addDebugLog(`Quote parsed: ${quote}`)
+                        setStepResults(prev => ({ ...prev, quote }))
+                        toast.success(`Quote: ${numberValue} ICP → ${quote.toLocaleString()} Governance tokens`)
+                    } else {
+                        addDebugLog(`Quote failed with error: ${safeStringify(quoteResult.err)}`)
+                        throw new Error(`Quote failed: ${safeStringify(quoteResult.err)}`)
+                    }
+                    break
+
+                case 4: // Swap
+                    addDebugLog('Starting swap process')
+                    const swapActor = Actor.createActor<_SERVICE_AMM>(idlFactoryAMM, {
+                        agent, canisterId: actualAmmCanisterId
+                    })
+                    const minAmountOut = stepResults.quote ? Math.floor(stepResults.quote * 0.99) : 1
+                    const swapArgs = {
+                        token_in_id: Principal.fromText(icpCanisterId),
+                        amount_in: BigInt(numberValue),
+                        min_amount_out: BigInt(minAmountOut)
+                    }
+                    addDebugLog(`Swap args: ${safeStringify(swapArgs)}`)
+                    const swapResult = await swapActor.swap(swapArgs)
+                    addDebugLog(`Swap result: ${safeStringify(swapResult)}`)
+                    if ('ok' in swapResult) {
+                        addDebugLog(`Swap successful, received: ${swapResult.ok}`)
+                        setStepResults(prev => ({ ...prev, swap: swapResult }))
+                        toast.success(`Swap successful! Received ${Number(swapResult.ok).toLocaleString()} governance tokens`)
+                        
+                        // Add transaction
+                        const newTransaction: Transaction = {
+                            id: Date.now().toString(),
+                            account: userPrincipal.slice(0, 8) + '...' + userPrincipal.slice(-6),
+                            amount: numberValue,
+                            type: "In",
+                            beneficiary: "DAO Treasury",
+                            address: actualAmmCanisterId.slice(0, 8) + '...' + actualAmmCanisterId.slice(-6),
+                            date: new Date().toISOString().split("T")[0],
+                        }
+                        addDebugLog(`Adding transaction: ${safeStringify(newTransaction)}`)
+                        setTransactions(prev => [newTransaction, ...prev])
+                    } else {
+                        addDebugLog(`Swap failed with error: ${safeStringify(swapResult.err)}`)
+                        throw new Error(`Swap failed: ${safeStringify(swapResult.err)}`)
+                    }
+                    break
+
+                case 5: // Check Balances
+                    addDebugLog('Checking balances after swap')
+                    
+                    // Create ICP ledger actor
+                    const icpLedgerActor = Actor.createActor<_SERVICE_ICP_LEDGER>(idlFactoryICP, {
+                        agent, canisterId: icpCanisterId
+                    })
+                    
+                    // Create governance ledger actor using DAO-specific ledger canister
+                    // From AMM info: token1 is the governance token canister
+                    const governanceCanisterId = stepResults.ammInfo?.token1 || 'vizcg-th777-77774-qaaea-cai'
+                    addDebugLog(`Using governance ledger canister: ${governanceCanisterId}`)
+                    
+                    const { idlFactory: govLedgerIdlFactory } = await import('declarations/icrc1_ledger_canister/index')
+                    const govLedgerActor = Actor.createActor(govLedgerIdlFactory, {
+                        agent, canisterId: governanceCanisterId
+                    })
+                    
+                    // Check both balances
+                    const [icpBalance, govBalance] = await Promise.all([
+                        icpLedgerActor.icrc1_balance_of({
+                            owner: Principal.fromText(userPrincipal),
+                            subaccount: [] as []
+                        }),
+                        govLedgerActor.icrc1_balance_of({
+                            owner: Principal.fromText(userPrincipal),
+                            subaccount: [] as []
+                        })
+                    ])
+                    
+                    const balances = {
+                        icp: Number(icpBalance),
+                        governance: Number(govBalance)
+                    }
+                    
+                    addDebugLog(`Balances result: ${safeStringify(balances)}`)
+                    setStepResults(prev => ({ ...prev, balances }))
+                    setBalancesAfterSwap(balances)
+                    toast.success(`Balances: ${balances.icp.toLocaleString()} ICP, ${balances.governance.toLocaleString()} Governance tokens`)
+                    break
             }
-
-            const swapArgs = {
-                token_in_id: Principal.fromText(icpCanisterId),
-                amount_in: BigInt(numberValue),
-                min_amount_out: BigInt(minAmountOut),
-            }
-            console.log('[CONTRIBUTION] Proceeding with swap args:', swapArgs)
-
-            console.log('[CONTRIBUTION] Calling swap with args:', swapArgs)
-            
-            // Add timeout for swap call
-            const swapPromise = actorAMM.swap(swapArgs)
-            const swapTimeoutPromise = new Promise((_, reject) => 
-                setTimeout(() => reject(new Error('Swap request timed out after 30 seconds')), 30000)
-            )
-            
-            const swapResult = await Promise.race([swapPromise, swapTimeoutPromise])
-            console.log('[CONTRIBUTION] Swap result:', swapResult)
-
-            if ("ok" in swapResult) {
-                console.log('[CONTRIBUTION] Swap successful, received tokens:', swapResult.ok)
-                
-                // Register user after successful contribution
-                try {
-                    console.log('[CONTRIBUTION] Attempting user registration for canisterId:', canisterId)
-                    const { registerUser } = await import('../../services/dao')
-                    await registerUser(canisterId, agent)
-                    console.log('[CONTRIBUTION] User registration successful')
-                } catch (regError) {
-                    console.log('[CONTRIBUTION] Registration after contribution failed:', regError)
-                }
-
-                const newTransaction: Transaction = {
-                    id: Date.now().toString(),
-                    account: userPrincipal.slice(0, 8) + '...' + userPrincipal.slice(-6),
-                    amount: Number(contributionData.amount),
-                    type: "In",
-                    beneficiary: "DAO Treasury",
-                    address: ammCanisterId.slice(0, 8) + '...' + ammCanisterId.slice(-6),
-                    date: new Date().toISOString().split("T")[0],
-                }
-
-                console.log('[CONTRIBUTION] Adding new transaction:', newTransaction)
-                setTransactions((prev) => [newTransaction, ...prev])
-                toast.success(`Contribution successful! Received ${Number(swapResult.ok).toLocaleString()} governance tokens`)
-            } else {
-                console.log('[CONTRIBUTION] Swap failed with error:', swapResult.err)
-                throw new Error(`Swap failed: ${JSON.stringify(swapResult.err)}`)
-            }
+            addDebugLog(`Step ${step} completed successfully`)
+            setCurrentStep(step)
         } catch (error) {
-            console.error('Contribution error:', error)
-            const errorMessage = error instanceof Error ? error.message : 'Contribution failed. Please try again.'
-            toast.error(errorMessage)
-        } finally {
-            setIsProcessingPayment(false)
-            setShowConfirmationModal(false)
-            setContributionData({ amount: "10000", contributorName: "" })
-            setValidationErrors({ amount: "", contributorName: "" })
+            const errorMessage = error instanceof Error ? error.message : 'Step failed'
+            addDebugLog(`Step ${step} failed: ${errorMessage}`)
+            console.error(`Step ${step} error:`, error)
+            toast.error(`Step ${step} failed: ${errorMessage}`)
         }
     }
 
@@ -316,10 +399,11 @@ const TransactionPage: React.FC = () => {
 
     return (
         <DAOLayout>
-            {({ dao, canisterId, isRegistered, isCreator }) => {
+            {({ dao, canisterId, ammCanisterId, isRegistered, isCreator }) => {
                 return <TransactionContent 
                     dao={dao}
                     canisterId={canisterId}
+                    ammCanisterId={ammCanisterId}
                     isRegistered={isRegistered}
                     isCreator={isCreator}
                     transactions={transactions}
@@ -362,7 +446,12 @@ const TransactionPage: React.FC = () => {
                     handleSelectAll={handleSelectAll}
                     validateForm={validateForm}
                     handleContributionSubmit={handleContributionSubmit}
-                    handleFinalContribution={() => handleFinalContribution(canisterId)}
+                    executeStep={executeStep}
+                    resetContributionFlow={resetContributionFlow}
+                    currentStep={currentStep}
+                    stepResults={stepResults}
+                    debugInfo={debugInfo}
+                    addDebugLog={addDebugLog}
                 />
 
             }}
@@ -371,7 +460,7 @@ const TransactionPage: React.FC = () => {
 }
 
 const TransactionContent: React.FC<any> = ({
-    dao, canisterId, isRegistered, isCreator, transactions, setTransactions,
+    dao, canisterId, ammCanisterId, isRegistered, isCreator, transactions, setTransactions,
     loading, setLoading, searchTerm, setSearchTerm, showContributionModal,
     setShowContributionModal, showConfirmationModal, setShowConfirmationModal,
     contributionData, setContributionData, validationErrors, setValidationErrors,
@@ -380,7 +469,8 @@ const TransactionContent: React.FC<any> = ({
     setSortField, sortDirection, setSortDirection, showFilter, setShowFilter,
     typeFilter, setTypeFilter, dateFilter, setDateFilter, handleSort,
     filteredTransactions, totalPages, paginatedTransactions, handleRowSelect,
-    handleSelectAll, validateForm, handleContributionSubmit, handleFinalContribution
+    handleSelectAll, validateForm, handleContributionSubmit, executeStep,
+    resetContributionFlow, currentStep, stepResults, debugInfo, addDebugLog
 }) => {
     const agent = useAgent()
     const identity = useIdentity()
@@ -861,6 +951,71 @@ const TransactionContent: React.FC<any> = ({
                                                     </div>
                                                 </div>
 
+                                                {/* Step-by-step execution */}
+                                                <div className="space-y-4">
+                                                    <div className="grid grid-cols-5 gap-2">
+                                                        {[1, 2, 3, 4, 5].map(step => (
+                                                            <Button
+                                                                key={step}
+                                                                size="sm"
+                                                                variant={currentStep >= step ? "default" : "outline"}
+                                                                onClick={() => {
+                                                                    console.log('Button clicked with:', { step, canisterId, ammCanisterId })
+                                                                    executeStep(step, canisterId, ammCanisterId)
+                                                                }}
+                                                                disabled={isProcessingPayment || (step > 1 && currentStep < step - 1)}
+                                                                className="text-xs"
+                                                            >
+                                                                {step === 1 && 'Approve'}
+                                                                {step === 2 && 'AMM Info'}
+                                                                {step === 3 && 'Quote'}
+                                                                {step === 4 && 'Swap'}
+                                                                {step === 5 && 'Balances'}
+                                                            </Button>
+                                                        ))}
+                                                    </div>
+                                                    
+                                                    {/* Step Results */}
+                                                    {stepResults.approve && (
+                                                        <div className="p-2 bg-green-50 rounded text-xs">
+                                                            <strong>Approve:</strong> ✅ Success
+                                                        </div>
+                                                    )}
+                                                    {stepResults.ammInfo && (
+                                                        <div className="p-2 bg-blue-50 rounded text-xs">
+                                                            <strong>AMM:</strong> Initialized: {stepResults.ammInfo.is_initialized ? 'Yes' : 'No'}, 
+                                                            Reserves: {stepResults.ammInfo.reserve0.toLocaleString()} ICP, {stepResults.ammInfo.reserve1.toLocaleString()} Gov
+                                                        </div>
+                                                    )}
+                                                    {stepResults.quote && (
+                                                        <div className="p-2 bg-yellow-50 rounded text-xs">
+                                                            <strong>Quote:</strong> {contributionData.amount} ICP → {stepResults.quote.toLocaleString()} Governance tokens
+                                                        </div>
+                                                    )}
+                                                    {stepResults.swap && (
+                                                        <div className="p-2 bg-purple-50 rounded text-xs">
+                                                            <strong>Swap:</strong> ✅ Received {Number(stepResults.swap.ok).toLocaleString()} governance tokens
+                                                        </div>
+                                                    )}
+                                                    {stepResults.balances && (
+                                                        <div className="p-2 bg-gray-50 rounded text-xs">
+                                                            <strong>Balances:</strong> {stepResults.balances.icp.toLocaleString()} ICP, {stepResults.balances.governance.toLocaleString()} Governance
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                {/* Debug Log */}
+                                                {debugInfo.length > 0 && (
+                                                    <div className="mt-4 p-2 bg-gray-100 border rounded text-xs max-h-32 overflow-y-auto">
+                                                        <h4 className="font-semibold mb-1">Debug Log:</h4>
+                                                        {debugInfo.map((log, index) => (
+                                                            <div key={index} className="text-gray-600 font-mono text-xs">
+                                                                {log}
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+
                                                 <div className="flex space-x-3 pt-4">
                                                     <Button
                                                         variant="outline"
@@ -872,22 +1027,13 @@ const TransactionContent: React.FC<any> = ({
                                                     >
                                                         Go back
                                                     </Button>
-                                                    <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="flex-1">
-                                                        <Button 
-                                                            onClick={() => handleFinalContribution(canisterId)} 
-                                                            disabled={isProcessingPayment}
-                                                            className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
-                                                        >
-                                                            {isProcessingPayment ? (
-                                                                <>
-                                                                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                                                    Processing...
-                                                                </>
-                                                            ) : (
-                                                                'Make a contribution'
-                                                            )}
-                                                        </Button>
-                                                    </motion.div>
+                                                    <Button
+                                                        variant="outline"
+                                                        onClick={resetContributionFlow}
+                                                        className="flex-1"
+                                                    >
+                                                        Reset
+                                                    </Button>
                                                 </div>
                                             </div>
                                         </motion.div>

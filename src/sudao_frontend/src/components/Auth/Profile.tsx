@@ -431,10 +431,29 @@ export default function UserProfile() {
       addDebugLog("Swap result: " + safeStringify(result));
 
       if ("ok" in result) {
-        setStatus({
-          type: "success",
-          message: `Swap successful! Output: ${result.ok}`,
-        });
+        // Check balances after successful swap
+        try {
+          addDebugLog("Checking balances after swap");
+          const { checkUserBalances } = await import("../../services/balance");
+          const updatedBalances = await checkUserBalances(authenticatedAgent, userPrincipal);
+          setUserBalances((prev) => ({
+            ...prev,
+            icp: updatedBalances.icp,
+            governance: updatedBalances.governance,
+          }));
+          addDebugLog(`Updated balances after swap - ICP: ${updatedBalances.icp}, Governance: ${updatedBalances.governance}`);
+          
+          setStatus({
+            type: "success",
+            message: `Swap successful! Output: ${result.ok}. New balances: ${updatedBalances.icp.toLocaleString()} ICP, ${updatedBalances.governance.toLocaleString()} Governance tokens`,
+          });
+        } catch (balanceError) {
+          addDebugLog("Failed to check balances after swap: " + balanceError);
+          setStatus({
+            type: "success",
+            message: `Swap successful! Output: ${result.ok}`,
+          });
+        }
         addDebugLog("Swap completed successfully: " + result.ok);
       } else {
         setStatus({
@@ -535,25 +554,20 @@ export default function UserProfile() {
       });
       addDebugLog("AMM info loaded: " + safeStringify(info));
       addDebugLog("AMM reserves loaded: " + safeStringify(reserves));
-      addDebugLog("Loading user balances");
-      const icpBalance = await actorICP.icrc1_balance_of({
-        owner: Principal.fromText(userPrincipal),
-        subaccount: [] as [],
-      });
-      const governanceBalance = await actorGovernanceLedger.icrc1_balance_of({
-        owner: Principal.fromText(userPrincipal),
-        subaccount: [] as [],
-      });
+      addDebugLog("Loading user balances using balance service");
+      const { checkUserBalances } = await import("../../services/balance");
+      const balances = await checkUserBalances(authenticatedAgent, userPrincipal);
+      
       const lpInfo = await actorAMM.get_liquidity_info([
         Principal.fromText(userPrincipal),
       ]);
       setUserBalances({
-        icp: Number(icpBalance),
-        governance: Number(governanceBalance),
+        icp: balances.icp,
+        governance: balances.governance,
         lp: Number(lpInfo?.user_balance ?? 0),
       });
       addDebugLog(
-        `Balances loaded - ICP: ${icpBalance}, Governance: ${governanceBalance}, LP: ${
+        `Balances loaded - ICP: ${balances.icp}, Governance: ${balances.governance}, LP: ${
           lpInfo?.user_balance ?? 0
         }`
       );
@@ -678,10 +692,10 @@ export default function UserProfile() {
 
   // Quick balance check handler (ICP and Governance only)
   const handleCheckBalances = async () => {
-    if (!actorICP || !actorGovernanceLedger || !userPrincipal) {
+    if (!authenticatedAgent || !userPrincipal) {
       setStatus({
         type: "error",
-        message: "Actors not ready. Please ensure you're logged in.",
+        message: "Authenticated agent not ready. Please ensure you're logged in.",
       });
       return;
     }
@@ -689,32 +703,22 @@ export default function UserProfile() {
     setStatus({ type: "info", message: "Checking balances..." });
 
     try {
-      addDebugLog("Checking user balances");
-      const icpBalance = await actorICP.icrc1_balance_of({
-        owner: Principal.fromText(userPrincipal),
-        subaccount: [] as [],
-      });
-      const governanceBalance = await actorGovernanceLedger.icrc1_balance_of({
-        owner: Principal.fromText(userPrincipal),
-        subaccount: [] as [],
-      });
+      addDebugLog("Checking user balances using balance service");
+      const { checkUserBalances } = await import("../../services/balance");
+      const balances = await checkUserBalances(authenticatedAgent, userPrincipal);
 
       setUserBalances((prev) => ({
         ...prev,
-        icp: Number(icpBalance),
-        governance: Number(governanceBalance),
+        icp: balances.icp,
+        governance: balances.governance,
       }));
 
       addDebugLog(
-        `Balance check - ICP: ${icpBalance}, Governance: ${governanceBalance}`
+        `Balance check - ICP: ${balances.icp}, Governance: ${balances.governance}`
       );
       setStatus({
         type: "success",
-        message: `Balances: ${Number(
-          icpBalance
-        ).toLocaleString()} Local ICP, ${Number(
-          governanceBalance
-        ).toLocaleString()} Governance tokens`,
+        message: `Balances: ${balances.icp.toLocaleString()} Local ICP, ${balances.governance.toLocaleString()} Governance tokens`,
       });
     } catch (error) {
       const errorMessage =

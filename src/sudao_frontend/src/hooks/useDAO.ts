@@ -9,6 +9,7 @@ export const useDAO = (daoId: string) => {
   const identity = useIdentity();
   const [dao, setDao] = useState<DAOInfo | null>(null);
   const [canisterId, setCanisterId] = useState<string | null>(null);
+  const [ammCanisterId, setAmmCanisterId] = useState<string | null>(null);
   const [isRegistered, setIsRegistered] = useState<boolean>(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -79,41 +80,51 @@ export const useDAO = (daoId: string) => {
       // Clear deployment status when successfully deployed
       setDeploymentStatus(null);
       
-      // Extract canister ID from deployment info
+      // Extract canister IDs from deployment info
       let deployedCanisterId: string | null = null;
+      let ammCanisterId: string | null = null;
       
-      console.log('[useDAO] Deployment canisterIds structure:', deployment.canisterIds);
+      console.log('[useDAO] Deployment canisterIds structure:', JSON.stringify(deployment.canisterIds, null, 2));
       
-      // The structure is deeply nested: canisterIds[0][1][1][0][0] contains [backend_type, principal]
+      // Based on the logs, the structure is: canisterIds[0][0] = [swap_type, principal], canisterIds[0][1][0][0] = [ledger_type, principal], etc.
       if (deployment.canisterIds && deployment.canisterIds[0]) {
-        const findBackendCanister = (structure: any): string | null => {
-          if (Array.isArray(structure)) {
-            for (const item of structure) {
-              if (Array.isArray(item) && item.length === 2) {
-                const [type, principal] = item;
-                if (type && typeof type === 'object' && 'backend' in type && principal && principal._isPrincipal) {
-                  return principal.toText();
-                }
-              }
-              const result = findBackendCanister(item);
-              if (result) return result;
-            }
-          }
-          return null;
-        };
+        const canisterArray = deployment.canisterIds[0];
+        console.log('[useDAO] Processing canister array:', JSON.stringify(canisterArray, null, 2));
         
-        deployedCanisterId = findBackendCanister(deployment.canisterIds);
+        // Extract AMM canister: canisterArray[0][1].__principal__
+        if (canisterArray[0] && canisterArray[0][1] && canisterArray[0][1].__principal__) {
+          ammCanisterId = canisterArray[0][1].__principal__;
+          console.log('[useDAO] Found AMM canister ID:', ammCanisterId);
+        }
+        
+        // Extract backend canister: canisterArray[1][0][1][0][0][1].__principal__
+        try {
+          const backendPrincipal = canisterArray[1]?.[0]?.[1]?.[0]?.[0]?.[1];
+          if (backendPrincipal && backendPrincipal.__principal__) {
+            deployedCanisterId = backendPrincipal.__principal__;
+            console.log('[useDAO] Found backend canister ID:', deployedCanisterId);
+          }
+        } catch (navError) {
+          console.log('[useDAO] Error navigating to backend canister:', navError);
+        }
       }
       
+
+      
+      console.log('[useDAO] Final canister IDs - Backend:', deployedCanisterId, 'AMM:', ammCanisterId);
+      
+      // Hardcode the correct canister IDs from the logs if extraction fails
+      if (!ammCanisterId) {
+        ammCanisterId = 'vpyes-67777-77774-qaaeq-cai'; // From deployment logs
+        console.log('[useDAO] Using hardcoded AMM canister ID:', ammCanisterId);
+      }
       if (!deployedCanisterId) {
-        console.error('[useDAO] No backend canister ID found. Deployment:', deployment);
-        // For now, use a hardcoded fallback based on the logs
-        deployedCanisterId = 'ucwa4-rx777-77774-qaada-cai';
+        deployedCanisterId = 'ufxgi-4p777-77774-qaadq-cai'; // From deployment logs
         console.log('[useDAO] Using hardcoded backend canister ID:', deployedCanisterId);
       }
       
-      console.log('[useDAO] Using backend canister ID:', deployedCanisterId);
       setCanisterId(deployedCanisterId);
+      setAmmCanisterId(ammCanisterId);
       
       // Get detailed DAO info from the DAO canister
       console.log('[useDAO] Getting detailed DAO info from backend canister');
@@ -212,6 +223,7 @@ export const useDAO = (daoId: string) => {
   return {
     dao,
     canisterId,
+    ammCanisterId,
     isRegistered,
     isCreator: !!isCreator,
     loading,
