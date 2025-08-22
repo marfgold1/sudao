@@ -38,10 +38,6 @@
     "sudao_amm": {
       "main": "src/sudao_amm/main.mo",
       "type": "motoko"
-    },
-    "test_transfer": {
-      "main": "test-transfer.mo",
-      "type": "motoko"
     }
   },
   "defaults": {

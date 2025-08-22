@@ -9,7 +9,7 @@ dfx deploy sudao_amm
 # Get the canister IDs
 AMM_CANISTER_ID=$(dfx canister id sudao_amm)
 ICP_CANISTER_ID=$(dfx canister id icp_ledger_canister)
-GOVERNANCE_CANISTER_ID=$(dfx canister id icrc1_ledger_canister)
+GOVERNANCE_CANISTER_ID=$(dfx canister id sudao_ledger)
 
 echo "📋 Canister IDs:"
 echo "  AMM: $AMM_CANISTER_ID"
