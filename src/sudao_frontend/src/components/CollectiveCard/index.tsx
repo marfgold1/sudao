@@ -14,6 +14,7 @@ interface Collective {
     members: number
     tags: string[]
     category?: string
+    deploymentStatus?: { Pending: null } | { Deploying: null } | { Deployed: { canisterId: string } } | { Failed: { error: string } }
 }
 
 interface CollectiveCardProps {
@@ -86,10 +87,33 @@ export default function CollectiveCard({ collective, index, isOwned }: Collectiv
                         ))}
                     </div>
 
+                    {/* Deployment Status */}
+                    {collective.deploymentStatus && (
+                        <div className="mb-3">
+                            {'Pending' in collective.deploymentStatus && (
+                                <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">Pending Deployment</Badge>
+                            )}
+                            {'Deploying' in collective.deploymentStatus && (
+                                <Badge variant="secondary" className="bg-blue-100 text-blue-800">Deploying...</Badge>
+                            )}
+                            {'Deployed' in collective.deploymentStatus && (
+                                <Badge variant="secondary" className="bg-green-100 text-green-800">Deployed</Badge>
+                            )}
+                            {'Failed' in collective.deploymentStatus && (
+                                <Badge variant="secondary" className="bg-red-100 text-red-800">Deployment Failed</Badge>
+                            )}
+                        </div>
+                    )}
+
                     <div className="flex space-x-2 mt-12 justify-end">
                         <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                             <Link to={`/home/${collective.id}`}>
-                                <Button variant="outline" size="sm" className="flex-1 border-slate-200 hover:bg-slate-50 bg-transparent">
+                                <Button 
+                                    variant="outline" 
+                                    size="sm" 
+                                    className="flex-1 border-slate-200 hover:bg-slate-50 bg-transparent"
+                                    disabled={collective.deploymentStatus && !('Deployed' in collective.deploymentStatus)}
+                                >
                                 <Eye className="h-4 w-4 mr-1" />
                                 View
                                 </Button>
@@ -98,7 +122,11 @@ export default function CollectiveCard({ collective, index, isOwned }: Collectiv
                         {!isOwned && (
                             <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                                 <Link to={`/home/${collective.id}`}>
-                                    <Button size="sm" className="flex-1 bg-blue-600 hover:bg-blue-700 text-white">
+                                    <Button 
+                                        size="sm" 
+                                        className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+                                        disabled={collective.deploymentStatus && !('Deployed' in collective.deploymentStatus)}
+                                    >
                                     <UserPlus className="h-4 w-4 mr-1" />
                                     Join
                                     </Button>

@@ -13,7 +13,7 @@ import type { _SERVICE as _SERVICE_GOVERNANCE_LEDGER } from "declarations/icrc1_
 import {
   idlFactory as idlFactoryGovernanceLedger,
   canisterId as canisterIdGovernanceLedger,
-} from "declarations/icrc1_ledger_canister/index";
+} from "declarations/sudao_ledger/index";
 // import type { _SERVICE as _SERVICE_DAO_LEDGER } from "declarations/icrc1_ledger_canister/icrc1_ledger_canister.did";
 import { Actor, ActorSubclass } from "@dfinity/agent";
 // import {
@@ -296,7 +296,7 @@ export default function UserProfile() {
   // Approve logic
   const handleApprove = async () => {
     addDebugLog("Starting approve process");
-    if (!actorICP) {
+    if (!actorICP || !userPrincipal) {
       addDebugLog("No ICP actor available for approve");
       setStatus({
         type: "error",
@@ -306,14 +306,12 @@ export default function UserProfile() {
     }
 
     const acc = {
-      owner: Principal.fromText("uzt4z-lp777-77774-qaabq-cai"),
+      owner: Principal.fromText(ammCanisterId),
       subaccount: [] as [],
     };
 
     const acc2 = {
-      owner: Principal.fromText(
-        "n74bt-mr7nf-tbl4t-kf6xx-6yd3a-egzs3-6sjvg-x6nxa-lvy7v-gvrg4-yae"
-      ),
+      owner: Principal.fromText(userPrincipal),
       subaccount: [] as [],
     };
 
@@ -331,12 +329,12 @@ export default function UserProfile() {
     console.log("icrc2_approve_args", icrc2_approve_args);
 
     try {
-      addDebugLog("Checking balance for acc1");
+      addDebugLog("Checking balance for acc1, ammCanisterId: " + ammCanisterId);
       const balance = await actorICP.icrc1_balance_of(acc);
       addDebugLog("Balance for acc1: " + balance);
       console.log("Balance:", balance, acc, acc.owner.toString());
 
-      addDebugLog("Checking balance for acc2");
+      addDebugLog("Checking balance for acc2, userPrincipal: " + userPrincipal);
       const balance2 = await actorICP.icrc1_balance_of(acc2);
       addDebugLog("Balance for acc2: " + balance2);
       console.log("Balance2:", balance2, acc2, acc2.owner.toString());
