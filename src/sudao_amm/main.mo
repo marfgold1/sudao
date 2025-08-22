@@ -8,10 +8,10 @@ import Iter "mo:base/Iter";
 import Float "mo:base/Float";
 import Error "mo:base/Error";
 import Text "mo:base/Text";
-import Time "mo:base/Time";
+import _Time "mo:base/Time";
 import Nat64 "mo:base/Nat64";
 
-actor AMM {
+persistent actor AMM {
 
   // ICRC-1/ICRC-2 Types
   type Account = {
@@ -125,10 +125,10 @@ actor AMM {
   private stable var swap_count : Nat = 0;
 
   private stable var lp_balances_entries : [(Principal, Nat)] = [];
-  private var lp_balances = HashMap.HashMap<Principal, Nat>(10, Principal.equal, Principal.hash);
+  private transient var lp_balances = HashMap.HashMap<Principal, Nat>(10, Principal.equal, Principal.hash);
 
-  private let MINIMUM_LIQUIDITY : Nat = 1000;
-  private let FEE_DENOMINATOR : Nat = 1000;
+  private transient let MINIMUM_LIQUIDITY : Nat = 1000;
+  private transient let FEE_DENOMINATOR : Nat = 1000;
 
   // Upgrade hooks
   system func preupgrade() {
