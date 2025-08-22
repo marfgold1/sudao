@@ -9,14 +9,15 @@
       feature_flags = opt record { icrc2 = true };
       initial_balances = vec {
         record {
-          record { owner = principal "uzt4z-lp777-77774-qaabq-cai" };
+          record { owner = principal "u6s2n-gx777-77774-qaaba-cai" };
           1000000000;
         }
       };
       archive_options = record { 
         num_blocks_to_archive = 1000; 
         trigger_threshold = 1000; 
-        controller_id = principal "ryjl3-tyaaa-aaaaa-aaaba-cai"; 
+        // ICP ledger canister (LICP)
+        controller_id = principal "uxrrr-q7777-77774-qaaaq-cai"; 
         cycles_for_archive_creation = opt 10000000000000; 
         };
     }
