@@ -1,0 +1,12 @@
+(
+  variant {
+    Init = record {
+      // ICP ledger canister (LICP)
+      token0_ledger_id = principal "uxrrr-q7777-77774-qaaaq-cai";
+      // DAO ledger canister (SUDAGOV)
+      token1_ledger_id = principal "ulvla-h7777-77774-qaacq-cai";
+      // Owner principal
+      owner = principal "uzt4z-lp777-77774-qaabq-cai";
+    }
+  }
+)

@@ -4,6 +4,7 @@ import ProposalDetail from "../ProposalDetail"
 import { mockProposals } from "@/mocks"
 import ProposalCreation from "../ProposalCreation"
 import { Proposal } from "@/types"
+import { DAOLayout } from "../../components/DAOLayout"
 
 const ProposalPage: React.FC = () => {
     const [currentView, setCurrentView] = useState<"list" | "detail" | "create">("list")
@@ -59,8 +60,7 @@ const ProposalPage: React.FC = () => {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50 mt-[4.5rem]">
-            <div className="container mx-auto px-4 py-6">
+        <DAOLayout>
                 {currentView === "list" && (
                     <ProposalList
                         proposals={proposals}
@@ -119,8 +119,7 @@ const ProposalPage: React.FC = () => {
                         </div>
                     </div>
                 )}
-            </div>
-        </div>
+        </DAOLayout>
     )
 }
 

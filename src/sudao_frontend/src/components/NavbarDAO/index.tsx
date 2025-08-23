@@ -2,7 +2,9 @@ import { motion } from 'framer-motion';
 import {  Menu, Settings } from 'lucide-react';
 import React, { useState } from 'react';
 import { useParams, useLocation, Link } from 'react-router-dom';
+import { ConnectWallet } from "@nfid/identitykit/react";
 import { Avatar, AvatarFallback } from '../ui/avatar';
+import Logo from '@/assets/logos/SUDAOWhite.png';
 
 const NavbarDAO: React.FC = () => {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -18,10 +20,13 @@ const NavbarDAO: React.FC = () => {
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6 }}
-                className="fixed top-0 left-0 right-0 z-50 px-6 py-4 bg-slate-900 text-white backdrop-blur-sm"
+                className="fixed top-0 left-0 right-0 z-40 px-6 py-4 bg-slate-900 text-white backdrop-blur-sm"
             >
                 <div className="px-6 mx-auto flex items-center justify-between">
                     <div className="flex items-center space-x-10">
+                        <Link to="/" className="w-10 h-10">
+                            <img src={Logo} alt="SUDAO" className="w-full h-full object-contain" />
+                        </Link>
                         <div className="hidden md:flex items-center space-x-10">
                             <Link 
                                 to={`/home/${daoId}`} 
@@ -43,6 +48,7 @@ const NavbarDAO: React.FC = () => {
                     </div>
 
                     <div className="flex items-center space-x-4">
+                        <ConnectWallet />
                         <motion.button
                             className="flex items-center space-x-2 text-white/80 bg-blue-600/30 rounded-lg p-2 px-4 hover:text-blue-300 transition-colors"
                             whileHover={{ scale: 1.05 }}

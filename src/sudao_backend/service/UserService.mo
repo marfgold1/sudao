@@ -6,8 +6,8 @@ import Result "mo:base/Result";
 import Nat "mo:base/Nat";
 import Iter "mo:base/Iter";
 
-import Types "./Types";
-import Utils "./Utils";
+import Types "../Types";
+import Utils "../Utils";
 
 module {
   public type UserRegistry = Map.Map<Principal, Types.UserProfile>;
@@ -65,8 +65,8 @@ module {
       };
     };
 
-    // Get system information
-    public func getSystemInfo() : Types.SystemInfo {
+    // Get system information (base info without DAO details)
+    public func getSystemInfo() : Types.BaseSystemInfo {
       let totalUsers = Map.size(userRegistry);
       Utils.logInfo("System info requested - Total users: " # Nat.toText(totalUsers));
 

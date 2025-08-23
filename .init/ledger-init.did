@@ -1,0 +1,15 @@
+(variant { Init = record {
+    minting_account = "a5724d6aeca71e4f6de824e9d01d280313db0bebb4516552f6d939bb399cc324";
+    initial_values = vec { 
+        record { 
+            // principal n74bt-mr7nf-tbl4t-kf6xx-6yd3a-egzs3-6sjvg-x6nxa-lvy7v-gvrg4-yae
+            "d61896e4554ae7dec0952fd266270fe7150560fcaab68e756a51be8cfd1c01de";
+            record { e8s = 10_000_000_000 : nat64; };
+        };
+    };
+    send_whitelist = vec {};
+    transfer_fee = opt record { e8s = 10_000 : nat64; };
+    token_symbol = opt "LICP";
+    token_name = opt "Local ICP";
+  }
+})

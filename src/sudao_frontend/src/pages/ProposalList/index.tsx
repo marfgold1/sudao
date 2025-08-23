@@ -12,7 +12,7 @@ import { ProposalItem } from '@/components';
 
 const allStatuses: Status[] = ['Active', 'Approved', 'Rejected', 'Draft', 'Executed'];
 
-const ProposalList: React.FC<any> = ({ proposals, onProposalClick, onCreateClick, filterOpen, setFilterOpen }) => {
+const ProposalList: React.FC<any> = ({ proposals, onProposalClick, onCreateClick, filterOpen, setFilterOpen, loading }) => {
     const [searchTerm, setSearchTerm] = useState('');
     const [filters, setFilters] = useState<Record<Status, boolean>>({
         Active: false,
@@ -148,7 +148,11 @@ const ProposalList: React.FC<any> = ({ proposals, onProposalClick, onCreateClick
                     </div>
 
                     <div className="px-6 pb-6">
-                        {filteredProposals.length > 0 ? (
+                        {loading ? (
+                            <div className="text-center py-12 border-t border-gray-200 dark:border-gray-700">
+                                <p className="text-gray-500 dark:text-gray-400">Loading proposals...</p>
+                            </div>
+                        ) : filteredProposals.length > 0 ? (
                             filteredProposals.map((proposal: Proposal) => <ProposalItem key={proposal.id} proposal={proposal} onProposalClick={onProposalClick} />)
                         ) : (
                             <div className="text-center py-12 border-t border-gray-200 dark:border-gray-700">

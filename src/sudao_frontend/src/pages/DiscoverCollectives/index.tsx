@@ -1,30 +1,82 @@
-import { useState } from "react"
+import React, { useState, useMemo } from "react"
 import { motion } from "framer-motion"
-import { Plus, Search } from "lucide-react"
+import { Plus, Search, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { CollectiveCard } from "@/components"
-import { discoverCollectives, floatingCards, userCollectives } from "@/mocks"
+import { floatingCards } from "@/mocks"
+import { useDAOs } from "../../hooks/useDAOs"
+import { DAOCreationModal } from "../../components/DAOCreationModal"
+import { useIdentity, useAgent } from "@nfid/identitykit/react"
 
 
 const DiscoverCollectives: React.FC = () => {
     const [searchQuery, setSearchQuery] = useState("")
-    const [filteredCollectives, setFilteredCollectives] = useState(discoverCollectives)
+    const [showCreateModal, setShowCreateModal] = useState(false)
+    const [isCreating, setIsCreating] = useState(false)
+    const { daos, loading, createNewDAO } = useDAOs()
+    const identity = useIdentity()
+    const agent = useAgent()
+    const isAuthenticated = !!agent
+    
+    const currentUserPrincipal = identity?.getPrincipal()?.toString()
+    
+    // Memoize collectives to prevent infinite re-renders
+    const { allCollectives, userCollectives, discoverCollectives } = useMemo(() => {
+        const all = daos.map(([dao, deployment]) => ({
+            id: dao.id,
+            name: dao.name,
+            description: dao.description,
+            tags: dao.tags,
+            members: Math.floor(Math.random() * 1000) + 50,
+            avatar: `/placeholder.svg?height=40&width=40&text=${dao.name.substring(0, 2).toUpperCase()}`,
+            isOwned: dao.creator === currentUserPrincipal,
+            deploymentStatus: deployment?.status
+        }))
+        
+        return {
+            allCollectives: all,
+            userCollectives: all.filter(c => c.isOwned),
+            discoverCollectives: all.filter(c => !c.isOwned)
+        }
+    }, [daos, currentUserPrincipal])
+    
+    const [filteredCollectives, setFilteredCollectives] = useState<typeof discoverCollectives>([])
 
-    const handleSearch = (query: string) => {
-        setSearchQuery(query)
-        if (!query.trim()) {
+    // Update filtered collectives when search query or discover collectives change
+    React.useEffect(() => {
+        if (!searchQuery.trim()) {
             setFilteredCollectives(discoverCollectives)
             return
         }
 
         const filtered = discoverCollectives.filter(
         (collective) =>
-            collective.name.toLowerCase().includes(query.toLowerCase()) ||
-            collective.description.toLowerCase().includes(query.toLowerCase()) ||
-            collective.tags.some((tag) => tag.toLowerCase().includes(query.toLowerCase())),
+            collective.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            collective.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            collective.tags.some((tag) => tag.toLowerCase().includes(searchQuery.toLowerCase())),
         )
         setFilteredCollectives(filtered)
+    }, [searchQuery, discoverCollectives])
+    
+    // Initialize filtered collectives when discoverCollectives changes
+    React.useEffect(() => {
+        if (!searchQuery.trim()) {
+            setFilteredCollectives(discoverCollectives)
+        }
+    }, [discoverCollectives, searchQuery])
+    
+    const handleSearch = (query: string) => {
+        setSearchQuery(query)
+    }
+    
+    const handleCreateDAO = async (request: { name: string; description: string; tags: string[] }) => {
+        setIsCreating(true)
+        try {
+            await createNewDAO(request)
+        } finally {
+            setIsCreating(false)
+        }
     }
 
     return (
@@ -62,13 +114,16 @@ const DiscoverCollectives: React.FC = () => {
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.8, delay: 0.6 }}
                         >
-                            <Button
-                                size="lg"
-                                className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-6 text-lg font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-300"
-                            >
-                            <Plus className="mr-2 h-5 w-5" />
-                            Start a new Collective
-                            </Button>
+                            {isAuthenticated && (
+                                <Button
+                                    size="lg"
+                                    className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-6 text-lg font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-300"
+                                    onClick={() => setShowCreateModal(true)}
+                                >
+                                <Plus className="mr-2 h-5 w-5" />
+                                Start a new Collective
+                                </Button>
+                            )}
                         </motion.div>
                     </motion.div>
                 </div>
@@ -123,36 +178,62 @@ const DiscoverCollectives: React.FC = () => {
                         </div>
                     </motion.div>
 
-                    {/* Collective Managed by You */}
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.6, delay: 0.4 }}
-                        className="mb-12"
-                    >
-                        <h2 className="text-2xl font-bold mb-6">Collective Managed by You</h2>
-                        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                            {userCollectives.map((collective, index) => (
-                                <CollectiveCard key={collective.id} collective={collective} index={index} isOwned={true} />
-                            ))}
+                    {/* Loading State */}
+                    {loading && (
+                        <div className="flex justify-center items-center py-12">
+                            <Loader2 className="h-8 w-8 animate-spin" />
+                            <span className="ml-2">Loading DAOs...</span>
                         </div>
-                    </motion.div>
+                    )}
+                    
+                    {/* Collective Managed by You */}
+                    {!loading && userCollectives.length > 0 && (
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.6, delay: 0.4 }}
+                            className="mb-12"
+                        >
+                            <h2 className="text-2xl font-bold mb-6">Collective Managed by You</h2>
+                            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                                {userCollectives.map((collective, index) => (
+                                    <CollectiveCard key={collective.id} collective={collective} index={index} isOwned={true} />
+                                ))}
+                            </div>
+                        </motion.div>
+                    )}
 
                     {/* Discover Section */}
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.6, delay: 0.5 }}
-                    >
-                        <h2 className="text-2xl font-bold mb-6">Discover</h2>
-                        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                            {filteredCollectives.map((collective, index) => (
-                                <CollectiveCard key={collective.id} collective={collective} index={index} isOwned={false} />
-                            ))}
-                        </div>
-                    </motion.div>
+                    {!loading && (
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.6, delay: 0.5 }}
+                        >
+                            <h2 className="text-2xl font-bold mb-6">Discover</h2>
+                            {filteredCollectives.length === 0 ? (
+                                <div className="text-center py-12">
+                                    <p className="text-gray-500">No DAOs found matching your search.</p>
+                                </div>
+                            ) : (
+                                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                                    {filteredCollectives.map((collective, index) => (
+                                        <CollectiveCard key={collective.id} collective={collective} index={index} isOwned={false} />
+                                    ))}
+                                </div>
+                            )}
+                        </motion.div>
+                    )}
                 </div>
             </section>
+            
+            {/* DAO Creation Modal */}
+            <DAOCreationModal
+                isOpen={showCreateModal}
+                onClose={() => setShowCreateModal(false)}
+                onSubmit={handleCreateDAO}
+                isLoading={isCreating}
+            />
         </div>
     )
 }

@@ -67,3 +67,17 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* NFID Modal z-index fix */
+.nfid-modal,
+.nfid-overlay,
+[data-radix-portal],
+[data-nfid-modal] {
+  z-index: 9999 !important;
+}
+
+/* Ensure NFID components have proper z-index */
+.nfid-connect-wallet {
+  position: relative;
+  z-index: 50;
+}

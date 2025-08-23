@@ -1,42 +1,68 @@
 import Principal "mo:base/Principal";
 import Map "mo:map/Map";
 import { phash; thash } "mo:map/Map";
-import Time "mo:base/Time";
 import ProposalManager "Proposal";
-import UserService "UserService";
+import UserService "service/UserService";
+import PaymentService "service/PaymentService";
+import TokenSwapService "service/TokenSwapService";
 import Types "Types";
 import Result "mo:base/Result";
-import Utils "Utils";
+import Float "mo:base/Float";
+import Middleware "../common/Middleware";
+import CommonTypes "../common/Types";
 
 // This is the main actor for an individual DAO created by the platform.
 // It acts as a facade, orchestrating different modules like proposals, treasury, and membership.
-actor {
-    public query func icrc28_trusted_origins() : async {
-        trusted_origins : [Text];
-    } {
-        return {
-            trusted_origins = [
-                "http://localhost:3000",
-                "http://localhost:4943",
-            ];
+// The DAOEntry is passed as an argument at canister install time.
+shared ({ caller }) actor class DAO(initDAO : CommonTypes.DAOEntry, ledgerCanisterId_ : Principal) = this {
+    // ------ DAO MANAGEMENT ------
+    // DAO Information - initialiszed during canister creation
+    private stable var daoInfo : ?Types.DAOInfo = ?{
+        name = initDAO.name;
+        description = initDAO.description;
+        tags = initDAO.tags;
+        creator = initDAO.creator;
+        createdAt = initDAO.createdAt;
+    };
+
+    private stable var controllers : ?[Principal] = null;
+    
+    // Ledger canister ID for token-based voting
+    private let ledgerCanisterId : Principal = ledgerCanisterId_;
+
+    private func getControllers() : async [Principal] {
+        switch (controllers) {
+            case (?controllers) controllers;
+            case null await Middleware.getControllers(Principal.fromActor(this));
         };
     };
 
-    public query func icrc28_supported_standards() : async [{
-        name : Text;
-        url : Text;
-    }] {
-        return [{
-            name = "ICRC-28";
-            url = "https://github.com/dfinity/ICRC/tree/main/ICRCs/ICRC-28/ICRC-28.md";
-        }, {
-            name = "ICRC-10";
-            url = "https://github.com/dfinity/ICRC/blob/main/ICRCs/ICRC-10/ICRC-10.md";
-        }];
+    private func isController(caller : Principal) : async Bool {
+        await Middleware.isController(caller, await getControllers());
+    };
+
+    // Get DAO information
+    public query func getDAOInfo() : async ?Types.DAOInfo {
+        return daoInfo;
     };
 
     public query func greet(name : Text) : async Text {
-        return "Hello, " # name # "!";
+        switch (daoInfo) {
+            case (?info) {
+                return "Hello, " # name # "! Welcome to " # info.name # " DAO.";
+            };
+            case (null) {
+                return "Hello, " # name # "!";
+            };
+        };
+    };
+
+    // Check if the caller is the creator of the DAO
+    private func _isCreator(caller : Principal) : async Bool {
+        switch (daoInfo) {
+            case (?info) info.creator == caller;
+            case null false;
+        };
     };
 
     // Debug function to check caller identity
@@ -49,11 +75,29 @@ actor {
     private stable var usersEntries : [(Principal, Types.UserProfile)] = [];
     private var userService = UserService.UserService(?Map.fromIter<Principal, Types.UserProfile>(usersEntries.vals(), phash));
 
-    // Public user management functions
+    // --- TREASURY MANAGEMENT ---
+    // PaymentService state management with stable recovery
+    private stable var treasuryData : ?{
+        balance : PaymentService.TreasuryBalance;
+        transactions : [(Text, PaymentService.TransactionRecord)];
+        nextId : Nat;
+    } = null;
+    private var paymentService = PaymentService.PaymentService();
+
+    // --- TOKEN SWAP MANAGEMENT ---
+    // TokenSwapService state management with stable recovery
+    private stable var tokenSwapData : ?{
+        pool : TokenSwapService.LiquidityPool;
+        swaps : [(Text, TokenSwapService.SwapRecord)];
+        nextId : Nat;
+        fee : Float;
+    } = null;
+    private var tokenSwapService = TokenSwapService.TokenSwapService();
+
+    // Public user management functions (adapted for frontend expectations)
     public shared (msg) func register() : async Text {
-        Utils.logInfo("Registering user: " # Principal.toText(msg.caller));
         let result = userService.registerUser(msg.caller);
-        
+
         switch (result) {
             case (#Success(message)) message;
             case (#AlreadyRegistered(message)) message;
@@ -70,7 +114,12 @@ actor {
     };
 
     public query func getSystemInfo() : async Types.SystemInfo {
-        return userService.getSystemInfo();
+        let baseInfo = userService.getSystemInfo();
+        return {
+            totalUsers = baseInfo.totalUsers;
+            systemStartTime = baseInfo.systemStartTime;
+            daoInfo = daoInfo;
+        };
     };
 
     // --- MEMBER MANAGEMENT ---
@@ -85,6 +134,8 @@ actor {
     system func preupgrade() {
         proposalsEntries := Map.toArray(proposalState.proposals);
         usersEntries := Map.toArray(userService.getRegistry());
+        treasuryData := ?paymentService.stableGet();
+        tokenSwapData := ?tokenSwapService.stableGet();
     };
 
     system func postupgrade() {
@@ -94,6 +145,24 @@ actor {
             migratedToNewProposalFormat := true;
         };
         usersEntries := [];
+
+        // Restore treasury data
+        switch (treasuryData) {
+            case (?data) {
+                paymentService.stableSet(data);
+                treasuryData := null;
+            };
+            case null {};
+        };
+
+        // Restore token swap data
+        switch (tokenSwapData) {
+            case (?data) {
+                tokenSwapService.stableSet(data);
+                tokenSwapData := null;
+            };
+            case null {};
+        };
     };
 
     // Proposal state management with stable recovery
@@ -150,9 +219,22 @@ actor {
         return await ProposalManager.publishProposal(proposalState, msg.caller, proposalId);
     };
 
-    // Vote on an active proposal
+    // Vote on an active proposal with token-based weighting
     public shared (msg) func voteOnProposal(proposalId : Text, choice : ProposalManager.Vote) : async Result.Result<Bool, ProposalManager.ProposalError> {
-        return await ProposalManager.vote(proposalState, msg.caller, isMember, proposalId, choice);
+        // Get voter's token balance for weighted voting
+        let voterAccount = {
+            owner = msg.caller;
+            subaccount = null;
+        };
+        
+        // Get balance from ledger canister
+        let ledgerActor : actor {
+            icrc1_balance_of : shared query (account : { owner : Principal; subaccount : ?[Nat8] }) -> async Nat;
+        } = actor(Principal.toText(ledgerCanisterId));
+        
+        let tokenBalance = await ledgerActor.icrc1_balance_of(voterAccount);
+        
+        return await ProposalManager.vote(proposalState, msg.caller, isMember, proposalId, choice, tokenBalance);
     };
 
     // Finalize a proposal (determine result based on voting period end)
@@ -162,7 +244,51 @@ actor {
 
     // Execute an approved proposal
     public shared (msg) func executeProposal(proposalId : Text) : async Result.Result<Bool, ProposalManager.ProposalError> {
-        return ProposalManager.executeProposal(proposalState, msg.caller, proposalId);
+        // Check if caller has permission to execute proposals
+        if (not (await isMember(msg.caller))) {
+            return #err(#unauthorized);
+        };
+
+        // Get proposal details
+        switch (ProposalManager.get(proposalState, proposalId)) {
+            case (?proposal) {
+                if (proposal.status != #approved) {
+                    return #err(#proposalNotActive);
+                };
+
+                // Handle funding proposals
+                if (proposal.proposalType == #funding) {
+                    switch (proposal.beneficiaryAddress, proposal.requestedAmount) {
+                        case (?beneficiary, ?amount) {
+                            // Check if treasury has sufficient funds
+                            if (not paymentService.hasSufficientFunds(amount)) {
+                                return #err(#proposalNotActive); // Insufficient funds
+                            };
+
+                            // Execute the payment
+                            switch (await paymentService.executeProposalPayment(beneficiary, amount, proposalId)) {
+                                case (#ok(_transactionId)) {
+                                    // Mark proposal as executed
+                                    return ProposalManager.executeProposal(proposalState, msg.caller, proposalId);
+                                };
+                                case (#err(_paymentError)) {
+                                    return #err(#proposalNotActive); // Payment failed
+                                };
+                            };
+                        };
+                        case _ {
+                            return #err(#proposalNotActive); // Invalid funding proposal
+                        };
+                    };
+                } else {
+                    // For governance proposals, just mark as executed
+                    return ProposalManager.executeProposal(proposalState, msg.caller, proposalId);
+                };
+            };
+            case null {
+                return #err(#proposalNotFound);
+            };
+        };
     };
 
     // Add comment to a proposal
@@ -207,6 +333,182 @@ actor {
             rejected = ProposalManager.getCountByStatus(proposalState, #rejected);
             executed = ProposalManager.getCountByStatus(proposalState, #executed);
         };
+    };
+
+    // --- TREASURY MANAGEMENT ---
+
+    /**
+     * Get treasury balance
+     */
+    public query func getTreasuryBalance() : async PaymentService.TreasuryBalance {
+        paymentService.getTreasuryBalance();
+    };
+
+    /**
+     * Deposit funds from swap canister (called after successful fundraising)
+     */
+    public shared (_msg) func depositFromSwap(amount : Nat, swapCanister : Principal) : async Result.Result<Text, Text> {
+        switch (await paymentService.depositFromSwap(amount, swapCanister)) {
+            case (#ok(transactionId)) #ok(transactionId);
+            case (#err(_error)) #err("Deposit failed"); // Convert error type
+        };
+    };
+
+    /**
+     * Get transaction history
+     */
+    public query func getTransactionHistory() : async [PaymentService.TransactionRecord] {
+        paymentService.getTransactionHistory();
+    };
+
+    /**
+     * Reserve funds for an approved proposal (internal use)
+     */
+    private func _reserveProposalFunds(proposalId : Text, amount : Nat) : Result.Result<(), Text> {
+        switch (paymentService.reserveFunds(amount, proposalId)) {
+            case (#ok()) #ok();
+            case (#err(_error)) #err("Failed to reserve funds");
+        };
+    };
+
+    // --- TOKEN SWAP MANAGEMENT ---
+
+    /**
+     * Initialize the token swap liquidity pool (admin only)
+     */
+    public shared (msg) func initializeTokenSwap(
+        initialTokens : Nat,
+        initialIcp : Nat,
+    ) : async Result.Result<(), Text> {
+        if (not (await isMember(msg.caller))) {
+            return #err("Only members can initialize token swap");
+        };
+
+        switch (tokenSwapService.initializeLiquidity(initialTokens, initialIcp)) {
+            case (#ok()) #ok();
+            case (#err(error)) #err("Failed to initialize swap: " # debug_show (error));
+        };
+    };
+
+    /**
+     * Get quote for swapping governance tokens to ICP
+     */
+    public query func getTokenToIcpQuote(tokenAmount : Nat) : async Result.Result<TokenSwapService.SwapQuote, Text> {
+        switch (tokenSwapService.getTokenToIcpQuote(tokenAmount)) {
+            case (#ok(quote)) #ok(quote);
+            case (#err(error)) #err("Quote failed: " # debug_show (error));
+        };
+    };
+
+    /**
+     * Get quote for swapping ICP to governance tokens
+     */
+    public query func getIcpToTokenQuote(icpAmount : Nat) : async Result.Result<TokenSwapService.SwapQuote, Text> {
+        switch (tokenSwapService.getIcpToTokenQuote(icpAmount)) {
+            case (#ok(quote)) #ok(quote);
+            case (#err(error)) #err("Quote failed: " # debug_show (error));
+        };
+    };
+
+    /**
+     * Swap governance tokens for ICP
+     */
+    public shared (msg) func swapTokensForIcp(
+        tokenAmount : Nat,
+        minIcpOut : Nat,
+    ) : async Result.Result<TokenSwapService.SwapRecord, Text> {
+        if (not (await isMember(msg.caller))) {
+            return #err("Only members can swap tokens");
+        };
+
+        switch (await tokenSwapService.executeTokenToIcpSwap(msg.caller, tokenAmount, minIcpOut)) {
+            case (#ok(swapRecord)) #ok(swapRecord);
+            case (#err(error)) #err("Swap failed: " # debug_show (error));
+        };
+    };
+
+    /**
+     * Swap ICP for governance tokens
+     */
+    public shared (msg) func swapIcpForTokens(
+        icpAmount : Nat,
+        minTokensOut : Nat,
+    ) : async Result.Result<TokenSwapService.SwapRecord, Text> {
+        if (not (await isMember(msg.caller))) {
+            return #err("Only members can swap tokens");
+        };
+
+        switch (await tokenSwapService.executeIcpToTokenSwap(msg.caller, icpAmount, minTokensOut)) {
+            case (#ok(swapRecord)) #ok(swapRecord);
+            case (#err(error)) #err("Swap failed: " # debug_show (error));
+        };
+    };
+
+    /**
+     * Add liquidity to the token swap pool
+     */
+    public shared (msg) func addSwapLiquidity(
+        tokenAmount : Nat,
+        icpAmount : Nat,
+    ) : async Result.Result<Nat, Text> {
+        if (not (await isMember(msg.caller))) {
+            return #err("Only members can add liquidity");
+        };
+
+        switch (tokenSwapService.addLiquidity(tokenAmount, icpAmount, msg.caller)) {
+            case (#ok(shares)) #ok(shares);
+            case (#err(error)) #err("Add liquidity failed: " # debug_show (error));
+        };
+    };
+
+    /**
+     * Get current liquidity pool state
+     */
+    public query func getSwapLiquidityPool() : async TokenSwapService.LiquidityPool {
+        tokenSwapService.getLiquidityPool();
+    };
+
+    /**
+     * Get exchange rates
+     */
+    public query func getSwapExchangeRates() : async {
+        tokenToIcpRate : Float;
+        icpToTokenRate : Float;
+        totalLiquidity : Nat;
+    } {
+        tokenSwapService.getExchangeRates();
+    };
+
+    /**
+     * Get user's swap history
+     */
+    public query func getMySwapHistory() : async [TokenSwapService.SwapRecord] {
+        // This would need the caller context, but query functions don't have msg
+        // For now, return empty array - in practice, would use a different approach
+        [];
+    };
+
+    /**
+     * Get user's swap history (with explicit user parameter)
+     */
+    public shared (msg) func getUserSwapHistory(user : ?Principal) : async [TokenSwapService.SwapRecord] {
+        let targetUser = switch (user) {
+            case (?u) u;
+            case null msg.caller;
+        };
+        tokenSwapService.getUserSwapHistory(targetUser);
+    };
+
+    /**
+     * Enable/disable token swapping (admin only)
+     */
+    public shared (msg) func setSwapEnabled(enabled : Bool) : async Result.Result<(), Text> {
+        if (not (await isController(msg.caller))) {
+            return #err("Only controllers can enable/disable swapping");
+        };
+
+        tokenSwapService.setSwapEnabled(enabled);
+        #ok();
     };
 
     // --- LEGACY FUNCTIONS (for backward compatibility) ---

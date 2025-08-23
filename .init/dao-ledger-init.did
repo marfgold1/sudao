@@ -1,0 +1,25 @@
+(
+  variant {
+    Init = record {
+      token_symbol = "SUDAGOV";
+      token_name = "SUDAO GOVERNANCE TOKEN";
+      minting_account = record { owner = principal "zwrsw-mep5i-qxaw3-rjicp-ighsc-jxa2e-rmk2r-2sunl-p2lkj-nutli-dqe"; };
+      transfer_fee = 10;
+      metadata = vec {};
+      feature_flags = opt record { icrc2 = true };
+      initial_balances = vec {
+        record {
+          record { owner = principal "u6s2n-gx777-77774-qaaba-cai" };
+          1000000000;
+        }
+      };
+      archive_options = record { 
+        num_blocks_to_archive = 1000; 
+        trigger_threshold = 1000; 
+        // ICP ledger canister (LICP)
+        controller_id = principal "uxrrr-q7777-77774-qaaaq-cai"; 
+        cycles_for_archive_creation = opt 10000000000000; 
+        };
+    }
+  }
+)

@@ -28,7 +28,14 @@ interface Comment {
     userReactions: string[];
 }
 
-const ProposalDetail: React.FC<{ proposal: Proposal, onBack: any, onEdit?: (proposal: Proposal) => void, onPublish?: (proposal: Proposal) => void }> = ({ proposal, onBack, onEdit, onPublish }) => {
+const ProposalDetail: React.FC<{ 
+    proposal: Proposal, 
+    onBack: any, 
+    onEdit?: (proposal: Proposal) => void, 
+    onPublish?: (proposal: Proposal) => void,
+    onVote?: (choice: 'Yes' | 'No') => void,
+    onAddComment?: (content: string) => void
+}> = ({ proposal, onBack, onEdit, onPublish, onVote, onAddComment }) => {
     const [vote, setVote] = useState<"support" | "against" | null>(null)
     const [comment, setComment] = useState("")
     const [showComments, setShowComments] = useState(true)
@@ -91,19 +98,29 @@ const ProposalDetail: React.FC<{ proposal: Proposal, onBack: any, onEdit?: (prop
         };
     }, [showEmojiPicker]);
 
-    const handleAddComment = () => {
+    const handleAddComment = async () => {
         if (comment.trim()) {
-            const newComment: Comment = {
-                id: comments.length + 1,
-                author: "Current User",
-                avatar: "CU",
-                date: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
-                content: comment,
-                reactions: { "👍": 0, "👎": 0, "❤️": 0, "😊": 0, "😢": 0 },
-                userReactions: []
-            };
-            setComments([...comments, newComment]);
-            setComment("");
+            if (onAddComment) {
+                try {
+                    await onAddComment(comment);
+                    setComment("");
+                } catch (error) {
+                    // Error handled by parent
+                }
+            } else {
+                // Fallback for mock data
+                const newComment: Comment = {
+                    id: comments.length + 1,
+                    author: "Current User",
+                    avatar: "CU",
+                    date: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
+                    content: comment,
+                    reactions: { "👍": 0, "👎": 0, "❤️": 0, "😊": 0, "😢": 0 },
+                    userReactions: []
+                };
+                setComments([...comments, newComment]);
+                setComment("");
+            }
         }
     };
 
@@ -138,33 +155,42 @@ const ProposalDetail: React.FC<{ proposal: Proposal, onBack: any, onEdit?: (prop
 
     const availableEmojis = ["👍", "👎", "❤️", "😊", "😢"];
 
-    const handleVote = (voteType: "support" | "against") => {
+    const handleVote = async (voteType: "support" | "against") => {
         if (!hasVoted) {
-            setVote(voteType);
-            setHasVoted(true);
-            
-            // Update vote results
-            setVoteResults(prev => {
-                const newTotalVotes = prev.totalVotes + 1;
-                let newSupport = prev.support;
-                let newAgainst = prev.against;
-                
-                if (voteType === "support") {
-                    // Recalculate percentages with new vote
-                    newSupport = Math.round(((prev.support * prev.totalVotes / 100) + 1) / newTotalVotes * 100);
-                    newAgainst = Math.round((prev.against * prev.totalVotes / 100) / newTotalVotes * 100);
-                } else {
-                    // Recalculate percentages with new vote
-                    newSupport = Math.round((prev.support * prev.totalVotes / 100) / newTotalVotes * 100);
-                    newAgainst = Math.round(((prev.against * prev.totalVotes / 100) + 1) / newTotalVotes * 100);
+            if (onVote) {
+                try {
+                    await onVote(voteType === "support" ? "Yes" : "No");
+                    setVote(voteType);
+                    setHasVoted(true);
+                } catch (error) {
+                    // Error handled by parent
                 }
+            } else {
+                // Fallback for mock data
+                setVote(voteType);
+                setHasVoted(true);
                 
-                return {
-                    support: newSupport,
-                    against: newAgainst,
-                    totalVotes: newTotalVotes
-                };
-            });
+                // Update vote results
+                setVoteResults(prev => {
+                    const newTotalVotes = prev.totalVotes + 1;
+                    let newSupport = prev.support;
+                    let newAgainst = prev.against;
+                    
+                    if (voteType === "support") {
+                        newSupport = Math.round(((prev.support * prev.totalVotes / 100) + 1) / newTotalVotes * 100);
+                        newAgainst = Math.round((prev.against * prev.totalVotes / 100) / newTotalVotes * 100);
+                    } else {
+                        newSupport = Math.round((prev.support * prev.totalVotes / 100) / newTotalVotes * 100);
+                        newAgainst = Math.round(((prev.against * prev.totalVotes / 100) + 1) / newTotalVotes * 100);
+                    }
+                    
+                    return {
+                        support: newSupport,
+                        against: newAgainst,
+                        totalVotes: newTotalVotes
+                    };
+                });
+            }
         }
     };
 
