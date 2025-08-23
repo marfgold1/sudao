@@ -1,25 +1,16 @@
 import React from 'react';
-import { Link, useParams, useLocation } from 'react-router-dom';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Loader2, UserPlus, Home, FileText } from 'lucide-react';
+import { useParams } from 'react-router-dom';
+import { Loader2 } from 'lucide-react';
 import { useDAO } from '../hooks/useDAO';
-import { useIdentity, useAgent } from '@nfid/identitykit/react';
-import { ConnectWallet } from '@nfid/identitykit/react';
 
 interface DAOLayoutProps {
-  children: React.ReactNode | ((props: { dao: any; canisterId: string | null; isRegistered: boolean; isCreator: boolean }) => React.ReactNode);
+  children: React.ReactNode | ((props: { dao: any; canisterId: string | null; ammCanisterId: string | null; isRegistered: boolean; isCreator: boolean; loading: boolean; error: string | null; deploymentStatus: string | null }) => React.ReactNode);
 }
 
 export const DAOLayout: React.FC<DAOLayoutProps> = ({ children }) => {
   const { daoId } = useParams<{ daoId: string }>();
-  const location = useLocation();
-  const identity = useIdentity();
-  const agent = useAgent();
-  const { dao, canisterId, isRegistered, isCreator, loading, error, isRegistering, deploymentStatus, handleRegister } = useDAO(daoId || '');
+  const { dao, canisterId, ammCanisterId, isRegistered, isCreator, loading, error, deploymentStatus } = useDAO(daoId || '');
   
-  const isAuthenticated = !!agent;
-
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 mt-[4.5rem]">
@@ -82,7 +73,8 @@ export const DAOLayout: React.FC<DAOLayoutProps> = ({ children }) => {
       {/* Page Content */}
       {typeof children === 'function' ? children({ 
         dao,
-        canisterId, 
+        canisterId,
+        ammCanisterId,
         isRegistered, 
         isCreator 
       }) : children}

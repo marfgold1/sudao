@@ -1,6 +1,7 @@
 import Principal "mo:base/Principal";
 import Result "mo:base/Result";
 import Nat "mo:base/Nat";
+import Nat32 "mo:base/Nat32";
 import Int "mo:base/Int";
 import Debug "mo:base/Debug";
 import HashMap "mo:base/HashMap";
@@ -113,6 +114,17 @@ persistent actor AMM {
     timestamp : Nat64;
   };
 
+  public type TransactionRecord = {
+    id : Nat;
+    user : Principal;
+    transaction_type : Text;
+    token_in : Principal;
+    token_out : ?Principal;
+    amount_in : Nat;
+    amount_out : Nat;
+    timestamp : Nat64;
+  };
+
   // State
   private stable var token0_ledger_id : ?Principal = null;
   private stable var token1_ledger_id : ?Principal = null;
@@ -123,9 +135,12 @@ persistent actor AMM {
   private stable var fee_rate : Nat = 3;
   private stable var is_initialized : Bool = false;
   private stable var swap_count : Nat = 0;
+  private stable var transaction_id_counter : Nat = 0;
 
   private stable var lp_balances_entries : [(Principal, Nat)] = [];
+  private stable var transaction_history_entries : [(Nat, TransactionRecord)] = [];
   private transient var lp_balances = HashMap.HashMap<Principal, Nat>(10, Principal.equal, Principal.hash);
+  private transient var transaction_history = HashMap.HashMap<Nat, TransactionRecord>(100, Nat.equal, func(n: Nat) : Nat32 { Nat32.fromNat(n % 1000000) });
 
   private transient let MINIMUM_LIQUIDITY : Nat = 1000;
   private transient let FEE_DENOMINATOR : Nat = 1000;
@@ -133,11 +148,14 @@ persistent actor AMM {
   // Upgrade hooks
   system func preupgrade() {
     lp_balances_entries := Iter.toArray(lp_balances.entries());
+    transaction_history_entries := Iter.toArray(transaction_history.entries());
   };
 
   system func postupgrade() {
     lp_balances := HashMap.fromIter<Principal, Nat>(lp_balances_entries.vals(), lp_balances_entries.size(), Principal.equal, Principal.hash);
+    transaction_history := HashMap.fromIter<Nat, TransactionRecord>(transaction_history_entries.vals(), transaction_history_entries.size(), Nat.equal, func(n: Nat) : Nat32 { Nat32.fromNat(n % 1000000) });
     lp_balances_entries := [];
+    transaction_history_entries := [];
   };
 
   // Initialize AMM
@@ -254,6 +272,20 @@ persistent actor AMM {
     };
     lp_balances.put(caller, current_balance + liquidity);
 
+    // Record transaction
+    let transaction_record : TransactionRecord = {
+      id = transaction_id_counter;
+      user = caller;
+      transaction_type = "add_liquidity";
+      token_in = token0_id;
+      token_out = ?token1_id;
+      amount_in = amount0_optimal;
+      amount_out = amount1_optimal;
+      timestamp = Nat64.fromNat(Int.abs(_Time.now()));
+    };
+    transaction_history.put(transaction_id_counter, transaction_record);
+    transaction_id_counter += 1;
+
     Debug.print("Added liquidity: " # Nat.toText(liquidity) # " LP tokens. New reserves: " # Nat.toText(reserve0) # ", " # Nat.toText(reserve1));
     #ok(liquidity);
   };
@@ -353,6 +385,20 @@ persistent actor AMM {
       return #err(#TransferFailed("Output failed: " # Error.message(error)));
     };
 
+    // Record transaction
+    let transaction_record : TransactionRecord = {
+      id = transaction_id_counter;
+      user = caller;
+      transaction_type = "swap";
+      token_in = token_in_id;
+      token_out = ?token_out_id;
+      amount_in = amount_in;
+      amount_out = amount_out;
+      timestamp = Nat64.fromNat(Int.abs(_Time.now()));
+    };
+    transaction_history.put(transaction_id_counter, transaction_record);
+    transaction_id_counter += 1;
+
     swap_count += 1;
     Debug.print("Swap completed successfully: " # Nat.toText(amount_out) # " tokens. Total swaps: " # Nat.toText(swap_count));
     #ok(amount_out);
@@ -438,6 +484,10 @@ persistent actor AMM {
       is_initialized = is_initialized;
       swap_count = swap_count;
     };
+  };
+
+  public query func get_transaction_history() : async [TransactionRecord] {
+    Iter.toArray(transaction_history.vals());
   };
 
   // Private helpers

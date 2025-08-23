@@ -116,15 +116,17 @@ export const useDAO = (daoId: string) => {
       // Hardcode the correct canister IDs from the logs if extraction fails
       if (!ammCanisterId) {
         ammCanisterId = 'vpyes-67777-77774-qaaeq-cai'; // From deployment logs
-        console.log('[useDAO] Using hardcoded AMM canister ID:', ammCanisterId);
+        console.log('[AMM] Using hardcoded AMM canister ID:', ammCanisterId);
       }
       if (!deployedCanisterId) {
         deployedCanisterId = 'ufxgi-4p777-77774-qaadq-cai'; // From deployment logs
         console.log('[useDAO] Using hardcoded backend canister ID:', deployedCanisterId);
       }
       
+      console.log('[AMM] Setting AMM canister ID in state:', ammCanisterId);
       setCanisterId(deployedCanisterId);
       setAmmCanisterId(ammCanisterId);
+      console.log('[AMM] AMM canister ID set successfully');
       
       // Get detailed DAO info from the DAO canister
       console.log('[useDAO] Getting detailed DAO info from backend canister');
@@ -219,6 +221,8 @@ export const useDAO = (daoId: string) => {
   }, [daoId, agent, isAuthenticated]);
 
   const isCreator = isAuthenticated && identity && dao && identity.getPrincipal().toString() === dao.creator;
+  
+  console.log('[AMM] useDAO returning ammCanisterId:', ammCanisterId);
   
   return {
     dao,

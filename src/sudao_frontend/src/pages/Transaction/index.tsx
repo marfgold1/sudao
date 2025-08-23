@@ -25,7 +25,7 @@ import {
 } from "lucide-react"
 import { Transaction } from "@/types"
 import { DAOLayout } from "../../components/DAOLayout"
-import { getTransactionHistory } from "../../services/treasury"
+import { getAMMTransactionHistory } from "../../services/amm"
 import { useAgent, useIdentity } from '@nfid/identitykit/react'
 import { toast } from 'react-toastify'
 import { Actor } from "@dfinity/agent"
@@ -66,6 +66,7 @@ const TransactionPage: React.FC = () => {
         balances?: UserBalances;
     }>({})
     const [debugInfo, setDebugInfo] = useState<string[]>([])
+    const [contributionCompleted, setContributionCompleted] = useState(false)
 
     const addDebugLog = useCallback((message: string) => {
         console.log(`[DEBUG] ${message}`)
@@ -186,6 +187,7 @@ const TransactionPage: React.FC = () => {
         setShowConfirmationModal(false)
         setContributionData({ amount: "10000", contributorName: "" })
         setValidationErrors({ amount: "", contributorName: "" })
+        setContributionCompleted(false)
     }
 
     const executeAllSteps = async (canisterId: string, ammCanisterId?: string) => {
@@ -203,7 +205,31 @@ const TransactionPage: React.FC = () => {
         }
         
         setIsProcessingPayment(false)
+        setContributionCompleted(true)
         toast.success('Contribution completed successfully!')
+        
+        // Reload transactions from AMM to show the new transaction
+        if (ammCanisterId) {
+            getAMMTransactionHistory(ammCanisterId)
+                .then(history => {
+                    const mappedTransactions = history.map(tx => ({
+                        id: tx.id,
+                        account: tx.user.slice(0, 8) + '...' + tx.user.slice(-6),
+                        amount: tx.amountIn,
+                        type: 'In' as const,
+                        beneficiary: 'AMM Pool',
+                        address: ammCanisterId.slice(0, 8) + '...' + ammCanisterId.slice(-6),
+                        date: new Date(Number(tx.timestamp) / 1000000).toISOString().split("T")[0],
+                    }))
+                    setTransactions(mappedTransactions)
+                })
+                .catch(console.error)
+        }
+        
+        // Auto-close modal after 2 seconds
+        setTimeout(() => {
+            resetContributionFlow()
+        }, 2000)
     }
 
     const executeStep = async (step: number, canisterId: string, ammCanisterId?: string) => {
@@ -342,18 +368,7 @@ const TransactionPage: React.FC = () => {
                         setStepResults(prev => ({ ...prev, swap: swapResult }))
                         toast.success(`Swap successful! Received ${Number(swapResult.ok).toLocaleString()} governance tokens`)
                         
-                        // Add transaction
-                        const newTransaction: Transaction = {
-                            id: Date.now().toString(),
-                            account: userPrincipal.slice(0, 8) + '...' + userPrincipal.slice(-6),
-                            amount: numberValue,
-                            type: "In",
-                            beneficiary: "DAO Treasury",
-                            address: actualAmmCanisterId.slice(0, 8) + '...' + actualAmmCanisterId.slice(-6),
-                            date: new Date().toISOString().split("T")[0],
-                        }
-                        addDebugLog(`Adding transaction: ${safeStringify(newTransaction)}`)
-                        setTransactions(prev => [newTransaction, ...prev])
+                        // Transaction will be loaded from AMM after completion
                     } else {
                         addDebugLog(`Swap failed with error: ${safeStringify(swapResult.err)}`)
                         throw new Error(`Swap failed: ${safeStringify(swapResult.err)}`)
@@ -471,6 +486,7 @@ const TransactionPage: React.FC = () => {
                     stepResults={stepResults}
                     debugInfo={debugInfo}
                     addDebugLog={addDebugLog}
+                    contributionCompleted={contributionCompleted}
                 />
 
             }}
@@ -489,34 +505,41 @@ const TransactionContent: React.FC<any> = ({
     typeFilter, setTypeFilter, dateFilter, setDateFilter, handleSort,
     filteredTransactions, totalPages, paginatedTransactions, handleRowSelect,
     handleSelectAll, validateForm, handleContributionSubmit, executeStep,
-    executeAllSteps, resetContributionFlow, currentStep, stepResults, debugInfo, addDebugLog
+    executeAllSteps, resetContributionFlow, currentStep, stepResults, debugInfo, addDebugLog,
+    contributionCompleted
 }) => {
     const agent = useAgent()
     const identity = useIdentity()
     
-    // Load transactions from DAO
+    // Load transactions from AMM
     useEffect(() => {
-        if (canisterId) {
+        console.log('[AMM] Transaction useEffect triggered with ammCanisterId:', ammCanisterId)
+        if (ammCanisterId) {
+            console.log('[AMM] Calling getAMMTransactionHistory with:', ammCanisterId)
             setLoading(true)
-            getTransactionHistory(canisterId)
+            getAMMTransactionHistory(ammCanisterId)
                 .then(history => {
                     const mappedTransactions = history.map(tx => ({
                         id: tx.id,
-                        account: tx.from.slice(0, 8) + '...' + tx.from.slice(-6),
-                        amount: tx.amount,
-                        type: tx.transactionType === 'Deposit' ? 'In' as const : 'Out' as const,
-                        beneficiary: tx.transactionType === 'Deposit' ? 'DAO Treasury' : tx.to.slice(0, 8) + '...' + tx.to.slice(-6),
-                        address: tx.to.slice(0, 8) + '...' + tx.to.slice(-6),
+                        account: tx.user.slice(0, 8) + '...' + tx.user.slice(-6),
+                        amount: tx.amountIn,
+                        type: 'In' as const,
+                        beneficiary: 'AMM Pool',
+                        address: ammCanisterId.slice(0, 8) + '...' + ammCanisterId.slice(-6),
                         date: new Date(Number(tx.timestamp) / 1000000).toISOString().split("T")[0],
                     }))
                     setTransactions(mappedTransactions)
+                    console.log('[AMM] Transactions loaded successfully:', mappedTransactions.length)
                 })
-                .catch(() => {
+                .catch((error) => {
+                    console.log('[AMM] Failed to load transactions:', error)
                     setTransactions([])
                 })
                 .finally(() => setLoading(false))
+        } else {
+            console.log('[AMM] No ammCanisterId provided, skipping transaction load')
         }
-    }, [canisterId, setTransactions, setLoading])
+    }, [ammCanisterId, setTransactions, setLoading])
     
     return (
         <div className="min-h-screen bg-gray-50 mt-[4.5rem]">
@@ -982,15 +1005,23 @@ const TransactionContent: React.FC<any> = ({
                                                 {/* Unified contribution button */}
                                                 <div className="space-y-4">
                                                     <Button
-                                                        onClick={() => executeAllSteps(canisterId, ammCanisterId)}
+                                                        onClick={() => {
+                                                            if (contributionCompleted) {
+                                                                resetContributionFlow()
+                                                            } else {
+                                                                executeAllSteps(canisterId, ammCanisterId)
+                                                            }
+                                                        }}
                                                         disabled={isProcessingPayment}
-                                                        className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
+                                                        className={`w-full ${contributionCompleted ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-600 hover:bg-blue-700'} disabled:opacity-50`}
                                                     >
                                                         {isProcessingPayment ? (
                                                             <>
                                                                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                                                                 Processing Contribution...
                                                             </>
+                                                        ) : contributionCompleted ? (
+                                                            'Contribution Complete - Close'
                                                         ) : (
                                                             'Complete Contribution'
                                                         )}
