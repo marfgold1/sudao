@@ -68,10 +68,13 @@ If you wish to reset everything and deploy them again (install), run `./explorer
 You can run frontend by running the following commands:
 
 ```bash
+dfx generate
 npm run dev
 ```
 
 Don't forget to run `npm install` to install FE packages.
+
+If there are missing imports to `declarations` please run `dfx generate` again. Don't forget to spin up backend as well.
 
 ## DAO Creation Flow
 
