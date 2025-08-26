@@ -388,7 +388,7 @@ const TransactionPage: React.FC = () => {
                     const governanceCanisterId = stepResults.ammInfo?.token1 || 'vizcg-th777-77774-qaaea-cai'
                     addDebugLog(`Using governance ledger canister: ${governanceCanisterId}`)
                     
-                    const { idlFactory: govLedgerIdlFactory } = await import('declarations/icrc1_ledger_canister/index')
+                    const { idlFactory: govLedgerIdlFactory } = await import('declarations/icp_ledger_canister/index')
                     const govLedgerActor = Actor.createActor(govLedgerIdlFactory, {
                         agent, canisterId: governanceCanisterId
                     })

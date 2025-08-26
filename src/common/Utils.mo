@@ -1,3 +1,5 @@
+import Principal "mo:base/Principal";
+
 module {
     public func find<T>(list : [T], predicate : T -> Bool) : ?T {
         for (item in list.vals()) {
@@ -9,4 +11,7 @@ module {
     };
 
     public let anonymous : Text = "2vxsx-fae";
+    public func getAnonymous() : Principal {
+        Principal.fromText(anonymous);
+    };
 }

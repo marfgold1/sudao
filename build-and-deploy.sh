@@ -19,8 +19,9 @@ fi
 # Step 2: Deploy the DAO Explorer canister and add cycles
 echo "🏗️  Deploying DAO Explorer canister and adding cycles..."
 dfx deploy sudao_be_explorer
+dfx deploy icp_ledger_canister --specified-id ryjl3-tyaaa-aaaaa-aaaba-cai
 # silently ignore the error
-dfx ledger fabricate-cycles --amount 10 --canister sudao_be_explorer || true
+dfx ledger fabricate-cycles --t 100 --canister sudao_be_explorer || true
 
 # Get the explorer canister ID
 EXPLORER_ID=$(dfx canister id sudao_be_explorer)

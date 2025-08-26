@@ -14,10 +14,10 @@ import CommonTypes "../common/Types";
 // This is the main actor for an individual DAO created by the platform.
 // It acts as a facade, orchestrating different modules like proposals, treasury, and membership.
 // The DAOEntry is passed as an argument at canister install time.
-shared ({ caller }) actor class DAO(initDAO : CommonTypes.DAOEntry, ledgerCanisterId_ : Principal) = this {
+persistent actor class DAO(initDAO : CommonTypes.DAOEntry, ledgerCanisterId_ : Principal) = this {
     // ------ DAO MANAGEMENT ------
     // DAO Information - initialiszed during canister creation
-    private stable var daoInfo : ?Types.DAOInfo = ?{
+    private var daoInfo : ?Types.DAOInfo = ?{
         name = initDAO.name;
         description = initDAO.description;
         tags = initDAO.tags;
@@ -25,10 +25,10 @@ shared ({ caller }) actor class DAO(initDAO : CommonTypes.DAOEntry, ledgerCanist
         createdAt = initDAO.createdAt;
     };
 
-    private stable var controllers : ?[Principal] = null;
+    private var controllers : ?[Principal] = null;
     
     // Ledger canister ID for token-based voting
-    private let ledgerCanisterId : Principal = ledgerCanisterId_;
+    private transient let ledgerCanisterId : Principal = ledgerCanisterId_;
 
     private func getControllers() : async [Principal] {
         switch (controllers) {
@@ -72,27 +72,27 @@ shared ({ caller }) actor class DAO(initDAO : CommonTypes.DAOEntry, ledgerCanist
 
     // --- USER MANAGEMENT ---
     // UserService state management with stable recovery
-    private stable var usersEntries : [(Principal, Types.UserProfile)] = [];
-    private var userService = UserService.UserService(?Map.fromIter<Principal, Types.UserProfile>(usersEntries.vals(), phash));
+    private var usersEntries : [(Principal, Types.UserProfile)] = [];
+    private transient var userService = UserService.UserService(?Map.fromIter<Principal, Types.UserProfile>(usersEntries.vals(), phash));
 
     // --- TREASURY MANAGEMENT ---
     // PaymentService state management with stable recovery
-    private stable var treasuryData : ?{
+    private var treasuryData : ?{
         balance : PaymentService.TreasuryBalance;
         transactions : [(Text, PaymentService.TransactionRecord)];
         nextId : Nat;
     } = null;
-    private var paymentService = PaymentService.PaymentService();
+    private transient var paymentService = PaymentService.PaymentService();
 
     // --- TOKEN SWAP MANAGEMENT ---
     // TokenSwapService state management with stable recovery
-    private stable var tokenSwapData : ?{
+    private var tokenSwapData : ?{
         pool : TokenSwapService.LiquidityPool;
         swaps : [(Text, TokenSwapService.SwapRecord)];
         nextId : Nat;
         fee : Float;
     } = null;
-    private var tokenSwapService = TokenSwapService.TokenSwapService();
+    private transient var tokenSwapService = TokenSwapService.TokenSwapService();
 
     // Public user management functions (adapted for frontend expectations)
     public shared (msg) func register() : async Text {
@@ -127,8 +127,8 @@ shared ({ caller }) actor class DAO(initDAO : CommonTypes.DAOEntry, ledgerCanist
     // In the future, this could be expanded with roles, permissions, etc.
 
     // Stable storage for proposals with migration handling
-    private stable var proposalsEntries : [(Text, ProposalManager.Proposal)] = [];
-    private stable var migratedToNewProposalFormat : Bool = false;
+    private var proposalsEntries : [(Text, ProposalManager.Proposal)] = [];
+    private var migratedToNewProposalFormat : Bool = false;
 
     // System lifecycle hooks for stable variables
     system func preupgrade() {
@@ -166,7 +166,7 @@ shared ({ caller }) actor class DAO(initDAO : CommonTypes.DAOEntry, ledgerCanist
     };
 
     // Proposal state management with stable recovery
-    private var proposalState : ProposalManager.ProposalState = {
+    private transient var proposalState : ProposalManager.ProposalState = {
         var proposals = Map.fromIter<Text, ProposalManager.Proposal>(proposalsEntries.vals(), thash);
     };
 

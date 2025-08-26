@@ -85,32 +85,29 @@ export const useDAO = (daoId: string) => {
       let ammCanisterId: string | null = null;
       
       console.log('[useDAO] Deployment canisterIds structure:', JSON.stringify(deployment.canisterIds, null, 2));
-      
-      // Based on the logs, the structure is: canisterIds[0][0] = [swap_type, principal], canisterIds[0][1][0][0] = [ledger_type, principal], etc.
-      if (deployment.canisterIds && deployment.canisterIds[0]) {
-        const canisterArray = deployment.canisterIds[0];
-        console.log('[useDAO] Processing canister array:', JSON.stringify(canisterArray, null, 2));
-        
-        // Extract AMM canister: canisterArray[0][1].__principal__
-        if (canisterArray[0] && canisterArray[0][1] && canisterArray[0][1].__principal__) {
-          ammCanisterId = canisterArray[0][1].__principal__;
-          console.log('[useDAO] Found AMM canister ID:', ammCanisterId);
+
+      // traverse deployment.canisterIds
+      const traverseCanisterIds = (canisterIds: any) => {
+        if (canisterIds.length === 0) {
+          return;
         }
-        
-        // Extract backend canister: canisterArray[1][0][1][0][0][1].__principal__
-        try {
-          const backendPrincipal = canisterArray[1]?.[0]?.[1]?.[0]?.[0]?.[1];
-          if (backendPrincipal && backendPrincipal.__principal__) {
-            deployedCanisterId = backendPrincipal.__principal__;
-            console.log('[useDAO] Found backend canister ID:', deployedCanisterId);
+        const canId = canisterIds[0];
+        if (!Array.isArray(canId)) {
+          // get key of canId
+          const key = Object.keys(canId)[0];
+          if (key === 'backend') {
+            deployedCanisterId = canisterIds[1].toText();
           }
-        } catch (navError) {
-          console.log('[useDAO] Error navigating to backend canister:', navError);
+          if (key === 'swap') {
+            ammCanisterId = canisterIds[1].toText();
+          }
+          return;
+        }
+        for (const canisterId of canisterIds) {
+          traverseCanisterIds(canisterId);
         }
       }
-      
-
-      
+      traverseCanisterIds(deployment.canisterIds);
       console.log('[useDAO] Final canister IDs - Backend:', deployedCanisterId, 'AMM:', ammCanisterId);
       
       // Hardcode the correct canister IDs from the logs if extraction fails

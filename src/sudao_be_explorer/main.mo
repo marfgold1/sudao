@@ -31,16 +31,16 @@ import CommonTypes "../common/Types";
  */
 persistent actor DAOExplorer {
     // Stable storage for upgrades
-    private stable var systemStartTime : Time.Time = Time.now();
-    private stable var canisterId : Principal = Principal.fromActor(DAOExplorer);
-    private stable var admins : ?[Principal] = null;
+    private var systemStartTime : Time.Time = Time.now();
+    private var canisterId : Principal = Principal.fromActor(DAOExplorer);
+    private var admins : ?[Principal] = null;
 
-    private stable var daoState : DaoManager.DAOState = {
+    private var daoState : DaoManager.DAOState = {
         daoEntries = Map.new<Text, CommonTypes.DAOEntry>();
         nextDAOId = 0;
     };
 
-    private stable var deploymentState : DeploymentManager.DeploymentState = {
+    private var deploymentState : DeploymentManager.DeploymentState = {
         deploymentMap = Map.new<Text, DeploymentManager.DeploymentInfo>();
         wasmCodeMap = Map.new<Nat8, Types.WasmInfo>();
     };
@@ -110,6 +110,7 @@ persistent actor DAOExplorer {
                 ignore DeploymentManager.deploy(deploymentState, {
                     dao = dao;
                     controller = canisterId;
+                    mainTokenLedger = Principal.fromText("ryjl3-tyaaa-aaaaa-aaaba-cai"); // ICP
                 });
                 #ok(dao.id)
             };
