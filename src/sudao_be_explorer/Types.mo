@@ -4,6 +4,7 @@ import Nat8 "mo:base/Nat8";
 import Array "mo:base/Array";
 import Map "mo:map/Map";
 import List "mo:base/List";
+import Utils "../common/Utils";
 
 module {
     public type WasmCodeMap = Map.Map<Nat8, WasmInfo>;
@@ -32,5 +33,12 @@ module {
             case (?i) Nat8.fromNat(i);
             case null 0; // fallback, should not happen
         }
+    };
+
+    public func getCodePrincipal(codeCanisterList : CodeCanisterList, codeType : WasmCodeType) : Principal {
+        switch (List.find<(WasmCodeType, Principal)>(codeCanisterList, func((codeType_, _)) = codeType_ == codeType)) {
+            case (?(_, canisterId)) canisterId;
+            case null Utils.getAnonymous();
+        };
     };
 };

@@ -11,6 +11,15 @@
       },
       "init_arg_file": ".init/ledger-init.did"
     },
+    "sudao_be_explorer": {
+      "main": "src/sudao_be_explorer/main.mo",
+      "type": "motoko",
+      "remote": {
+        "id": {
+          "ic": "umunu-kh777-77774-qaaca-cai"
+        }
+      }
+    },
     "sudao_ledger": {
       "type": "custom",
       "candid": "https://github.com/dfinity/ic/releases/download/ledger-suite-icrc-2025-06-19/ledger.did",
@@ -21,15 +30,6 @@
         }
       },
       "init_arg_file": ".init/dao-ledger-init.did"
-    },
-    "sudao_be_explorer": {
-      "main": "src/sudao_be_explorer/main.mo",
-      "type": "motoko",
-      "remote": {
-        "id": {
-          "ic": "umunu-kh777-77774-qaaca-cai"
-        }
-      }
     },
     "sudao_backend": {
       "main": "src/sudao_backend/main.mo",

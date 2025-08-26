@@ -12,7 +12,7 @@ import {thash; n8hash} "mo:map/Map";
 import Types "Types";
 import CommonTypes "../common/Types";
 import {ic} "mo:ic";
-import Utils "../common/Utils";
+import AMMTypes "../sudao_amm/Types";
 
 module {
     public type DeployingStep = {
@@ -121,6 +121,7 @@ module {
     type DeploymentManagerRequest = {
         dao : CommonTypes.DAOEntry;
         controller : Principal;
+        mainTokenLedger : Principal;
     };
 
     // it's here
@@ -176,29 +177,23 @@ module {
 
             // Create all required canisters
             var canisterIds : Types.CodeCanisterList = List.nil();
-            var ledgerCanisterId : Principal = Principal.fromText(Utils.anonymous);
             for (key in Types.wasmCodeTypes.vals()) {
                 updateDeployingStep(state, daoId, #creating_canister(key));
                 let canisterId = await? createCanisterWithCycles();
                 canisterIds := List.push((key, canisterId), canisterIds);
-                if (key == #ledger) { ledgerCanisterId := canisterId; };
             };
             setCanisterIds(state, daoId, canisterIds);
-            Debug.print("Created Canister " # debug_show(daoId));
+            Debug.print("Created Canister " # debug_show(daoId) # " with canisterIds: " # debug_show(canisterIds));
 
             // Step 2: Install code
             // Get WASM code from the manager
             Debug.print("Installing code for DAO " # debug_show(daoId));
+            var ledgerCanisterId = Types.getCodePrincipal(canisterIds, #ledger);
+            var ammCanisterId = Types.getCodePrincipal(canisterIds, #swap);
             for ((key, canisterId) in List.toIter(canisterIds)) {
                 switch (Map.get(state.wasmCodeMap, n8hash, Types.getWasmCodeKey(key))) {
                     case (?wasmInfo) {
                         updateDeployingStep(state, daoId, #installing_code(key));
-                        // Find AMM canister ID for proper initialization
-                        var ammCanisterId : Principal = Principal.fromText(Utils.anonymous);
-                        for ((codeType, cId) in List.toIter(canisterIds)) {
-                            if (codeType == #swap) { ammCanisterId := cId; };
-                        };
-                        
                         let arg = switch (key) {
                             case (#ledger) to_candid(#Init {
                                 token_symbol = "SUDAGOV";
@@ -220,8 +215,11 @@ module {
                                 };
                             });
                             case (#backend) to_candid(dao, ledgerCanisterId);
-                            case (#swap) to_candid();  // AMM has no constructor args, will initialize separately
-                            case _ to_candid();
+                            case (#swap) to_candid({
+                                token0_ledger_id = request.mainTokenLedger;
+                                token1_ledger_id = ledgerCanisterId;
+                                owner = controller;
+                            });
                         };
                         let wasmCode = wasmInfo.code;
                         await? ic.install_code({
@@ -238,59 +236,32 @@ module {
             Debug.print("Installed code for DAO " # debug_show(daoId));
             
             // Step 3: Initialize AMM
-            Debug.print("Initializing AMM for DAO " # debug_show(daoId));
-            
-            // Find AMM canister
-            let ?ammCanister = List.find<(Types.WasmCodeType, Principal)>(canisterIds, func((codeType, _)) = codeType == #swap) else {
-                throw Error.reject("AMM canister not found");
-            };
-            let (_, ammCanisterId) = ammCanister;
+            Debug.print("Add liquidity to AMM for DAO " # debug_show(daoId));
             
             // Initialize AMM with token IDs
             let ammActor = actor(Principal.toText(ammCanisterId)) : actor {
-                initialize : (Principal, Principal, Principal) -> async { #ok: (); #err: Text };
-                add_liquidity : ({ amount0_desired: Nat; amount1_desired: Nat; amount0_min: ?Nat; amount1_min: ?Nat }) -> async { #ok: Nat; #err: Text };
+                add_liquidity : (AMMTypes.AddLiquidityArgs) -> async AMMTypes.CommonAMMResult;
             };
+
+            // Add initial liquidity
+            let liquidityResult = await? ammActor.add_liquidity({
+                amount0_desired = 1000;  // 1000 ICP
+                amount1_desired = 1000000;  // 1M governance tokens
+                amount0_min = ?0;
+                amount1_min = ?0;
+            });
             
-            // Use the deployed ICP ledger canister ID
-            // This should match the canister ID from dfx canister id icp_ledger_canister
-            let icpCanisterId = Principal.fromText("uxrrr-q7777-77774-qaaaq-cai");
-            
-            Debug.print("Initializing AMM with ICP canister: " # Principal.toText(icpCanisterId) # " and governance canister: " # Principal.toText(ledgerCanisterId));
-            
-            let initResult = await? ammActor.initialize(
-                icpCanisterId,  // ICP canister
-                ledgerCanisterId,  // Governance token canister
-                controller  // Owner
-            );
-            
-            switch (initResult) {
-                case (#ok()) {
-                    Debug.print("AMM initialized successfully");
-                    
-                    // Add initial liquidity
-                    let liquidityResult = await? ammActor.add_liquidity({
-                        amount0_desired = 1000;  // 1000 ICP
-                        amount1_desired = 1000000;  // 1M governance tokens
-                        amount0_min = ?0;
-                        amount1_min = ?0;
-                    });
-                    
-                    switch (liquidityResult) {
-                        case (#ok(lpTokens)) {
-                            Debug.print("Initial liquidity added: " # debug_show(lpTokens) # " LP tokens");
-                        };
-                        case (#err(error)) {
-                            Debug.print("Failed to add initial liquidity: " # debug_show(error));
-                        };
-                    };
+            switch (liquidityResult) {
+                case (#ok(lpTokens)) {
+                    Debug.print("Initial liquidity added: " # debug_show(lpTokens) # " LP tokens");
                 };
                 case (#err(error)) {
-                    Debug.print("AMM initialization failed: " # error);
+                    throw Error.reject("Failed to add initial liquidity: " # debug_show(error));
                 };
             };
             
             // Step 4: Complete
+            Debug.print("Deployment completed for DAO " # debug_show(daoId));
             updateDeploymentCompleted(state, daoId);
         } catch (error) {
             // Handle deployment failure
