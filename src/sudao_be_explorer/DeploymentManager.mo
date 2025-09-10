@@ -159,7 +159,7 @@ module {
 
             // Create canister with cycles (1T cycles)
             func createCanisterWithCycles() : async Principal {
-                let result = await? (with cycles = 1_000_000_000_000) ic.create_canister({
+                let result = await (with cycles = 1_000_000_000_000) ic.create_canister({
                     sender_canister_version = null;
                     settings = ?{
                         controllers = ?[controller];
@@ -179,7 +179,7 @@ module {
             var canisterIds : Types.CodeCanisterList = List.nil();
             for (key in Types.wasmCodeTypes.vals()) {
                 updateDeployingStep(state, daoId, #creating_canister(key));
-                let canisterId = await? createCanisterWithCycles();
+                let canisterId = await createCanisterWithCycles();
                 canisterIds := List.push((key, canisterId), canisterIds);
             };
             setCanisterIds(state, daoId, canisterIds);
@@ -222,7 +222,7 @@ module {
                             });
                         };
                         let wasmCode = wasmInfo.code;
-                        await? ic.install_code({
+                        await ic.install_code({
                             arg = arg;
                             wasm_module = wasmCode;
                             mode = #install;
@@ -244,7 +244,7 @@ module {
             };
 
             // Add initial liquidity
-            let liquidityResult = await? ammActor.add_liquidity({
+            let liquidityResult = await ammActor.add_liquidity({
                 amount0_desired = 1000;  // 1000 ICP
                 amount1_desired = 1000000;  // 1M governance tokens
                 amount0_min = ?0;

@@ -2,6 +2,7 @@ import Principal "mo:base/Principal";
 import Map "mo:map/Map";
 import { phash; thash } "mo:map/Map";
 import ProposalManager "Proposal";
+import ProposalExtensions "ProposalExtensions";
 import UserService "service/UserService";
 import PaymentService "service/PaymentService";
 import TokenSwapService "service/TokenSwapService";
@@ -227,12 +228,17 @@ persistent actor class DAO(initDAO : CommonTypes.DAOEntry, ledgerCanisterId_ : P
             subaccount = null;
         };
         
-        // Get balance from ledger canister
-        let ledgerActor : actor {
-            icrc1_balance_of : shared query (account : { owner : Principal; subaccount : ?[Nat8] }) -> async Nat;
-        } = actor(Principal.toText(ledgerCanisterId));
-        
-        let tokenBalance = await ledgerActor.icrc1_balance_of(voterAccount);
+        // Get balance from ledger canister with error handling
+        let tokenBalance = try {
+            let ledgerActor : actor {
+                icrc1_balance_of : shared query (account : { owner : Principal; subaccount : ?[Nat8] }) -> async Nat;
+            } = actor(Principal.toText(ledgerCanisterId));
+            
+            await ledgerActor.icrc1_balance_of(voterAccount)
+        } catch (error) {
+            // If we can't get token balance, use 1 as default (1 token = 1 vote)
+            1
+        };
         
         return await ProposalManager.vote(proposalState, msg.caller, isMember, proposalId, choice, tokenBalance);
     };
@@ -333,6 +339,35 @@ persistent actor class DAO(initDAO : CommonTypes.DAOEntry, ledgerCanisterId_ : P
             rejected = ProposalManager.getCountByStatus(proposalState, #rejected);
             executed = ProposalManager.getCountByStatus(proposalState, #executed);
         };
+    };
+
+    // Get voting statistics for a proposal
+    public query func getVotingStats(proposalId : Text) : async ?{
+        totalVoters : Nat;
+        votesFor : Nat;
+        votesAgainst : Nat;
+        weightedVotesFor : Nat;
+        weightedVotesAgainst : Nat;
+        participationRate : Nat;
+        approvalRate : Nat;
+        weightedApprovalRate : Nat;
+    } {
+        ProposalExtensions.getVotingStats(proposalState, proposalId)
+    };
+
+    // Auto-finalize expired proposals
+    public shared (_msg) func autoFinalizeExpiredProposals() : async [Text] {
+        ProposalExtensions.autoFinalizeExpiredProposals(proposalState)
+    };
+
+    // Get proposals needing attention (expired but not finalized)
+    public query func getProposalsNeedingAttention() : async [ProposalManager.Proposal] {
+        ProposalExtensions.getProposalsNeedingAttention(proposalState)
+    };
+
+    // Get active proposals sorted by deadline
+    public query func getActiveProposalsByDeadline() : async [ProposalManager.Proposal] {
+        ProposalExtensions.getActiveProposalsByDeadline(proposalState)
     };
 
     // --- TREASURY MANAGEMENT ---

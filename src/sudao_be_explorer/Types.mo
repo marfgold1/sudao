@@ -41,4 +41,12 @@ module {
             case null Utils.getAnonymous();
         };
     };
+
+    public func wasmCodeTypeToText(codeType : WasmCodeType) : Text {
+        switch (codeType) {
+            case (#backend) "backend";
+            case (#ledger) "ledger"; 
+            case (#swap) "swap";
+        }
+    };
 };

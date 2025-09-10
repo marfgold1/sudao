@@ -3,6 +3,7 @@ import Map "mo:map/Map";
 import Time "mo:base/Time";
 import Result "mo:base/Result";
 import Blob "mo:base/Blob";
+import Array "mo:base/Array";
 import Iter "mo:base/Iter";
 
 // Import our modular components
@@ -45,6 +46,8 @@ persistent actor DAOExplorer {
         wasmCodeMap = Map.new<Nat8, Types.WasmInfo>();
     };
 
+    private var chunkUploadState : BinaryManager.ChunkUploadMap = Map.new<Text, BinaryManager.ChunkUploadState>();
+
     private func getControllers() : async [Principal] {
         switch (admins) {
             case (?admins) admins;
@@ -72,6 +75,69 @@ persistent actor DAOExplorer {
             version = version;
             uploader = msg.caller;
         })
+    };
+
+    /**
+     * Upload WASM code in chunks for large files
+     */
+    public shared(msg) func uploadWasmChunk(
+        codeType : Types.WasmCodeType, 
+        chunk: Blob, 
+        chunkIndex: Nat, 
+        totalChunks: Nat, 
+        version: Text
+    ) : async Result.Result<Text, Text> {
+        // Check if caller is a controller of this canister
+        if (not (await isController(msg.caller))) {
+            return #err("Only canister controllers can upload WASM code");
+        };
+        
+        BinaryManager.uploadWasmChunk(
+            deploymentState.wasmCodeMap, 
+            chunkUploadState, 
+            {
+                codeType = codeType;
+                chunk = chunk;
+                chunkIndex = chunkIndex;
+                totalChunks = totalChunks;
+                version = version;
+                uploader = msg.caller;
+            }
+        )
+    };
+
+    /**
+     * Get chunk upload status
+     */
+    public query func getChunkUploadStatus(codeType : Types.WasmCodeType) : async ?{receivedChunks : Nat; totalChunks : Nat} {
+        BinaryManager.getChunkUploadStatus(chunkUploadState, codeType)
+    };
+
+    /**
+     * Get WASM code size for debugging
+     */
+    public query func getWasmCodeSize(key : Types.WasmCodeType) : async ?Nat {
+        switch (BinaryManager.getWasmCode(deploymentState.wasmCodeMap, key)) {
+            case (?wasmCode) ?wasmCode.size();
+            case null null;
+        }
+    };
+
+    /**
+     * Get first 32 bytes of WASM code for debugging
+     */
+    public query func getWasmCodeHeader(key : Types.WasmCodeType) : async ?[Nat8] {
+        switch (BinaryManager.getWasmCode(deploymentState.wasmCodeMap, key)) {
+            case (?wasmCode) {
+                let bytes = Blob.toArray(wasmCode);
+                if (bytes.size() > 32) {
+                    ?Array.subArray(bytes, 0, 32)
+                } else {
+                    ?bytes
+                }
+            };
+            case null null;
+        }
     };
 
     /**

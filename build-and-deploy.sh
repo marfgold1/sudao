@@ -27,44 +27,6 @@ dfx ledger fabricate-cycles --t 100 --canister sudao_be_explorer || true
 EXPLORER_ID=$(dfx canister id sudao_be_explorer)
 echo "✅ DAO Explorer deployed with ID: $EXPLORER_ID"
 
-# Step 3 & 4: Modular build and upload for each wasm code
-build_and_upload_wasm() {
-    local CODE_TYPE=$1
-    local CANISTER_NAME=$2
-
-    # Build
-    echo "🔧 Building $CANISTER_NAME WASM..."
-    dfx build $CANISTER_NAME
-
-    # Path
-    local WASM_PATH=".dfx/local/canisters/${CANISTER_NAME}/${CANISTER_NAME}.wasm"
-    local WASM_GZ_PATH="${WASM_PATH}.gz"
-
-    if [ -f "$WASM_PATH" ]; then
-        # .wasm exists, use as is
-        :
-    elif [ -f "$WASM_GZ_PATH" ]; then
-        echo "🗜️  Found gzipped WASM at $WASM_GZ_PATH, extracting..."
-        gunzip -c "$WASM_GZ_PATH" > "$WASM_PATH"
-        if [ $? -ne 0 ] || [ ! -f "$WASM_PATH" ]; then
-            echo "❌ Error: Failed to extract $WASM_GZ_PATH"
-            exit 1
-        fi
-    else
-        echo "❌ Error: $CANISTER_NAME WASM file not found at $WASM_PATH or $WASM_GZ_PATH"
-        exit 1
-    fi
-    echo "✅ $CANISTER_NAME WASM built at: $WASM_PATH"
-
-    # Upload
-    echo "📦 Uploading $CANISTER_NAME WASM code to DAO Explorer as code type '$CODE_TYPE'..."
-    local WASM_HEX=$(hexdump -ve '1/1 "\\%02X"' "$WASM_PATH")
-    local VERSION=$(date +"%Y%m%d-%H%M%S")
-    # Read WASM file as raw blob (no hex conversion needed for dfx call with --argument)
-    # Use dfx's candid argument syntax: (variant, blob, text)
-    dfx canister call sudao_be_explorer setWasmCode --argument-file \
-        <(echo "(variant { $CODE_TYPE }, blob \"$WASM_HEX\", \"$VERSION\")")
-}
 
 # Build and upload both backend and ledger
 modules=(
@@ -73,20 +35,100 @@ modules=(
     "swap:sudao_amm"
 )
 
-# Build and upload all WASM modules in parallel, then wait for completion
+# Build all WASM modules first (in parallel), then upload sequentially
+echo "🔧 Building all WASM modules in parallel..."
 pids=()
 for entry in "${modules[@]}"; do
     IFS=":" read -r code_type canister <<< "$entry"
     # need to create canister first because it's not concurrent safe
     dfx canister create $canister
-    build_and_upload_wasm "$code_type" "$canister" &
+    (
+        echo "🔧 Building $canister WASM..."
+        dfx build $canister
+        
+        # Path
+        WASM_PATH=".dfx/local/canisters/${canister}/${canister}.wasm"
+        WASM_GZ_PATH="${WASM_PATH}.gz"
+
+        if [ -f "$WASM_PATH" ]; then
+            # .wasm exists, use as is
+            :
+        elif [ -f "$WASM_GZ_PATH" ]; then
+            echo "🗜️  Found gzipped WASM at $WASM_GZ_PATH, extracting..."
+            gunzip -c "$WASM_GZ_PATH" > "$WASM_PATH"
+            if [ $? -ne 0 ] || [ ! -f "$WASM_PATH" ]; then
+                echo "❌ Error: Failed to extract $WASM_GZ_PATH"
+                exit 1
+            fi
+        else
+            echo "❌ Error: $canister WASM file not found at $WASM_PATH or $WASM_GZ_PATH"
+            exit 1
+        fi
+        echo "✅ $canister WASM built at: $WASM_PATH"
+    ) &
     pids+=($!)
 done
+
+# Wait for all builds to complete
 for pid in "${pids[@]}"; do
     wait "$pid"
     if [ $? -ne 0 ]; then
-        echo "❌ Error: One of the build_and_upload_wasm jobs failed."
+        echo "❌ Error: One of the build jobs failed."
         exit 1
+    fi
+done
+
+echo "🔧 All WASM modules built. Starting sequential upload..."
+
+# Now upload sequentially to avoid race conditions
+for entry in "${modules[@]}"; do
+    IFS=":" read -r code_type canister <<< "$entry"
+    
+    WASM_PATH=".dfx/local/canisters/${canister}/${canister}.wasm"
+    VERSION=$(date +"%Y%m%d-%H%M%S")
+    FILE_SIZE=$(stat -c%s "$WASM_PATH")
+    
+    echo "📦 Uploading $canister WASM code to DAO Explorer as code type '$code_type'..."
+    
+    # Check if file is larger than 800KB (use chunked upload)
+    if [ "$FILE_SIZE" -gt 819200 ]; then
+        echo "Large file detected ($FILE_SIZE bytes), using chunked upload..."
+        CHUNK_SIZE=524288  # 512KB chunks to account for hex encoding (2x) + candid overhead
+        TOTAL_CHUNKS=$(( ($FILE_SIZE + $CHUNK_SIZE - 1) / $CHUNK_SIZE ))
+        
+        echo "Uploading in $TOTAL_CHUNKS chunks..."
+        for i in $(seq 0 $((TOTAL_CHUNKS - 1))); do
+            OFFSET=$(( $i * $CHUNK_SIZE ))
+            CHUNK_FILE=$(mktemp)
+            
+            # Extract chunk from WASM file
+            dd if="$WASM_PATH" of="$CHUNK_FILE" bs=1 skip=$OFFSET count=$CHUNK_SIZE 2>/dev/null
+            
+            # Convert chunk to hex
+            CHUNK_HEX=$(hexdump -ve '1/1 "%02x"' "$CHUNK_FILE" 2>/dev/null || xxd -p -c 256 "$CHUNK_FILE" | tr -d '\n')
+            TEMP_ARG_FILE=$(mktemp)
+            echo "(variant { $code_type }, blob \"$CHUNK_HEX\", $i, $TOTAL_CHUNKS, \"$VERSION\")" > "$TEMP_ARG_FILE"
+            
+            echo "Uploading chunk $((i + 1))/$TOTAL_CHUNKS..."
+            dfx canister call sudao_be_explorer uploadWasmChunk --argument-file "$TEMP_ARG_FILE"
+            
+            rm "$CHUNK_FILE" "$TEMP_ARG_FILE"
+        done
+    else
+        # Small file, use single upload  
+        echo "⚠️  Debugging WASM upload format..."
+        
+        # Try the original quoted hex format but ensure proper WASM hex encoding
+        echo "🔧 Converting WASM to hex blob format..."
+        WASM_HEX=$(hexdump -ve '1/1 "%02x"' "$WASM_PATH" 2>/dev/null || xxd -p -c 256 "$WASM_PATH" | tr -d '\n')
+        TEMP_ARG_FILE=$(mktemp)
+        
+        # Use blob with quoted hex - this is the standard Candid format
+        echo "(variant { $code_type }, blob \"$WASM_HEX\", \"$VERSION\")" > "$TEMP_ARG_FILE"
+        
+        echo "Attempting upload with hex blob format..."
+        dfx canister call sudao_be_explorer setWasmCode --argument-file "$TEMP_ARG_FILE"
+        rm "$TEMP_ARG_FILE"
     fi
 done
 

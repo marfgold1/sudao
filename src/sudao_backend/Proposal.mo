@@ -69,6 +69,8 @@ module {
         #insufficientParticipation;
         #commentNotFound;
         #alreadyReacted;
+        #insufficientFunds;
+        #executionFailed;
     };
 
     public type Proposal = {
@@ -316,6 +318,7 @@ module {
 
     /**
      * Ends a proposal's voting period and determines the result.
+     * Now uses weighted voting for final decision.
      */
     public func finalizeProposal(state : ProposalState, proposalId : Text) : Result.Result<ProposalStatus, ProposalError> {
         if (not UUIDUtils.isValidUUID(proposalId)) {
@@ -329,8 +332,15 @@ module {
                 if (Time.now() <= proposal.votingDeadline) { return #err(#votingStillActive); };
 
                 let totalVotes = proposal.votesFor + proposal.votesAgainst;
+                let totalWeightedVotes = proposal.weightedVotesFor + proposal.weightedVotesAgainst;
+                
+                // Use simple vote count for participation, weighted votes for approval
                 let participationRate = calculateParticipationRate(totalVotes, proposal.totalEligibleVoters);
-                let approvalRate = calculateApprovalRate(proposal.votesFor, totalVotes);
+                let approvalRate = if (totalWeightedVotes > 0) {
+                    calculateApprovalRate(proposal.weightedVotesFor, totalWeightedVotes)
+                } else {
+                    0
+                };
 
                 let finalStatus = if (participationRate < proposal.minimumParticipation) {
                     #rejected // Insufficient participation
@@ -606,12 +616,24 @@ module {
 
     /**
      * Retrieves proposals filtered by status, sorted by latest.
+     * Auto-finalizes expired active proposals.
      */
     public func listByStatus(state : ProposalState, status : ?ProposalStatus) : [Proposal] {
         let allProposals = Map.vals(state.proposals) |> Iter.toArray(_);
+        
+        // Auto-finalize expired active proposals
+        let now = Time.now();
+        for (proposal in allProposals.vals()) {
+            if (proposal.status == #active and now > proposal.votingDeadline) {
+                ignore finalizeProposal(state, proposal.id);
+            };
+        };
+        
+        // Get updated proposals after auto-finalization
+        let updatedProposals = Map.vals(state.proposals) |> Iter.toArray(_);
         let filteredProposals = switch (status) {
-            case (null) allProposals;
-            case (?s) Array.filter<Proposal>(allProposals, func(p) = p.status == s);
+            case (null) updatedProposals;
+            case (?s) Array.filter<Proposal>(updatedProposals, func(p) = p.status == s);
         };
         
         // Sort by creation time (latest first)
