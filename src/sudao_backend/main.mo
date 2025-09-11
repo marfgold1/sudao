@@ -46,17 +46,6 @@ persistent actor class DAO(initDAO : CommonTypes.DAOEntry, ledgerCanisterId_ : P
         return daoInfo;
     };
 
-    public query func greet(name : Text) : async Text {
-        switch (daoInfo) {
-            case (?info) {
-                return "Hello, " # name # "! Welcome to " # info.name # " DAO.";
-            };
-            case (null) {
-                return "Hello, " # name # "!";
-            };
-        };
-    };
-
     // Check if the caller is the creator of the DAO
     private func _isCreator(caller : Principal) : async Bool {
         switch (daoInfo) {
