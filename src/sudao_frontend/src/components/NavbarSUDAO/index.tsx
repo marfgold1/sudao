@@ -62,7 +62,7 @@ const NavbarSUDAO: React.FC = () => {
 
                     <div className="flex items-center space-x-4">
                         <ConnectWallet />
-                        <button className="p-2 px-4 bg-gradient-to-r from-blue-100 to-blue-50 hover:bg-blue-300 rounded-lg flex items-center justify-center">
+                        <button className="p-2 px-4 bg-gradient-to-r from-blue-100 to-blue-50 hover:bg-blue-300 rounded-xl flex items-center justify-center">
                             <GitHubLogoIcon className="w-6 h-6" />
                         </button>
                         <button className="md:hidden text-white" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>

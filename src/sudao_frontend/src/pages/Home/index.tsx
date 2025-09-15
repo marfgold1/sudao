@@ -72,20 +72,22 @@ const Home: React.FC = () => {
                             style={{
                                 opacity: heroOpacityRem,
                             }}
-                            className="max-w-5xl relative z-10"
+                            className="max-w-5xl relative z-10 pt-20"
                         >
                             <h1 className="text-5xl md:text-7xl font-bold text-white leading-tight mb-6 tracking-tight">
-                                FROM COMMUNITY
+                                Build 
                                 <br />
-                                ENERGY TO
+                                Your Community
                                 <br />
-                                COLLECTIVE ACTION
+                                in Seconds
                             </h1>
                             <p className="text-xl text-white/[74%] mb-8 max-w-3xl leading-relaxed">
-                                Launch a transparent and community-owned organization with Decentralized Autonomous Organizations.
+                                Launch a transparent and community-owned organization
+                                <br />
+                                with Decentralized Autonomous Organizations.
                             </p>
                             <Button className="bg-blue-950 hover:bg-blue-500 text-white px-8 py-6 text-lg font-semibold rounded-lg">
-                                Start Now
+                                Start Building  →
                             </Button>
                         </motion.div>
                         
@@ -194,9 +196,6 @@ const Home: React.FC = () => {
                                                 ))}
                                             </Accordion>
 
-                                            <Button className="mt-8 bg-green-500 hover:bg-green-600 text-white px-8 py-4 rounded-lg shadow-lg hover:shadow-xl transition-all">
-                                                Learn More
-                                            </Button>
                                         </div>
 
                                         <motion.div
@@ -249,7 +248,7 @@ const Home: React.FC = () => {
                         viewport={{ once: true }}
                         className="text-center mb-16 justify-center"
                     >
-                        <h2 className="text-4xl font-bold text-slate-800 mb-4">SUDAO HELPS YOU CREATE GREAT DAO</h2>
+                        <h2 className="text-4xl font-bold text-slate-800 mb-4">SUDAO Makes Great DAOs</h2>
                         <p className="text-slate-600 text-lg max-w-2xl mx-auto">From transparent governance and fair funding to community-focused support, SUDAO helps movements of any size grow and thrive.</p>
                     </motion.div>
 
@@ -269,8 +268,8 @@ const Home: React.FC = () => {
                                 description: "Propose, vote, and execute together.",
                             },
                             {
-                                title: "No-Code Setup",
-                                description: "Skip the smart contract hassle and focus on impact.",
+                                title: "Plugin Ecosystem",
+                                description: "Extend your DAO with powerful tools, made by the community.",
                             },
                         ].map((feature, index) => (
                             <motion.div
@@ -481,7 +480,9 @@ const Home: React.FC = () => {
                             security.
                         </p>
 
-                        <Button className="bg-slate-800 hover:bg-slate-700 text-white px-8 py-4 rounded-lg">
+                        <Button 
+                            onClick={() => window.open("https://internetcomputer.org", "_blank")}
+                            className="bg-slate-800 hover:bg-slate-700 text-white px-8 py-4 rounded-lg">
                             Learn More About ICP
                         </Button>
                     </motion.div>
