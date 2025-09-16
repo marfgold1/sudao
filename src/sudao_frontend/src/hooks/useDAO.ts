@@ -175,7 +175,7 @@ export const useDAO = (daoId: string) => {
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch DAO';
       console.error('[useDAO] fetchDAO error:', err);
       setError(errorMessage);
-      navigate("/404");
+      navigate("/dao/404");
       // toast.error(errorMessage);
     } finally {
       setLoading(false);

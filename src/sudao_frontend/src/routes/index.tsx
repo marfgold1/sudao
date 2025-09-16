@@ -1,71 +1,84 @@
 import { Outlet, RouteObject, createBrowserRouter } from "react-router-dom";
 import { Home, Example, Proposal, Transaction, DiscoverCollectives, Profile, BuildDAO, NotFound } from "@/pages";
-import { DynamicNavbar, DynamicFooter } from "@/components";
-// import { AuthProvider } from "@/contexts/AuthContext";
+import { NavbarDAO, NavbarSUDAO, FooterSUDAO, FooterDAO } from "@/components";
 
-const MainLayout = () => {
+const SUDAOLayout = () => {
     return (
         <>
-            <DynamicNavbar />
+            <NavbarSUDAO />
             <Outlet />
-            <DynamicFooter />
+            <FooterSUDAO />
         </>
     );
 };
 
-const AuthLayout = () => {
-    return <Outlet />;
+const DAOLayout = () => {
+    return (
+        <>
+            <NavbarDAO />
+            <Outlet />
+            <FooterDAO />
+        </>
+    );
 };
 
 const routes: RouteObject[] = [
     {
         path: "/",
-        element: <MainLayout />,
+        element: <SUDAOLayout />,
         children: [
             {
-                path: "/",
+                index: true,
                 element: <Home />,
             },
             {
-                path: "/discover",
+                path: "discover",
                 element: <DiscoverCollectives />,
             },
             {
-                path: "/build",
+                path: "build",
                 element: <BuildDAO />,
             },
             {
-                path: "/home/:daoId",
-                element: <Transaction />,
+                path: "example",
+                element: <Example />,
             },
             {
-                path: "/proposal/:daoId",
-                element: <Proposal />,
-            },
-            {
-                path: "/profile",
-                element: <Profile />,
-            },
-            {
-                path: "/404",
+                path: "*",
                 element: <NotFound />,
             },
-            {
-                path: "/example",
-                element: <Example />,
-            }
         ],
     },
     {
-        path: "/",
-        element: <AuthLayout />,
+        path: "/dao", // DAO-related pages
+        element: <DAOLayout />,
         children: [
             {
-                path: "/auth",
-                element: <Home />,
-            }
+                path: ":daoId/home",
+                element: <Transaction />,
+            },
+            {
+                path: ":daoId/proposal",
+                element: <Proposal />,
+            },
+            {
+                path: ":daoId/profile",
+                element: <Profile />,
+            },
+            {
+                path: "404",
+                element: <NotFound />,
+            },
+            {
+                path: "*",
+                element: <NotFound />,
+            },
         ],
     },
+    {
+        path: "*",
+        element: <NotFound />,
+    }
 ];
 
 const router = createBrowserRouter(routes);
