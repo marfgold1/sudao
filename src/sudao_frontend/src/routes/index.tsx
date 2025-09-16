@@ -1,6 +1,6 @@
 import { Outlet, RouteObject, createBrowserRouter } from "react-router-dom";
 import { Home, Example, Proposal, Transaction, DiscoverCollectives, Profile, BuildDAO, NotFound } from "@/pages";
-import { DynamicNavbar, /* Footer */ } from "@/components";
+import { DynamicNavbar, DynamicFooter } from "@/components";
 // import { AuthProvider } from "@/contexts/AuthContext";
 
 const MainLayout = () => {
@@ -8,7 +8,7 @@ const MainLayout = () => {
         <>
             <DynamicNavbar />
             <Outlet />
-            {/* <Footer /> */}
+            <DynamicFooter />
         </>
     );
 };

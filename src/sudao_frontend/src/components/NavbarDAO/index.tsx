@@ -32,7 +32,7 @@ const NavbarDAO: React.FC = () => {
                                     isActive('/home/') ? 'text-blue-200 font-semibold' : 'text-white hover:text-blue-200'
                                 }`}
                             >
-                                Home
+                                [DAO Name]
                             </Link>
                             <Link 
                                 to={`/proposal/${daoId}`} 
