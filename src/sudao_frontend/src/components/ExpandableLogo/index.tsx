@@ -26,7 +26,7 @@ export default function ExpandableLogo() {
                     className={`
                         flex-shrink-0 
                         transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]
-                        ${isHovered ? "mr-1 scale-95 rotate-360" : "scale-100 rotate-0"}
+                        ${isHovered ? "mr-1 scale-95 rotate-180" : "scale-100 rotate-0"}
                     `}
                 >
                     <img src={Logo} alt="SUDAO" className="w-10 h-10 object-contain" />

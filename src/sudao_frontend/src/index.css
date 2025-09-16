@@ -69,6 +69,10 @@
 }
 
 @layer utilities {
+  .rotate-180 {
+    transform: rotate(180deg);
+  }
+
   .rotate-360 {
     transform: rotate(360deg);
   }

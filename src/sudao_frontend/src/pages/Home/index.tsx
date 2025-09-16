@@ -206,7 +206,7 @@ const Home: React.FC = () => {
                                             className="bg-white rounded-2xl p-8 pb-20 shadow-xl border border-slate-200"
                                         >
                                             <div className="flex items-center justify-between mb-6">
-                                                <h3 className="text-lg font-semibold text-slate-800">Diisi Screen Snippets</h3>
+                                                <h3 className="text-lg font-semibold text-slate-800">Your Incredible Movement</h3>
                                                 <div className="flex space-x-1">
                                                     <div className="w-3 h-3 bg-red-400 rounded-full"></div>
                                                     <div className="w-3 h-3 bg-yellow-400 rounded-full"></div>
@@ -258,33 +258,51 @@ const Home: React.FC = () => {
                         viewport={{ once: true }}
                         className="grid md:grid-cols-3 gap-8"
                     >
-                        {[
-                            {
-                                title: "Transparent Treasury",
-                                description: "All transactions are on-chain and open to everyone.",
-                            },
-                            {
-                                title: "Collective Governance",
-                                description: "Propose, vote, and execute together.",
-                            },
-                            {
-                                title: "Plugin Ecosystem",
-                                description: "Extend your DAO with powerful tools, made by the community.",
-                            },
-                        ].map((feature, index) => (
-                            <motion.div
-                                key={index}
-                                variants={fadeInUp}
-                                whileHover={{ y: -10 }}
-                                className="bg-slate-100 backdrop-blur-sm border border-slate-400 rounded-2xl p-8 pb-24 text-center hover:bg-slate-200 transition-all duration-300"
-                            >
-                                <div className="w-16 h-16 bg-gradient-to-br from-slate-700 to-slate-800 rounded-2xl mx-auto mb-6 flex items-center justify-center">
-                                    <div className="w-8 h-8 bg-cyan-400 rounded-lg"></div>
-                                </div>
-                                <h3 className="text-xl font-bold mb-4">{feature.title}</h3>
-                                <p className="leading-relaxed">{feature.description}</p>
-                            </motion.div>
-                        ))}
+                        <motion.div
+                            variants={fadeInUp}
+                            whileHover={{ y: -10 }}
+                            className="bg-gradient-to-b from-blue-900 via-blue-900 to-blue-900/85 text-white backdrop-blur-sm border border-slate-400 rounded-2xl p-8 pt-12 text-center transition-all duration-300"
+                        >
+                            <div className="w-full mx-auto mb-[-1rem] flex items-center justify-center">
+                                <img
+                                    src="/src/assets/images/b_1.png"
+                                    alt="Icon"
+                                    className="w-60"
+                                />
+                            </div>
+                            <h3 className="text-xl font-semibold mb-4">Transparent Treasury</h3>
+                            <p className="font-normal leading-relaxed">All transactions are on-chain <br></br>and open to everyone.</p>
+                        </motion.div>
+                        <motion.div
+                            variants={fadeInUp}
+                            whileHover={{ y: -10 }}
+                            className="bg-gradient-to-b from-blue-900 via-blue-900 to-blue-900/85 text-white backdrop-blur-sm border border-slate-400 rounded-2xl p-8 pt-0 text-center transition-all duration-300"
+                        >
+                            <div className="w-full mx-auto mb-[-2rem] flex items-center justify-center">
+                                <img
+                                    src="/src/assets/images/b_2.png"
+                                    alt="Icon"
+                                    className="w-72"
+                                />
+                            </div>
+                            <h3 className="text-xl font-semibold mb-4">Collective Governance</h3>
+                            <p className="font-normal leading-relaxed">Propose, vote, and execute together.</p>
+                        </motion.div>
+                        <motion.div
+                            variants={fadeInUp}
+                            whileHover={{ y: -10 }}
+                            className="bg-gradient-to-b from-blue-900 via-blue-900 to-blue-900/85 text-white backdrop-blur-sm border border-slate-400 rounded-2xl p-8 pt-12 text-center transition-all duration-300"
+                        >
+                            <div className="w-full mx-auto mb-5 flex items-center justify-center">
+                                <img
+                                    src="/src/assets/images/b_3.png"
+                                    alt="Icon"
+                                    className="w-60"
+                                />
+                            </div>
+                            <h3 className="text-xl font-semibold mb-4">Plugin Ecosystem</h3>
+                            <p className="font-normal leading-relaxed">Extend your DAO with powerful tools, made by the community.</p>
+                        </motion.div>
                     </motion.div>
                 </div>
             </section>

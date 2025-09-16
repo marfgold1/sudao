@@ -58,7 +58,7 @@ build_and_upload_wasm() {
 
     # Upload
     echo "📦 Uploading $CANISTER_NAME WASM code to DAO Explorer as code type '$CODE_TYPE'..."
-    local WASM_HEX=$(hexdump -ve '1/1 "\\%02X"' "$WASM_PATH")
+    local WASM_HEX=$(hexdump -ve '"\\" 1/1 "%02X"' "$WASM_PATH")
     local VERSION=$(date +"%Y%m%d-%H%M%S")
     # Read WASM file as raw blob (no hex conversion needed for dfx call with --argument)
     # Use dfx's candid argument syntax: (variant, blob, text)
