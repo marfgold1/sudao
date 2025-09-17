@@ -6,7 +6,8 @@ import DiscoverCollectives from "./DiscoverCollectives";
 import Profile from "./Profile";
 import BuildDAO from "./BuildDAO";
 import NotFound from "./NotFound";
+import CreatorDashboard from "./CreatorDashboard";
 
 export {
-    Home, Proposal, Transaction, DiscoverCollectives, Profile, BuildDAO, NotFound, Example
+    Home, Proposal, Transaction, DiscoverCollectives, Profile, BuildDAO, NotFound, CreatorDashboard, Example
 };

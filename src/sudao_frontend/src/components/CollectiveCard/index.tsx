@@ -107,7 +107,7 @@ export default function CollectiveCard({ collective, index, isOwned }: Collectiv
 
                     <div className="flex space-x-2 mt-12 justify-end">
                         <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                            <Link to={`/home/${collective.id}`}>
+                            <Link to={`/dao/${collective.id}/home`}>
                                 <Button 
                                     variant="outline" 
                                     size="sm" 

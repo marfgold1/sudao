@@ -1,6 +1,7 @@
 import { Outlet, RouteObject, createBrowserRouter } from "react-router-dom";
-import { Home, Example, Proposal, Transaction, DiscoverCollectives, Profile, BuildDAO, NotFound } from "@/pages";
+import { Home, Example, Proposal, Transaction, DiscoverCollectives, Profile, BuildDAO, NotFound, CreatorDashboard } from "@/pages";
 import { NavbarDAO, NavbarSUDAO, FooterSUDAO, FooterDAO } from "@/components";
+import { CreatorDashboardLayout } from "@/layouts";
 
 const SUDAOLayout = () => {
     return (
@@ -64,6 +65,20 @@ const routes: RouteObject[] = [
             {
                 path: ":daoId/profile",
                 element: <Profile />,
+            },
+            {
+                path: ":daoId/creator-dashboard",
+                element: <CreatorDashboardLayout />,
+                children: [
+                    {
+                        index: true,
+                        element: <CreatorDashboard />,
+                    },
+                    /* {
+                        path: ":daoId/home",
+                        element: <Transaction />,
+                    }, */
+                ],
             },
             {
                 path: "404",

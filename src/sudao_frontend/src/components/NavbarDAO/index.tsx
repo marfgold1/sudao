@@ -27,7 +27,7 @@ const NavbarDAO: React.FC = () => {
                         <ExpandableLogo />
                         <div className="hidden md:flex items-center space-x-10">
                             <Link 
-                                to={`/home/${daoId}`} 
+                                to={`/dao/${daoId}/home`} 
                                 className={`transition-colors ${
                                     isActive('/home/') ? 'text-blue-200 font-semibold' : 'text-white hover:text-blue-200'
                                 }`}
@@ -35,7 +35,7 @@ const NavbarDAO: React.FC = () => {
                                 [DAO Name]
                             </Link>
                             <Link 
-                                to={`/proposal/${daoId}`} 
+                                to={`/dao/${daoId}/proposal`} 
                                 className={`transition-colors ${
                                     isActive('/proposal/') ? 'text-blue-200 font-semibold' : 'text-white hover:text-blue-200'
                                 }`}
@@ -47,13 +47,15 @@ const NavbarDAO: React.FC = () => {
 
                     <div className="flex items-center space-x-4">
                         <ConnectWallet />
-                        <motion.button
-                            className="flex items-center space-x-2 text-white/80 bg-blue-600/30 rounded-lg p-2 px-4 hover:text-blue-300 transition-colors"
-                            whileHover={{ scale: 1.05 }}
-                        >
-                            <Settings className="w-4 h-4" />
-                            <span>Creator Dashboard</span>
-                        </motion.button>
+                        <Link to={`/dao/${daoId}/creator-dashboard`}>
+                            <motion.button
+                                className="flex items-center space-x-2 text-white/80 bg-blue-600/30 rounded-lg p-2 px-4 hover:text-blue-300 transition-colors"
+                                whileHover={{ scale: 1.05 }}
+                            >
+                                <Settings className="w-4 h-4" />
+                                <span>Creator Dashboard</span>
+                            </motion.button>
+                        </Link>
                         <Link to={"/profile"}>
                             <motion.button
                                 whileHover={{ scale: 1.05 }}
