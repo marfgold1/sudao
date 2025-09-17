@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from "react-router-dom";
 import { useAgent, useIdentity } from '@nfid/identitykit/react';
 import { toast } from 'react-toastify';
 import { getDAO } from '../services/explorer';
@@ -7,6 +8,7 @@ import { getDAOInfo, registerUser, getUserProfile, type DAOInfo } from '../servi
 export const useDAO = (daoId: string) => {
   const agent = useAgent();
   const identity = useIdentity();
+  const navigate = useNavigate();
   const [dao, setDao] = useState<DAOInfo | null>(null);
   const [canisterId, setCanisterId] = useState<string | null>(null);
   const [ammCanisterId, setAmmCanisterId] = useState<string | null>(null);
@@ -173,7 +175,8 @@ export const useDAO = (daoId: string) => {
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch DAO';
       console.error('[useDAO] fetchDAO error:', err);
       setError(errorMessage);
-      toast.error(errorMessage);
+      navigate("/dao/404");
+      // toast.error(errorMessage);
     } finally {
       setLoading(false);
       console.log('[useDAO] fetchDAO completed');
