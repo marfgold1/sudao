@@ -7,27 +7,42 @@ set -e  # Exit on any error
 
 echo "🚀 Starting DAO Explorer build and deployment process..."
 
-# Step 1: Start local replica if not running
-echo "📡 Checking local replica status..."
-if ! dfx ping > /dev/null 2>&1; then
-    echo "Starting local replica..."
-    dfx start --background --clean
+if [ -z "$1" ]; then
+    NETWORK="local"
 else
-    echo "Local replica is already running"
+    NETWORK=$1
 fi
 
-# Step 2: Deploy the DAO Explorer canister and add cycles
-echo "🏗️  Deploying DAO Explorer canister and adding cycles..."
-dfx deploy sudao_be_explorer
-dfx deploy icp_ledger_canister --specified-id ryjl3-tyaaa-aaaaa-aaaba-cai
-# silently ignore the error
-dfx ledger fabricate-cycles --t 100 --canister sudao_be_explorer || true
+# Step 1: Start local replica if not running (only if network not ic)
+if [ "$NETWORK" == "local" ]; then
+    echo "Running on local network, checking local replica status..."
+    if ! dfx ping > /dev/null 2>&1; then
+        echo "❌ Local replica is not running, starting local replica..."
+        dfx start --background --clean
+    else
+        echo "✅ Local replica is already running"
+    fi
+else
+    echo "Running on network: $NETWORK"
+fi
+
+# Step 2: Deploy the DAO Explorer canister
+echo "🏗️  Deploying DAO Explorer canister"
+dfx deploy sudao_be_explorer --network=$NETWORK
+if [ "$NETWORK" == "local" ]; then
+    # Only needed for local network
+    echo "Deploying ICP ledger canister in local network..."
+    dfx deploy icp_ledger_canister --specified-id ryjl3-tyaaa-aaaaa-aaaba-cai
+    echo "Adding cycles to DAO Explorer canister in local network..."
+    dfx ledger fabricate-cycles --t 10 --canister sudao_be_explorer || true # silently ignore the error
+fi
 
 # Get the explorer canister ID
-EXPLORER_ID=$(dfx canister id sudao_be_explorer)
+EXPLORER_ID=$(dfx canister id sudao_be_explorer --network=$NETWORK)
 echo "✅ DAO Explorer deployed with ID: $EXPLORER_ID"
 
 # Step 3 & 4: Modular build and upload for each wasm code
+# Note that we can just use local network to build wasm
 build_and_upload_wasm() {
     local CODE_TYPE=$1
     local CANISTER_NAME=$2
@@ -57,12 +72,11 @@ build_and_upload_wasm() {
     echo "✅ $CANISTER_NAME WASM built at: $WASM_PATH"
 
     # Upload
-    echo "📦 Uploading $CANISTER_NAME WASM code to DAO Explorer as code type '$CODE_TYPE'..."
-    local WASM_HEX=$(hexdump -ve '1/1 "\\%02X"' "$WASM_PATH")
+    echo "📦 Uploading $CANISTER_NAME WASM code to DAO Explorer in $NETWORK network as code type '$CODE_TYPE'..."
+    local WASM_HEX=$(hexdump -ve '"\\" 1/1 "%02X"' "$WASM_PATH")
     local VERSION=$(date +"%Y%m%d-%H%M%S")
-    # Read WASM file as raw blob (no hex conversion needed for dfx call with --argument)
-    # Use dfx's candid argument syntax: (variant, blob, text)
-    dfx canister call sudao_be_explorer setWasmCode --argument-file \
+    # Read WASM file as raw blob
+    dfx canister call sudao_be_explorer setWasmCode --network=$NETWORK --argument-file \
         <(echo "(variant { $CODE_TYPE }, blob \"$WASM_HEX\", \"$VERSION\")")
 }
 
@@ -94,7 +108,7 @@ echo "✅ All WASM code uploaded successfully!"
 
 # Step 5: Verify the upload
 echo "🔍 Verifying WASM upload..."
-HAS_WASM=$(dfx canister call sudao_be_explorer isDeploymentReady)
+HAS_WASM=$(dfx canister call sudao_be_explorer isDeploymentReady --network=$NETWORK)
 
 if [[ "$HAS_WASM" == *"ok"* ]]; then
     echo "✅ WASM code verification successful!"
@@ -105,11 +119,11 @@ fi
 
 # Step 6: Display system info
 echo "📊 System Information:"
-dfx canister call sudao_be_explorer getSystemInfo
+dfx canister call sudao_be_explorer getSystemInfo --network=$NETWORK
 
 echo ""
 echo "🎉 Deployment complete!"
 echo ""
 echo "🔧 Usage Examples:"
 echo "# List all DAOs:"
-echo "dfx canister call sudao_be_explorer listDAOs"
+echo "dfx canister call sudao_be_explorer listDAOs --network=$NETWORK"

@@ -1,7 +1,7 @@
 import React from "react";
 import Greet from "./greet";
 import { useAccounts } from "@nfid/identitykit/react";
-import UserProfile from "@/components/Auth/Profile";
+//import UserProfile from "@/components/Auth/Profile";
 
 const Example: React.FC = () => {
   const account = useAccounts();
@@ -9,7 +9,7 @@ const Example: React.FC = () => {
 
   return (
     <main className="flex flex-col w-full min-h-screen pt-20">
-      <UserProfile />
+      {/* <UserProfile /> */}
       <p>HALO INI EXAMPLE PAGE</p>
       <Greet />
     </main>

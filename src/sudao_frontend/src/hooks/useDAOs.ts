@@ -1,22 +1,27 @@
-import { useState, useEffect } from 'react';
-import { useAgent } from '@nfid/identitykit/react';
+import { useState, useCallback } from 'react';
 import { toast } from 'react-toastify';
-import { listDAOs, createDAO, type DAOEntry, type DeploymentInfo, type CreateDAORequest } from '../services/explorer';
-import { discoverCollectives, userCollectives } from '../mocks';
+import { useAgents } from '@/hooks/useAgents';
+import { CreateDAORequest, DAOEntry, DeploymentInfo } from 'declarations/sudao_be_explorer/sudao_be_explorer.did';
+import { matchVariant, Opt } from '@/utils/converter';
+import { AnonPrincipal } from '@/utils/common';
+import { discoverCollectives, userCollectives } from '@/mocks';
 
 export const useDAOs = () => {
-  const agent = useAgent();
-  const [daos, setDaos] = useState<Array<[DAOEntry, DeploymentInfo | null]>>([]);
+  const [daos, setDaos] = useState<[DAOEntry, DeploymentInfo | null][]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { agents } = useAgents();
 
-  const fetchDAOs = async () => {
-    console.log('[useDAOs] fetchDAOs called with agent:', !!agent);
+  const explorerDao = agents.explorerDao;
+
+  const fetchDAOs = useCallback(async () => {
+    console.log('[useDAOs] fetchDAOs called with agent:', explorerDao);
     setLoading(true);
     setError(null);
     try {
       console.log('[useDAOs] Calling listDAOs service');
-      const result = await listDAOs();
+      const daosOpt = await explorerDao.listDAOs();
+      const result = daosOpt.map(([dao, deployment]) => [dao, Opt(deployment)] as [DAOEntry, DeploymentInfo | null]);
       console.log('[useDAOs] listDAOs service returned:', result);
       setDaos(result);
       console.log('[useDAOs] DAOs state updated successfully');
@@ -34,13 +39,14 @@ export const useDAOs = () => {
             description: dao.description,
             tags: dao.tags,
             createdAt: BigInt(Date.now() * 1000000),
-            creator: 'mock-creator-principal'
-          } as DAOEntry,
+            creator: AnonPrincipal
+          },
           {
-            status: { Deployed: { canisterId: 'mock-canister-id' } },
-            startedAt: BigInt(Date.now() * 1000000),
-            completedAt: BigInt(Date.now() * 1000000)
-          } as DeploymentInfo
+            status: { deployed: { deployedAt: BigInt(Date.now() * 1000000) } },
+            createdAt: BigInt(Date.now() * 1000000),
+            canisterIds: [],
+            lastUpdate: BigInt(Date.now() * 1000000)
+          }
         ] as [DAOEntry, DeploymentInfo | null])),
         ...userCollectives.map(dao => ([
           {
@@ -49,40 +55,47 @@ export const useDAOs = () => {
             description: dao.description,
             tags: dao.tags,
             createdAt: BigInt(Date.now() * 1000000),
-            creator: 'current-user-principal'
-          } as DAOEntry,
+            creator: AnonPrincipal
+          },
           {
-            status: { Deployed: { canisterId: 'mock-canister-id' } },
-            startedAt: BigInt(Date.now() * 1000000),
-            completedAt: BigInt(Date.now() * 1000000)
-          } as DeploymentInfo
+            status: { deployed: { deployedAt: BigInt(Date.now() * 1000000) } },
+            createdAt: BigInt(Date.now() * 1000000),
+            canisterIds: [],
+            lastUpdate: BigInt(Date.now() * 1000000)
+          }
         ] as [DAOEntry, DeploymentInfo | null]))
       ];
       setDaos(mockDAOs);
     } finally {
       setLoading(false);
     }
-  };
+  }, [explorerDao]);
 
-  const createNewDAO = async (request: CreateDAORequest) => {
+  const createNewDAO = useCallback(async (request: CreateDAORequest) => {
     console.log('[useDAOs] createNewDAO called with request:', request);
-    console.log('[useDAOs] Agent available:', !!agent);
     
     try {
       console.log('[useDAOs] Calling createDAO service');
-      await createDAO(request, agent || undefined);
-      console.log('[useDAOs] createDAO call completed');
+      const res = await explorerDao.addDAO(request);
+      matchVariant(res, {
+        ok: (result) => {
+          console.log('[useDAOs] createDAO call completed:', result);
+          toast.success(`DAO "${request.name}" creation initiated!`);
+          fetchDAOs();
+          return result;
+        },
+        err: (error) => {
+          toast.error(error);
+          return null;
+        },
+      })
     } catch (err) {
-      console.log('[useDAOs] createDAO call failed, but assuming async creation');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to create DAO';
+      console.error('[useDAOs] createDAO call failed, but assuming async creation');
+      toast.error(errorMessage);
+      return null;
     }
-    
-    toast.success(`DAO "${request.name}" creation initiated! It will appear in the list shortly.`);
-    return 'async-creation';
-  };
-
-  useEffect(() => {
-    fetchDAOs();
-  }, [agent]);
+  }, [explorerDao, fetchDAOs]);
 
   return {
     daos,

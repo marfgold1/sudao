@@ -103,7 +103,7 @@ export const mockTransactions: Transaction[] = [
     {
         id: "1",
         account: "2vxsx-fae...aaa-aaa",
-        amount: 10,
+        amount: 10n,
         type: "Out",
         beneficiary: "Michael Donner",
         address: "rwlgt-iia...aai-aaa",
@@ -112,7 +112,7 @@ export const mockTransactions: Transaction[] = [
     {
         id: "2",
         account: "rwlgt-iia...aal-aaa",
-        amount: 80,
+        amount: 80n,
         type: "In",
         beneficiary: "Collective Treasury",
         address: "2vxsx-faea...aaa",
@@ -121,7 +121,7 @@ export const mockTransactions: Transaction[] = [
     {
         id: "3",
         account: "pjlw-4la...aac-aaa",
-        amount: 80,
+        amount: 80n,
         type: "Out",
         beneficiary: "Austin Ridge",
         address: "jv6dk-hya...aaa",
@@ -130,7 +130,7 @@ export const mockTransactions: Transaction[] = [
     {
         id: "4",
         account: "h3b5k-c2a...aad-aaa",
-        amount: 80,
+        amount: 80n,
         type: "Out",
         beneficiary: "Amar Lombardi",
         address: "2vxsx-faea...aaa",
@@ -139,7 +139,7 @@ export const mockTransactions: Transaction[] = [
     {
         id: "5",
         account: "jv6dk-hya...aae-aaa",
-        amount: 80,
+        amount: 80n,
         type: "Out",
         beneficiary: "Kenneth Spikes",
         address: "h3b5k-c2a...aad",
@@ -148,7 +148,7 @@ export const mockTransactions: Transaction[] = [
     {
         id: "6",
         account: "o7h6t-lia...aaf-aaa",
-        amount: 80,
+        amount: 80n,
         type: "In",
         beneficiary: "Collective Treasury",
         address: "2vxsx-faea...aaa",
@@ -157,7 +157,7 @@ export const mockTransactions: Transaction[] = [
     {
         id: "7",
         account: "sg6tq-zia...aah-aaa",
-        amount: 80,
+        amount: 80n,
         type: "In",
         beneficiary: "Collective Treasury",
         address: "2vxsx-faea...aaa",
@@ -166,7 +166,7 @@ export const mockTransactions: Transaction[] = [
     {
         id: "8",
         account: "TASK-7184",
-        amount: 80,
+        amount: 80n,
         type: "In",
         beneficiary: "Collective Treasury",
         address: "2vxsx-faea...aaa",
@@ -175,7 +175,7 @@ export const mockTransactions: Transaction[] = [
     {
         id: "9",
         account: "TASK-5160",
-        amount: 80,
+        amount: 80n,
         type: "In",
         beneficiary: "Collective Treasury",
         address: "2vxsx-faea...aaa",
@@ -189,7 +189,7 @@ export const userCollectives = [
         id: "yh1",
         name: "Yayasan HMIF",
         description:
-        "Transforming city rooftops and abandoned lots into lush community gardens and green spaces for sustainable urban living.",
+            "Transforming city rooftops and abandoned lots into lush community gardens and green spaces for sustainable urban living.",
         avatar: "/placeholder.svg?height=40&width=40&text=YH",
         members: 410,
         tags: ["Urban", "Gardening", "Sustainability"],
@@ -202,7 +202,7 @@ export const discoverCollectives = [
         id: "art-change",
         name: "Art for Change Network",
         description:
-        "Uniting artists worldwide to fund public art projects and social campaigns that inspire positive change in communities.",
+            "Uniting artists worldwide to fund public art projects and social campaigns that inspire positive change in communities.",
         avatar: "/placeholder.svg?height=40&width=40&text=AC",
         members: 720,
         tags: ["Art", "Activism", "Community"],
@@ -212,7 +212,7 @@ export const discoverCollectives = [
         id: "farmers-future",
         name: "Farmers for Future",
         description:
-        "Supporting regenerative agriculture projects and providing training to small farmers for sustainable food production.",
+            "Supporting regenerative agriculture projects and providing training to small farmers for sustainable food production.",
         avatar: "/placeholder.svg?height=40&width=40&text=FF",
         members: 520,
         tags: ["Agriculture", "Sustainability", "Climate"],
@@ -240,7 +240,7 @@ export const discoverCollectives = [
         id: "coral-revival",
         name: "Coral Revival Collective",
         description:
-        "Dedicated to restoring coral reefs across Southeast Asia through large-scale restoration and community education programs.",
+            "Dedicated to restoring coral reefs across Southeast Asia through large-scale restoration and community education programs.",
         avatar: "/placeholder.svg?height=40&width=40&text=CR",
         members: 46,
         tags: ["Environment", "Restoration", "Ocean"],
@@ -250,7 +250,7 @@ export const discoverCollectives = [
         id: "urban-greenmakers",
         name: "Urban Greenmakers",
         description:
-        "Transforming city rooftops and abandoned lots into lush community gardens and green spaces for sustainable urban living.",
+            "Transforming city rooftops and abandoned lots into lush community gardens and green spaces for sustainable urban living.",
         avatar: "/placeholder.svg?height=40&width=40&text=UG",
         members: 410,
         tags: ["Urban", "Gardening", "Sustainability"],
@@ -269,7 +269,7 @@ export const discoverCollectives = [
         id: "open-school",
         name: "Open School Alliance",
         description:
-        "Building free, open-source educational materials and supporting local teachers in underserved communities.",
+            "Building free, open-source educational materials and supporting local teachers in underserved communities.",
         avatar: "/placeholder.svg?height=40&width=40&text=OS",
         members: 360,
         tags: ["Education", "Open-Source", "Community"],

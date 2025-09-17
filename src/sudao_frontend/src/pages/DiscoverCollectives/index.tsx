@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react"
+import React, { useState, useMemo, useEffect } from "react"
 import { motion } from "framer-motion"
 import { Plus, Search, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -7,22 +7,23 @@ import { CollectiveCard } from "@/components"
 import { floatingCards } from "@/mocks"
 import { useDAOs } from "../../hooks/useDAOs"
 import { DAOCreationModal } from "../../components/DAOCreationModal"
-import { useIdentity, useAgent } from "@nfid/identitykit/react"
+import { useAccount } from "@/hooks/useAccount"
 
 
 const DiscoverCollectives: React.FC = () => {
     const [searchQuery, setSearchQuery] = useState("")
     const [showCreateModal, setShowCreateModal] = useState(false)
     const [isCreating, setIsCreating] = useState(false)
-    const { daos, loading, createNewDAO } = useDAOs()
-    const identity = useIdentity()
-    const agent = useAgent()
-    const isAuthenticated = !!agent
-    
-    const currentUserPrincipal = identity?.getPrincipal()?.toString()
-    
+    const { daos, loading, fetchDAOs, createNewDAO } = useDAOs()
+    const { currentAccount } = useAccount();
+
+    useEffect(() => {
+        fetchDAOs();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [])
+
     // Memoize collectives to prevent infinite re-renders
-    const { allCollectives, userCollectives, discoverCollectives } = useMemo(() => {
+    const { userCollectives, discoverCollectives } = useMemo(() => {
         const all = daos.map(([dao, deployment]) => ({
             id: dao.id,
             name: dao.name,
@@ -30,17 +31,17 @@ const DiscoverCollectives: React.FC = () => {
             tags: dao.tags,
             members: Math.floor(Math.random() * 1000) + 50,
             avatar: `/placeholder.svg?height=40&width=40&text=${dao.name.substring(0, 2).toUpperCase()}`,
-            isOwned: dao.creator === currentUserPrincipal,
+            isOwned: dao.creator.toString() === currentAccount?.principal.toString(),
             deploymentStatus: deployment?.status
         }))
-        
+
         return {
             allCollectives: all,
             userCollectives: all.filter(c => c.isOwned),
             discoverCollectives: all.filter(c => !c.isOwned)
         }
-    }, [daos, currentUserPrincipal])
-    
+    }, [daos, currentAccount])
+
     const [filteredCollectives, setFilteredCollectives] = useState<typeof discoverCollectives>([])
 
     // Update filtered collectives when search query or discover collectives change
@@ -51,25 +52,25 @@ const DiscoverCollectives: React.FC = () => {
         }
 
         const filtered = discoverCollectives.filter(
-        (collective) =>
-            collective.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            collective.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            collective.tags.some((tag) => tag.toLowerCase().includes(searchQuery.toLowerCase())),
+            (collective) =>
+                collective.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                collective.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                collective.tags.some((tag) => tag.toLowerCase().includes(searchQuery.toLowerCase())),
         )
         setFilteredCollectives(filtered)
     }, [searchQuery, discoverCollectives])
-    
+
     // Initialize filtered collectives when discoverCollectives changes
     React.useEffect(() => {
         if (!searchQuery.trim()) {
             setFilteredCollectives(discoverCollectives)
         }
     }, [discoverCollectives, searchQuery])
-    
+
     const handleSearch = (query: string) => {
         setSearchQuery(query)
     }
-    
+
     const handleCreateDAO = async (request: { name: string; description: string; tags: string[] }) => {
         setIsCreating(true)
         try {
@@ -114,14 +115,14 @@ const DiscoverCollectives: React.FC = () => {
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.8, delay: 0.6 }}
                         >
-                            {isAuthenticated && (
+                            {currentAccount && (
                                 <Button
                                     size="lg"
                                     className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-6 text-lg font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-300"
                                     onClick={() => setShowCreateModal(true)}
                                 >
-                                <Plus className="mr-2 h-5 w-5" />
-                                Start a new Collective
+                                    <Plus className="mr-2 h-5 w-5" />
+                                    Start a new Collective
                                 </Button>
                             )}
                         </motion.div>
@@ -185,7 +186,7 @@ const DiscoverCollectives: React.FC = () => {
                             <span className="ml-2">Loading DAOs...</span>
                         </div>
                     )}
-                    
+
                     {/* Collective Managed by You */}
                     {!loading && userCollectives.length > 0 && (
                         <motion.div
@@ -226,7 +227,7 @@ const DiscoverCollectives: React.FC = () => {
                     )}
                 </div>
             </section>
-            
+
             {/* DAO Creation Modal */}
             <DAOCreationModal
                 isOpen={showCreateModal}

@@ -17,7 +17,7 @@ export interface Proposal {
 export interface Transaction {
     id: string
     account: string
-    amount: number
+    amount: bigint
     type: "In" | "Out"
     beneficiary: string
     address: string

@@ -2,16 +2,26 @@ import React from 'react';
 import { useParams } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import { useDAO } from '../hooks/useDAO';
+import { DAOProvider } from '@/contexts/dao/provider';
+import { formatTime, getVariant, isVariant, keyVariant, matchVariant } from '@/utils/converter';
 
-interface DAOLayoutProps {
-  children: React.ReactNode | ((props: { dao: any; canisterId: string | null; ammCanisterId: string | null; isRegistered: boolean; isCreator: boolean; loading: boolean; error: string | null; deploymentStatus: string | null }) => React.ReactNode);
-}
-
-export const DAOLayout: React.FC<DAOLayoutProps> = ({ children }) => {
+export const DAOLayout = ({ children }: { children: React.ReactNode }) => {
   const { daoId } = useParams<{ daoId: string }>();
-  const { dao, canisterId, ammCanisterId, isRegistered, isCreator, loading, error, deploymentStatus } = useDAO(daoId || '');
-  
-  if (loading) {
+
+  return (
+    <DAOProvider
+      daoId={daoId || ''}
+    >
+      <DAOLayoutContent>
+        {children}
+      </DAOLayoutContent>
+    </DAOProvider>
+  )
+};
+
+const DAOLayoutContent = ({ children }: { children: React.ReactNode }) => {
+  const { daoInfo, isLoading, error, deploymentInfo } = useDAO();
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 mt-[4.5rem]">
         <div className="container mx-auto px-4 py-6">
@@ -25,26 +35,6 @@ export const DAOLayout: React.FC<DAOLayoutProps> = ({ children }) => {
   }
 
   if (error) {
-    // Check if it's a deployment status error
-    if (deploymentStatus) {
-      return (
-        <div className="min-h-screen bg-gray-50 mt-[4.5rem]">
-          <div className="container mx-auto px-4 py-6">
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-              <div className="flex items-center justify-center">
-                <Loader2 className="h-6 w-6 animate-spin text-blue-600 mr-3" />
-                <div>
-                  <h3 className="text-lg font-semibold text-blue-800">DAO Deployment in Progress</h3>
-                  <p className="text-blue-600 mt-1">{deploymentStatus}</p>
-                  <p className="text-sm text-blue-500 mt-2">This usually takes 1-2 minutes. The page will automatically refresh.</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      );
-    }
-    
     return (
       <div className="min-h-screen bg-gray-50 mt-[4.5rem]">
         <div className="container mx-auto px-4 py-6">
@@ -56,7 +46,38 @@ export const DAOLayout: React.FC<DAOLayoutProps> = ({ children }) => {
     );
   }
 
-  if (!dao) {
+  // Check if it's a deployment status error
+  if (deploymentInfo && !getVariant(deploymentInfo.status, 'deployed')) {
+    return (
+      <div className="min-h-screen bg-gray-50 mt-[4.5rem]">
+        <div className="container mx-auto px-4 py-6">
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+            <div className="flex items-center justify-center">
+              <Loader2 className="h-6 w-6 animate-spin text-blue-600 mr-3" />
+              <div>
+                <h3 className="text-lg font-semibold text-blue-800">DAO Deployment Status</h3>
+                <p className="text-blue-600 mt-1">{
+                  matchVariant(deploymentInfo.status, {
+                    deploying: (val) => `DAO deployment in progress started at ${formatTime(val.startedAt)} and currently in step: ${matchVariant(val.step, {
+                      creating_canister: (v) => `creating canister ${keyVariant(v)}`,
+                      installing_code: (v) => `installing code ${keyVariant(v)}`,
+                    })}`,
+                    failed: (val) => `DAO deployment failed at ${formatTime(val.failedAt)} with error: ${val.errorMessage}`,
+                    queued: () => 'DAO deployment queued',
+                  })
+                }</p>
+                {!isVariant(deploymentInfo.status, 'failed') && (
+                  <p className="text-sm text-blue-500 mt-2">This usually takes 1-2 minutes. The page will automatically refresh.</p>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!daoInfo) {
     return (
       <div className="min-h-screen bg-gray-50 mt-[4.5rem]">
         <div className="container mx-auto px-4 py-6">
@@ -71,13 +92,11 @@ export const DAOLayout: React.FC<DAOLayoutProps> = ({ children }) => {
   return (
     <>
       {/* Page Content */}
-      {typeof children === 'function' ? children({ 
-        dao,
-        canisterId,
-        ammCanisterId,
-        isRegistered, 
-        isCreator 
-      }) : children}
+      <div className="min-h-screen bg-gray-50 mt-[4.5rem]">
+        <div className="container mx-auto px-4 py-6">
+          {children}
+        </div>
+      </div>
     </>
   );
-};
+}

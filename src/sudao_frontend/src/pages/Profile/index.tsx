@@ -9,33 +9,33 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
-  ChevronDown,
-  ChevronLeft,
-  ChevronRight,
-  Copy,
-  Edit,
-  Search,
-  ArrowUpRight,
-  ArrowDownLeft,
-  ChevronUp,
-  Filter,
-  ArrowUp,
-  ArrowDown,
-  ChevronsLeft,
-  ChevronsRight,
+    ChevronDown,
+    ChevronLeft,
+    ChevronRight,
+    Copy,
+    Edit,
+    Search,
+    ArrowUpRight,
+    ArrowDownLeft,
+    ChevronUp,
+    Filter,
+    ArrowUp,
+    ArrowDown,
+    ChevronsLeft,
+    ChevronsRight,
 } from "lucide-react"
 import { mockProposals, mockTransactions } from "@/mocks"
 import { Proposal, Transaction } from "@/types"
 import { ProposalItem } from "@/components"
 
 const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.1,
+    hidden: { opacity: 0 },
+    visible: {
+        opacity: 1,
+        transition: {
+            staggerChildren: 0.1,
+        },
     },
-  },
 }
 
 const itemVariants = {
@@ -57,16 +57,16 @@ export default function ProfileDashboard() {
     const [showFilter, setShowFilter] = useState(false)
 
     const transactions = mockTransactions.slice(0, 3)
-    const proposals = mockProposals.slice(0,3)
+    const proposals = mockProposals.slice(0, 3)
 
     const handleSort = (field: keyof Transaction) => {
-            if (sortField === field) {
-                setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')
-            } else {
-                setSortField(field)
-                setSortDirection('asc')
-            }
+        if (sortField === field) {
+            setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')
+        } else {
+            setSortField(field)
+            setSortDirection('asc')
         }
+    }
 
     const filteredTransactions = transactions
         .filter((transaction) => {
@@ -78,21 +78,21 @@ export default function ProfileDashboard() {
         })
         .sort((a, b) => {
             if (!sortField) return 0
-            
+
             let aValue = a[sortField]
             let bValue = b[sortField]
-            
+
             // Handle undefined values
             if (aValue === undefined && bValue === undefined) return 0
             if (aValue === undefined) return sortDirection === 'asc' ? 1 : -1
             if (bValue === undefined) return sortDirection === 'asc' ? -1 : 1
-            
+
             // Convert strings to lowercase for case-insensitive comparison
             if (typeof aValue === 'string' && typeof bValue === 'string') {
                 aValue = aValue.toLowerCase()
                 bValue = bValue.toLowerCase()
             }
-            
+
             if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1
             if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1
             return 0
@@ -142,12 +142,12 @@ export default function ProfileDashboard() {
                             <div className="text-gray-600 mb-2">
                                 <p>
                                     I'm highly experienced in blockchain development and security best practices through my work at
-                                    OpenZeppelin as Head of Solutions Architecture. I've worked 
+                                    OpenZeppelin as Head of Solutions Architecture. I've worked
                                     {isReadMoreExpanded && (
                                         <span>
-                                        {" "}
-                                        extensively with smart contract auditing, DeFi protocols, and governance systems. My expertise
-                                        includes Solidity development, security analysis, and building scalable blockchain infrastructure.
+                                            {" "}
+                                            extensively with smart contract auditing, DeFi protocols, and governance systems. My expertise
+                                            includes Solidity development, security analysis, and building scalable blockchain infrastructure.
                                         </span>
                                     )}
                                 </p>
@@ -156,15 +156,15 @@ export default function ProfileDashboard() {
                                     className="p-0 h-auto text-blue-600 hover:text-blue-800"
                                     onClick={() => setIsReadMoreExpanded(!isReadMoreExpanded)}
                                 >
-                                {isReadMoreExpanded ? (
-                                    <>
-                                        Show less <ChevronUp className="w-4 h-4 ml-1" />
-                                    </>
-                                ) : (
-                                    <>
-                                        Read more <ChevronDown className="w-4 h-4 ml-1" />
-                                    </>
-                                )}
+                                    {isReadMoreExpanded ? (
+                                        <>
+                                            Show less <ChevronUp className="w-4 h-4 ml-1" />
+                                        </>
+                                    ) : (
+                                        <>
+                                            Read more <ChevronDown className="w-4 h-4 ml-1" />
+                                        </>
+                                    )}
                                 </Button>
                             </div>
                         </div>
@@ -245,7 +245,7 @@ export default function ProfileDashboard() {
                                 Filter
                             </Button>
                         </div>
-                        
+
                         {/* Filter Panel */}
                         {showFilter && (
                             <motion.div
@@ -277,9 +277,9 @@ export default function ProfileDashboard() {
                                             className="w-40"
                                         />
                                     </div>
-                                    <Button 
-                                        variant="outline" 
-                                        size="sm" 
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
                                         onClick={() => {
                                             setTypeFilter('all')
                                             setDateFilter('')
@@ -299,85 +299,85 @@ export default function ProfileDashboard() {
                                 <TableRow>
                                     <TableHead className="w-12">
                                         <Checkbox
-                                        checked={selectedRows.length === paginatedTransactions.length}
-                                        onCheckedChange={handleSelectAll}
+                                            checked={selectedRows.length === paginatedTransactions.length}
+                                            onCheckedChange={handleSelectAll}
                                         />
                                     </TableHead>
-                                    <TableHead 
+                                    <TableHead
                                         className="cursor-pointer hover:bg-gray-50 select-none"
                                         onClick={() => handleSort('account')}
                                     >
                                         <div className="flex items-center gap-1">
                                             Account
                                             {sortField === 'account' && (
-                                                sortDirection === 'asc' ? 
-                                                <ArrowUp className="w-4 h-4" /> : 
-                                                <ArrowDown className="w-4 h-4" />
+                                                sortDirection === 'asc' ?
+                                                    <ArrowUp className="w-4 h-4" /> :
+                                                    <ArrowDown className="w-4 h-4" />
                                             )}
                                         </div>
                                     </TableHead>
-                                    <TableHead 
+                                    <TableHead
                                         className="cursor-pointer hover:bg-gray-50 select-none"
                                         onClick={() => handleSort('amount')}
                                     >
                                         <div className="flex items-center gap-1">
                                             Amount
                                             {sortField === 'amount' && (
-                                                sortDirection === 'asc' ? 
-                                                <ArrowUp className="w-4 h-4" /> : 
-                                                <ArrowDown className="w-4 h-4" />
+                                                sortDirection === 'asc' ?
+                                                    <ArrowUp className="w-4 h-4" /> :
+                                                    <ArrowDown className="w-4 h-4" />
                                             )}
                                         </div>
                                     </TableHead>
-                                    <TableHead 
+                                    <TableHead
                                         className="cursor-pointer hover:bg-gray-50 select-none"
                                         onClick={() => handleSort('type')}
                                     >
                                         <div className="flex items-center gap-1">
                                             Type
                                             {sortField === 'type' && (
-                                                sortDirection === 'asc' ? 
-                                                <ArrowUp className="w-4 h-4" /> : 
-                                                <ArrowDown className="w-4 h-4" />
+                                                sortDirection === 'asc' ?
+                                                    <ArrowUp className="w-4 h-4" /> :
+                                                    <ArrowDown className="w-4 h-4" />
                                             )}
                                         </div>
                                     </TableHead>
-                                    <TableHead 
+                                    <TableHead
                                         className="cursor-pointer hover:bg-gray-50 select-none"
                                         onClick={() => handleSort('beneficiary')}
                                     >
                                         <div className="flex items-center gap-1">
                                             Beneficiary
                                             {sortField === 'beneficiary' && (
-                                                sortDirection === 'asc' ? 
-                                                <ArrowUp className="w-4 h-4" /> : 
-                                                <ArrowDown className="w-4 h-4" />
+                                                sortDirection === 'asc' ?
+                                                    <ArrowUp className="w-4 h-4" /> :
+                                                    <ArrowDown className="w-4 h-4" />
                                             )}
                                         </div>
                                     </TableHead>
-                                    <TableHead 
+                                    <TableHead
                                         className="cursor-pointer hover:bg-gray-50 select-none"
                                         onClick={() => handleSort('address')}
                                     >
                                         <div className="flex items-center gap-1">
                                             Address
                                             {sortField === 'address' && (
-                                                sortDirection === 'asc' ? 
-                                                <ArrowUp className="w-4 h-4" /> : 
-                                                <ArrowDown className="w-4 h-4" />
+                                                sortDirection === 'asc' ?
+                                                    <ArrowUp className="w-4 h-4" /> :
+                                                    <ArrowDown className="w-4 h-4" />
                                             )}
                                         </div>
                                     </TableHead>
-                                    <TableHead 
+                                    <TableHead
                                         className="cursor-pointer hover:bg-gray-50 select-none"
                                         onClick={() => handleSort('date')}
                                     >
                                         <div className="flex items-center gap-1">
                                             Date
                                             {sortField === 'date' && (
-                                                sortDirection === 'asc' ? 
-                                                <ArrowUp className="w-4 h-4" /> : 
-                                                <ArrowDown className="w-4 h-4" />
+                                                sortDirection === 'asc' ?
+                                                    <ArrowUp className="w-4 h-4" /> :
+                                                    <ArrowDown className="w-4 h-4" />
                                             )}
                                         </div>
                                     </TableHead>
@@ -401,13 +401,12 @@ export default function ProfileDashboard() {
                                                 />
                                             </TableCell>
                                             <TableCell className="font-mono text-sm py-4">{transaction.account}</TableCell>
-                                            <TableCell className="font-semibold py-4">{transaction.amount} ICP</TableCell>
+                                            <TableCell className="font-semibold py-4">{transaction.amount.toString()} ICP</TableCell>
                                             <TableCell className="py-4">
                                                 <Badge
                                                     variant={transaction.type === "In" ? "Approved" : "Rejected"}
-                                                    className={`flex items-center space-x-1 w-fit ${
-                                                        transaction.type === "In" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
-                                                    }`}
+                                                    className={`flex items-center space-x-1 w-fit ${transaction.type === "In" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
+                                                        }`}
                                                 >
                                                     {transaction.type === "In" ? (
                                                         <ArrowDownLeft className="w-3 h-3" />
@@ -486,7 +485,7 @@ export default function ProfileDashboard() {
                 </motion.div>
 
                 {/* Submitted Proposals Section */}
-                <motion.div 
+                <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.2 }}

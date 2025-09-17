@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Eye, UserPlus } from "lucide-react"
 import { Link } from "react-router-dom"
+import { DeploymentStatus } from "declarations/sudao_be_explorer/sudao_be_explorer.did"
 
 interface Collective {
     id: string
@@ -14,7 +15,7 @@ interface Collective {
     members: number
     tags: string[]
     category?: string
-    deploymentStatus?: { Pending: null } | { Deploying: null } | { Deployed: { canisterId: string } } | { Failed: { error: string } }
+    deploymentStatus?: DeploymentStatus
 }
 
 interface CollectiveCardProps {

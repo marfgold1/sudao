@@ -2,20 +2,31 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
-import "@nfid/identitykit/react/styles.css";
-import { IdentityKitProvider } from "@nfid/identitykit/react";
-import { IdentityKitAuthType, InternetIdentity, NFIDW } from "@nfid/identitykit";
-import { canisterId as backendCanId } from "declarations/sudao_backend";
-import { canisterId as explorerCanId } from "declarations/sudao_be_explorer";
+import { CanistersProvider } from "@/contexts/canisters/provider";
+import { AgentsProvider } from "@/contexts/agents/provider";
+import { IdentityProvider } from "@/contexts/identity/provider.tsx";
+
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+
+const queryClient = new QueryClient();
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <IdentityKitProvider 
-      signers={[InternetIdentity, NFIDW]}
-      signerClientOptions={{targets: [backendCanId, explorerCanId]}}
-      authType={IdentityKitAuthType.DELEGATION}
-    >
-      <App />
-    </IdentityKitProvider>
+    <QueryClientProvider client={queryClient}>
+      <CanistersProvider>
+        <IdentityProvider>
+          <AgentsProvider>
+            <App />
+          </AgentsProvider>
+        </IdentityProvider>
+      </CanistersProvider>
+    </QueryClientProvider>
   </StrictMode>
 );
+
+declare global {
+  interface BigInt {
+    toJSON(): string;
+  }
+}
+BigInt.prototype.toJSON = function () { return this.toString() }

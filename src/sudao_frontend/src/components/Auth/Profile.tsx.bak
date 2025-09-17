@@ -1,35 +1,9 @@
 import { useEffect, useState, useCallback } from "react";
-import { useIdentity, useAccounts, useAgent } from "@nfid/identitykit/react";
-import {
-  idlFactory as idlFactoryGovernance,
-  canisterId as canisterIdGovernance,
-} from "declarations/sudao_backend";
-import type {
-  UserProfile,
-  _SERVICE as _SERVICE_GOVERNANCE,
-} from "declarations/sudao_backend/sudao_backend.did";
-import type { _SERVICE as _SERVICE_ICP_LEDGER } from "declarations/icp_ledger_canister/icp_ledger_canister.did";
-import type { _SERVICE as _SERVICE_GOVERNANCE_LEDGER } from "declarations/icrc1_ledger_canister/icrc1_ledger_canister.did";
-import {
-  idlFactory as idlFactoryGovernanceLedger,
-  canisterId as canisterIdGovernanceLedger,
-} from "declarations/sudao_ledger/index";
-// import type { _SERVICE as _SERVICE_DAO_LEDGER } from "declarations/icrc1_ledger_canister/icrc1_ledger_canister.did";
-import { Actor, ActorSubclass } from "@dfinity/agent";
-// import {
-//   idlFactory as idlFactoryLedger,
-//   canisterId as ledgerCanisterId,
-// } from "declarations/icrc1_ledger_canister/index";
+import { useIdentity, useAccounts } from "@nfid/identitykit/react";
+import { useAgents } from "@/hooks/useAgents";
+import type { UserProfile } from "declarations/sudao_backend/sudao_backend.did";
 import { Principal } from "@dfinity/principal";
-import {
-  idlFactory as idlFactoryICP,
-  canisterId as icpCanisterId,
-} from "declarations/icp_ledger_canister/index";
-import {
-  idlFactory as idlFactoryAMM,
-  canisterId as ammCanisterId,
-} from "declarations/sudao_amm/index";
-import type { _SERVICE as _SERVICE_AMM } from "declarations/sudao_amm/sudao_amm.did";
+import { PrincipalReq } from "@/utils/converter";
 
 // Helper to safely stringify objects with BigInt
 function safeStringify(obj: unknown) {
@@ -43,7 +17,7 @@ function safeStringify(obj: unknown) {
 export default function UserProfile() {
   const identity = useIdentity();
   const accounts = useAccounts();
-  const authenticatedAgent = useAgent();
+  const {agents, canisterIds: {daoAmm: daoAmmCanId, icpLedger: icpLedgerCanId}} = useAgents();
   const [userPrincipal, setUserPrincipal] = useState<string | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [isRegistering, setIsRegistering] = useState(false);
@@ -53,16 +27,6 @@ export default function UserProfile() {
     message: string;
   } | null>(null);
   const [numberValue, setNumberValue] = useState<number>(0);
-  const [actorGovernance, setActorGovernance] =
-    useState<ActorSubclass<_SERVICE_GOVERNANCE> | null>(null);
-  // const [actorLedger, setActorLedger] = useState<ActorSubclass<_SERVICE_DAO_LEDGER> | null>(null);
-  const [actorICP, setActorICP] =
-    useState<ActorSubclass<_SERVICE_ICP_LEDGER> | null>(null);
-  const [actorAMM, setActorAMM] = useState<ActorSubclass<_SERVICE_AMM> | null>(
-    null
-  );
-  const [actorGovernanceLedger, setActorGovernanceLedger] =
-    useState<ActorSubclass<_SERVICE_GOVERNANCE_LEDGER> | null>(null);
   const [debugInfo, setDebugInfo] = useState<string[]>([]);
 
   // Add state for liquidity provision and balances
@@ -73,24 +37,6 @@ export default function UserProfile() {
     governance: number;
     lp: number;
   }>({ icp: 0, governance: 0, lp: 0 });
-  const [ammInfo, setAmmInfo] = useState<{
-    token0: string | null;
-    token1: string | null;
-    fee_rate: number;
-    is_initialized: boolean;
-    swap_count: number;
-    reserve0: number;
-    reserve1: number;
-  }>({
-    token0: null,
-    token1: null,
-    fee_rate: 0,
-    is_initialized: false,
-    swap_count: 0,
-    reserve0: 0,
-    reserve1: 0,
-  });
-
   const addDebugLog = useCallback((message: string) => {
     console.log(`[DEBUG] ${message}`);
     setDebugInfo((prev) => [
@@ -121,100 +67,13 @@ export default function UserProfile() {
     }
   }, [identity, accounts, addDebugLog]);
 
-  // Initialize actors when agent changes
-  useEffect(() => {
-    addDebugLog(
-      "Agent changed - authenticatedAgent: " +
-        (authenticatedAgent ? "exists" : "null")
-    );
-
-    if (!authenticatedAgent) {
-      addDebugLog("No authenticated agent, clearing actors");
-      setActorGovernance(null);
-      setActorICP(null);
-      setActorAMM(null);
-      setActorGovernanceLedger(null);
-      return;
-    }
-
-    const initializeActors = async () => {
-      addDebugLog("Starting actor initialization");
-      try {
-        if (process.env.DFX_NETWORK !== "ic") {
-          addDebugLog("Fetching root key for local development");
-          await authenticatedAgent.fetchRootKey();
-          addDebugLog("Root key fetched successfully");
-        }
-
-        addDebugLog("Creating governance actor");
-        const authenticatedActorGovernance =
-          Actor.createActor<_SERVICE_GOVERNANCE>(idlFactoryGovernance, {
-            agent: authenticatedAgent,
-            canisterId: canisterIdGovernance,
-          });
-        addDebugLog("Governance actor created: " + canisterIdGovernance);
-
-        addDebugLog("Creating ICP actor");
-        const authenticatedActorICP = Actor.createActor<_SERVICE_ICP_LEDGER>(
-          idlFactoryICP,
-          {
-            agent: authenticatedAgent,
-            canisterId: icpCanisterId,
-          }
-        );
-        addDebugLog("ICP actor created: " + icpCanisterId);
-
-        addDebugLog("Creating AMM actor");
-        const authenticatedActorAMM = Actor.createActor<_SERVICE_AMM>(
-          idlFactoryAMM,
-          {
-            agent: authenticatedAgent,
-            canisterId: ammCanisterId,
-          }
-        );
-        addDebugLog("AMM actor created: " + ammCanisterId);
-
-        addDebugLog("Creating Governance Ledger actor");
-        const authenticatedActorGovernanceLedger =
-          Actor.createActor<_SERVICE_GOVERNANCE_LEDGER>(
-            idlFactoryGovernanceLedger,
-            {
-              agent: authenticatedAgent,
-              canisterId: canisterIdGovernanceLedger,
-            }
-          );
-        addDebugLog(
-          "Governance Ledger actor created: " + canisterIdGovernanceLedger
-        );
-
-        setActorGovernance(authenticatedActorGovernance);
-        setActorICP(authenticatedActorICP);
-        setActorAMM(authenticatedActorAMM);
-        setActorGovernanceLedger(authenticatedActorGovernanceLedger);
-        addDebugLog("All actors set successfully");
-      } catch (err) {
-        addDebugLog(
-          "Failed to create actors: " +
-            (err instanceof Error ? err.message : String(err))
-        );
-        console.error("Failed to create authenticated actors:", err);
-        setActorGovernance(null);
-        setActorICP(null);
-        setActorAMM(null);
-        setActorGovernanceLedger(null);
-      }
-    };
-
-    initializeActors();
-  }, [authenticatedAgent, addDebugLog]);
-
   // Register user and fetch profile
   const handleUserRegistration = useCallback(async () => {
     addDebugLog("Starting user registration");
     setIsRegistering(true);
     setStatus(null);
 
-    if (!actorGovernance) {
+    if (!agents.daoBe) {
       addDebugLog("No governance actor available");
       setIsRegistering(false);
       setStatus({
@@ -226,12 +85,12 @@ export default function UserProfile() {
 
     try {
       addDebugLog("Calling register() on governance actor");
-      const registrationResult = await actorGovernance.register();
+      const registrationResult = await agents.daoBe.register();
       addDebugLog("Registration result: " + registrationResult);
       console.log("Registration result:", registrationResult);
 
       addDebugLog("Calling getMyProfile() on governance actor");
-      const profileResult = await actorGovernance.getMyProfile();
+      const profileResult = await agents.daoBe.getMyProfile();
       addDebugLog("Profile result length: " + profileResult.length);
       console.log("Profile result:", profileResult);
 
@@ -258,7 +117,7 @@ export default function UserProfile() {
       setIsRegistering(false);
       addDebugLog("Registration process finished");
     }
-  }, [actorGovernance, addDebugLog]);
+  }, [agents.daoBe, addDebugLog]);
 
   // Refresh profile
   const refreshProfile = useCallback(async () => {
@@ -266,7 +125,7 @@ export default function UserProfile() {
     setIsRefreshing(true);
     setStatus(null);
 
-    if (!actorGovernance) {
+    if (!agents.daoBe) {
       addDebugLog("No governance actor available for refresh");
       setIsRefreshing(false);
       setStatus({
@@ -278,7 +137,7 @@ export default function UserProfile() {
 
     try {
       addDebugLog("Calling getMyProfile() for refresh");
-      const [profile] = await actorGovernance.getMyProfile();
+      const [profile] = await agents.daoBe.getMyProfile();
       addDebugLog("Refresh profile result: " + (profile ? "exists" : "null"));
       setUserProfile(profile ?? null);
       setStatus({ type: "success", message: "Profile refreshed." });
@@ -291,13 +150,13 @@ export default function UserProfile() {
       setIsRefreshing(false);
       addDebugLog("Profile refresh finished");
     }
-  }, [actorGovernance, addDebugLog]);
+  }, [agents.daoBe, addDebugLog]);
 
   // Approve logic
   const handleApprove = async () => {
     addDebugLog("Starting approve process");
-    if (!actorICP || !userPrincipal) {
-      addDebugLog("No ICP actor available for approve");
+    if (!userPrincipal || !daoAmmCanId) {
+      addDebugLog("No DAO AMM actor available for approve");
       setStatus({
         type: "error",
         message: "Authenticated actor not ready. Please log in.",
@@ -306,12 +165,12 @@ export default function UserProfile() {
     }
 
     const acc = {
-      owner: Principal.fromText(ammCanisterId),
+      owner: PrincipalReq(daoAmmCanId),
       subaccount: [] as [],
     };
 
     const acc2 = {
-      owner: Principal.fromText(userPrincipal),
+      owner: PrincipalReq(userPrincipal),
       subaccount: [] as [],
     };
 
@@ -329,18 +188,18 @@ export default function UserProfile() {
     console.log("icrc2_approve_args", icrc2_approve_args);
 
     try {
-      addDebugLog("Checking balance for acc1, ammCanisterId: " + ammCanisterId);
-      const balance = await actorICP.icrc1_balance_of(acc);
+      addDebugLog("Checking balance for acc1, ammCanisterId: " + daoAmmCanId);
+      const balance = await agents.icpLedger.icrc1_balance_of(acc);
       addDebugLog("Balance for acc1: " + balance);
       console.log("Balance:", balance, acc, acc.owner.toString());
 
       addDebugLog("Checking balance for acc2, userPrincipal: " + userPrincipal);
-      const balance2 = await actorICP.icrc1_balance_of(acc2);
+      const balance2 = await agents.icpLedger.icrc1_balance_of(acc2);
       addDebugLog("Balance for acc2: " + balance2);
       console.log("Balance2:", balance2, acc2, acc2.owner.toString());
 
       addDebugLog("Calling icrc2_approve");
-      const response = await actorICP.icrc2_approve(icrc2_approve_args);
+      const response = await agents.icpLedger.icrc2_approve(icrc2_approve_args);
       console.log("Approve Result:", response);
       setStatus({ type: "success", message: "Approve transaction sent." });
     } catch (error) {
@@ -354,7 +213,7 @@ export default function UserProfile() {
 
   const handleSwap = async () => {
     addDebugLog("Starting swap process");
-    if (!actorAMM) {
+    if (!agents.daoAmm) {
       addDebugLog("No AMM actor available for swap");
       setStatus({
         type: "error",
@@ -388,8 +247,8 @@ export default function UserProfile() {
 
     try {
       // Fetch the latest quote
-      const quoteResult = await actorAMM.get_swap_quote(
-        Principal.fromText(icpCanisterId),
+      const quoteResult = await agents.daoAmm.get_swap_quote(
+        PrincipalReq(icpLedgerCanId),
         BigInt(numberValue)
       );
       addDebugLog("Fetched quote for swap: " + safeStringify(quoteResult));
@@ -420,13 +279,13 @@ export default function UserProfile() {
       );
 
       const swapArgs = {
-        token_in_id: Principal.fromText(icpCanisterId),
+        token_in_id: PrincipalReq(icpLedgerCanId),
         amount_in: BigInt(numberValue),
         min_amount_out: BigInt(minAmountOut),
       };
 
       addDebugLog("Swap args: " + safeStringify(swapArgs));
-      const result = await actorAMM.swap(swapArgs);
+      const result = await agents.daoAmm.swap(swapArgs);
       console.log("Swap Result:", result);
       addDebugLog("Swap result: " + safeStringify(result));
 
@@ -434,8 +293,7 @@ export default function UserProfile() {
         // Check balances after successful swap
         try {
           addDebugLog("Checking balances after swap");
-          const { checkUserBalances } = await import("../../services/balance");
-          const updatedBalances = await checkUserBalances(authenticatedAgent, userPrincipal);
+          const updatedBalances = await checkUserBalances(authenticatedAgent, userPrincipal ?? "");
           setUserBalances((prev) => ({
             ...prev,
             icp: updatedBalances.icp,
@@ -475,7 +333,7 @@ export default function UserProfile() {
 
   // Load AMM info only handler
   const handleLoadAMMInfo = async () => {
-    if (!actorAMM) {
+    if (!agents.daoAmm) {
       setStatus({
         type: "error",
         message: "AMM actor not ready. Please ensure you're logged in.",
@@ -487,19 +345,12 @@ export default function UserProfile() {
 
     try {
       addDebugLog("Loading AMM info");
-      const info = await actorAMM.get_token_info();
-      const reserves = await actorAMM.get_reserves();
+      const info = await agents.daoAmm.get_token_info();
+      const reserves = await agents.daoAmm.get_reserves();
       setAmmInfo({
-        token0:
-          info.token0?.length && info.token0[0]
-            ? info.token0[0].toString()
-            : null,
-        token1:
-          info.token1?.length && info.token1[0]
-            ? info.token1[0].toString()
-            : null,
+        token0: info.token0.toString(),
+        token1: info.token1.toString(),
         fee_rate: Number(info.fee_rate),
-        is_initialized: info.is_initialized,
         swap_count: Number(info.swap_count),
         reserve0: Number(reserves[0]),
         reserve1: Number(reserves[1]),
@@ -523,7 +374,7 @@ export default function UserProfile() {
 
   // Manual refresh balances handler
   const handleRefreshBalances = async () => {
-    if (!actorAMM || !actorICP || !actorGovernanceLedger || !userPrincipal) {
+    if (!agents.daoAmm || !agents.icpLedger || !agents.daoLedger || !userPrincipal) {
       setStatus({
         type: "error",
         message: "Actors not ready. Please ensure you're logged in.",
@@ -535,19 +386,15 @@ export default function UserProfile() {
 
     try {
       addDebugLog("Loading AMM info");
-      const info = await actorAMM.get_token_info();
-      const reserves = await actorAMM.get_reserves();
+      const info = await agents.daoAmm.get_token_info();
+      const reserves = await agents.daoAmm.get_reserves();
       setAmmInfo({
-        token0:
-          info.token0?.length && info.token0[0]
-            ? info.token0[0].toString()
-            : null,
+        token0: info.token0.toString(),
         token1:
           info.token1?.length && info.token1[0]
             ? info.token1[0].toString()
             : null,
         fee_rate: Number(info.fee_rate),
-        is_initialized: info.is_initialized,
         swap_count: Number(info.swap_count),
         reserve0: Number(reserves[0]),
         reserve1: Number(reserves[1]),
@@ -558,7 +405,7 @@ export default function UserProfile() {
       const { checkUserBalances } = await import("../../services/balance");
       const balances = await checkUserBalances(authenticatedAgent, userPrincipal);
       
-      const lpInfo = await actorAMM.get_liquidity_info([
+      const lpInfo = await agents.daoAmm.get_liquidity_info([
         Principal.fromText(userPrincipal),
       ]);
       setUserBalances({

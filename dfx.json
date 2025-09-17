@@ -13,23 +13,12 @@
     },
     "sudao_be_explorer": {
       "main": "src/sudao_be_explorer/main.mo",
-      "type": "motoko",
-      "remote": {
-        "id": {
-          "ic": "umunu-kh777-77774-qaaca-cai"
-        }
-      }
+      "type": "motoko"
     },
     "sudao_ledger": {
       "type": "custom",
       "candid": "https://github.com/dfinity/ic/releases/download/ledger-suite-icrc-2025-06-19/ledger.did",
-      "wasm": "https://github.com/dfinity/ic/releases/download/ledger-suite-icrc-2025-06-19/ic-icrc1-ledger.wasm.gz",
-      "remote": {
-        "id": {
-          "ic": "u6s2n-gx777-77774-qaaba-cai"
-        }
-      },
-      "init_arg_file": ".init/dao-ledger-init.did"
+      "wasm": "https://github.com/dfinity/ic/releases/download/ledger-suite-icrc-2025-06-19/ic-icrc1-ledger.wasm.gz"
     },
     "sudao_backend": {
       "main": "src/sudao_backend/main.mo",
@@ -38,6 +27,14 @@
     "sudao_amm": {
       "main": "src/sudao_amm/main.mo",
       "type": "motoko"
+    },
+    "sudao_frontend": {
+      "source": [
+        "src/sudao_frontend/dist",
+        "src/sudao_frontend/assets"
+      ],
+      "type": "assets",
+      "workspace": "sudao_frontend"
     }
   },
   "defaults": {

@@ -1,21 +1,7 @@
-import { Outlet, RouteObject, createBrowserRouter } from "react-router-dom";
-import { Home, Example, Proposal, Transaction, DiscoverCollectives, Profile } from "@/pages";
-import { DynamicNavbar, /* Footer */ } from "@/components";
-// import { AuthProvider } from "@/contexts/AuthContext";
-
-const MainLayout = () => {
-    return (
-        <>
-            <DynamicNavbar />
-            <Outlet />
-            {/* <Footer /> */}
-        </>
-    );
-};
-
-const AuthLayout = () => {
-    return <Outlet />;
-};
+import { RouteObject, createBrowserRouter } from "react-router-dom";
+import { Home, Example, Proposal, DiscoverCollectives, Profile } from "@/pages";
+import { MainLayout, AuthLayout } from "@/routes/layouts";
+import { DAOHomeTest } from "@/pages/DAOHome/test";
 
 const routes: RouteObject[] = [
     {
@@ -30,9 +16,13 @@ const routes: RouteObject[] = [
                 path: "/discover",
                 element: <DiscoverCollectives />,
             },
+            // {
+            //     path: "/home/:daoId",
+            //     element: <Transaction />,
+            // },
             {
                 path: "/home/:daoId",
-                element: <Transaction />,
+                element: <DAOHomeTest />,
             },
             {
                 path: "/proposal/:daoId",

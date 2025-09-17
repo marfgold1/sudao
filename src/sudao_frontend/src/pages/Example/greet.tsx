@@ -1,12 +1,19 @@
+import { useAgents } from "@/hooks/useAgents";
 import React, { useState } from "react";
-import { sudao_backend } from "declarations/sudao_backend";
 
 const Greet: React.FC = () => {
   const [name, setName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const { agents } = useAgents();
+  const daoBe = agents.daoBe;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!daoBe) {
+      alert("DAO BE not found");
+      return;
+    }
+
     if (name.trim() === "") {
       alert("Please enter a name.");
       return;
@@ -14,7 +21,7 @@ const Greet: React.FC = () => {
 
     setIsLoading(true);
     try {
-      const greeting = await sudao_backend.greet(name);
+      const greeting = await daoBe!.greet(name);
       alert(greeting);
     } catch (error) {
       console.error("Error calling greet:", error);
