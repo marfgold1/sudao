@@ -35,7 +35,7 @@ const NavbarSUDAO: React.FC = () => {
                             <a  
                                 href="/" 
                                 className={`transition-colors ${
-                                    isActive('/') ? 'text-blue-200 font-semibold' : 'text-white hover:text-blue-200'
+                                    isActive('/') ? 'text-white font-semibold' : 'text-slate-400 hover:text-blue-200'
                                 }`}
                             >
                                 Home
@@ -43,7 +43,7 @@ const NavbarSUDAO: React.FC = () => {
                             <a  
                                 href="/discover" 
                                 className={`transition-colors ${
-                                    isActive('/discover') ? 'text-blue-200 font-semibold' : 'text-white hover:text-blue-200'
+                                    isActive('/discover') ? 'text-white font-semibold' : 'text-slate-400 hover:text-blue-200'
                                 }`}
                             >
                                 Discover Collectives

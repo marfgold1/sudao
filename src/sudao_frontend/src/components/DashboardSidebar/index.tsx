@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { CreditCard, FileText, Puzzle, Store, User, ChevronDown, ChevronRight, Menu, LayoutList } from "lucide-react";
+import { CreditCard, FileText, HomeIcon, Puzzle, Store, User, ChevronDown, ChevronRight, Menu, LayoutList } from "lucide-react";
 import { Link, useLocation, useParams } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { usePluginStore } from "@/lib/plugin-store";
@@ -99,7 +99,7 @@ const CreatorDashboardSidebar: React.FC = () => {
                                                 : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
                                             )}
                                         >
-                                            <FileText className="w-4 h-4 mr-2" />
+                                            <HomeIcon className="w-4 h-4 mr-2" />
                                             Home
                                         </Button>
                                     </Link>

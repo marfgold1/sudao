@@ -11,7 +11,7 @@ const NavbarDAO: React.FC = () => {
     const { daoId } = useParams<{ daoId: string }>();
     const location = useLocation();
     
-    const isActive = (path: string) => location.pathname.includes(path);
+    const isActive = (path: string) => location.pathname.endsWith(path);
     
     return (
         <>
@@ -29,7 +29,7 @@ const NavbarDAO: React.FC = () => {
                             <Link 
                                 to={`/dao/${daoId}/home`} 
                                 className={`transition-colors ${
-                                    isActive('/home/') ? 'text-blue-200 font-semibold' : 'text-white hover:text-blue-200'
+                                    isActive('/home') ? 'text-white font-semibold' : 'text-slate-400 hover:text-blue-200'
                                 }`}
                             >
                                 [DAO Name]
@@ -37,10 +37,18 @@ const NavbarDAO: React.FC = () => {
                             <Link 
                                 to={`/dao/${daoId}/proposal`} 
                                 className={`transition-colors ${
-                                    isActive('/proposal/') ? 'text-blue-200 font-semibold' : 'text-white hover:text-blue-200'
+                                    isActive('/proposal') ? 'text-white font-semibold' : 'text-slate-400 hover:text-blue-200'
                                 }`}
                             >
                                 Proposals
+                            </Link>
+                            <Link 
+                                to={`/dao/${daoId}/plugins`} 
+                                className={`transition-colors ${
+                                    isActive('/plugins') ? 'text-white font-semibold' : 'text-slate-400 hover:text-blue-200'
+                                }`}
+                            >
+                                Plugins
                             </Link>
                         </div>
                     </div>
