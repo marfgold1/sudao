@@ -1,5 +1,11 @@
 import { create } from "zustand"
 
+import PluginLatestNews from '@/assets/images/plugin_latest_news.png';
+import PluginProposal from '@/assets/images/plugin_proposal.png';
+import PluginTopContributor from '@/assets/images/plugin_top_contributor.png';
+import PluginDAOAnalytics from '@/assets/images/plugin_dao_analytics.png';
+import PluginEngagementDashboard from '@/assets/images/plugin_engagement_dashboard.png';
+
 export interface Plugin {
     id: string
     name: string
@@ -32,8 +38,9 @@ const initialPlugins: Plugin[] = [
         description:
             "Keep your members in the loop with the latest updates, stories, and announcements from your collective. Perfect for homepages or proposal pages.",
         developer: "Amar Fadil",
+        icon: PluginLatestNews,
         installed: true,
-        enabled: true,
+        enabled: false,
         installCount: "128 collectives",
         showInMyPages: false,
         features: ["Real-time news updates", "Customizable news feed", "Member notifications", "Rich media support"],
@@ -44,10 +51,12 @@ const initialPlugins: Plugin[] = [
         description:
             "The Proposal Plugin lets members create, discuss, and vote on initiatives directly on-chain. From budget approvals to community rules, every decision is transparent, verifiable, and powered by ICP.",
         developer: "SUDAO Core Team",
+        icon: PluginProposal,
         installed: true,
         enabled: true,
         isCore: true,
         installCount: "128 collectives",
+        isPaid: true,
         pricing: "10 ICP",
         showInMyPages: true,
         features: [
@@ -69,6 +78,7 @@ const initialPlugins: Plugin[] = [
         description:
             "Showcase the most active or generous members in your community — based on contributions, voting activity, or proposal submissions.",
         developer: "SUDAO Core Team",
+        icon: PluginTopContributor,
         installed: false,
         enabled: false,
         installCount: "94 collectives",
@@ -83,6 +93,7 @@ const initialPlugins: Plugin[] = [
         description:
             "Visualize key stats: voting participation, funding trends, treasury flow, and proposal outcomes. Build transparency and spot patterns over time.",
         developer: "SUDAO Core Team",
+        icon: PluginDAOAnalytics,
         installed: false,
         enabled: false,
         installCount: "76 collectives",
@@ -95,6 +106,7 @@ const initialPlugins: Plugin[] = [
         description:
             "Track and display community involvement in real time — votes cast, discussions joined, and proposals submitted. Motivate members to stay involved.",
         developer: "SUDAO Core Team",
+        icon: PluginEngagementDashboard,
         installed: false,
         enabled: false,
         installCount: "45 collectives",
