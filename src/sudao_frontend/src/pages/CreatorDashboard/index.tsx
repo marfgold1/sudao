@@ -1,28 +1,30 @@
 import { motion } from "framer-motion";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowRight } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 
 const CreatorDashboard: React.FC = () => {
+    const { daoId } = useParams<{ daoId: string }>();
+    
     const quickActions = [
         {
             title: "Manage Transactions",
-            href: "/creator-dashboard/transactions",
+            href: `/dao/${daoId}/creator-dashboard/transactions`,
             description: "View and manage all treasury transactions",
         },
         {
             title: "Review Proposals",
-            href: "/creator-dashboard/proposals",
+            href: `/dao/${daoId}/creator-dashboard/proposals`,
             description: "Track and manage community proposals",
         },
         {
             title: "Plugin Marketplace",
-            href: "/creator-dashboard/plugins/marketplace",
+            href: `/dao/${daoId}/creator-dashboard/plugins/marketplace`,
             description: "Discover and install new plugins",
         },
         {
             title: "Installed Plugins",
-            href: "/creator-dashboard/plugins/installed",
+            href: `/dao/${daoId}/creator-dashboard/plugins/installed`,
             description: "Manage your active plugins",
         },
     ];
