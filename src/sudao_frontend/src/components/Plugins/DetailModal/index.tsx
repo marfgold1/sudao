@@ -57,7 +57,7 @@ export default function PluginDetailModal({ plugin, isOpen, onClose, onInstall, 
                                                 <TooltipProvider>
                                                     <Tooltip>
                                                         <TooltipTrigger asChild>
-                                                            <div className="flex items-center justify-center gap-2 border rounded-xl bg-red-100 text-red-700 font-semibold py-0.5 px-3">
+                                                            <div className="flex items-center justify-center gap-2 rounded-xl bg-red-100 text-red-700 font-semibold py-0.5 px-3">
                                                                 <div className="text-xs">Paid</div>
                                                                 <Info className="w-3 h-3 text-muted-foreground" />
                                                             </div>
@@ -72,7 +72,7 @@ export default function PluginDetailModal({ plugin, isOpen, onClose, onInstall, 
                                                 <TooltipProvider>
                                                     <Tooltip>
                                                         <TooltipTrigger asChild>
-                                                            <div className="flex items-center justify-center gap-2 border rounded-xl bg-blue-100 text-blue-700 font-semibold py-0.5 px-3">
+                                                            <div className="flex items-center justify-center gap-2 rounded-xl bg-blue-100 text-blue-700 font-semibold py-0.5 px-3">
                                                                 <div className="text-xs">Core Plugin</div>
                                                                 <Info className="w-3 h-3 text-muted-foreground" />
                                                             </div>
