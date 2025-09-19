@@ -8,6 +8,7 @@ import { floatingCards } from "@/mocks"
 import { useDAOs } from "../../hooks/useDAOs"
 import { DAOCreationModal } from "../../components/DAOCreationModal"
 import { useAccount } from "@/hooks/useAccount"
+import router from "@/routes"
 
 
 const DiscoverCollectives: React.FC = () => {
@@ -74,7 +75,11 @@ const DiscoverCollectives: React.FC = () => {
     const handleCreateDAO = async (request: { name: string; description: string; tags: string[] }) => {
         setIsCreating(true)
         try {
-            await createNewDAO(request)
+            const res = await createNewDAO(request)
+            if (res) {
+                // move to /home/:daoId with router
+                router.navigate(`/home/${res}`)
+            }
         } finally {
             setIsCreating(false)
         }

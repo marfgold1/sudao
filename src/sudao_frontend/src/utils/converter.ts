@@ -53,19 +53,6 @@ export function pairVariant<T extends Record<any, any>, K extends Keys<T>>(x: T 
     return [key, res];
 }
 
-
-type X = { ok: boolean } | { err: string } | { wowie: string }
-const t = { ok: true } as X
-matchVariant(t, {
-    ok: (val) => val,
-    err: () => false,
-    wowie: (val) => val === 'wowie',
-})
-matchVariant(t, {
-    ok: (val) => val,
-    err: () => false,
-})
-
 type Keys<T> = T extends Record<infer K, any> ? K : never;
 type Values<T, K extends Keys<T>> = T extends Record<K, infer V> ? V : never;
 type KeyMatcher<T> = { [K in Keys<T>]: (val: Values<T, K>) => any }
@@ -79,7 +66,7 @@ export function matchVariant<T extends Record<any, any>, TRet>(
     if (x === null || x === undefined) return undefined;
     for (const [k, fn] of Object.entries(matcher)) {
         const res = x[k];
-        if (res === undefined) return undefined;
+        if (res === undefined) continue;
         return fn?.(res);
     }
     return undefined;

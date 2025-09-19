@@ -73,11 +73,11 @@ export const useDAOs = () => {
 
   const createNewDAO = useCallback(async (request: CreateDAORequest) => {
     console.log('[useDAOs] createNewDAO called with request:', request);
-    
+
     try {
       console.log('[useDAOs] Calling createDAO service');
       const res = await explorerDao.addDAO(request);
-      matchVariant(res, {
+      return matchVariant(res, {
         ok: (result) => {
           console.log('[useDAOs] createDAO call completed:', result);
           toast.success(`DAO "${request.name}" creation initiated!`);
