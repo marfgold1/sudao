@@ -11,8 +11,9 @@ import CreatorDashboard from "./CreatorDashboard";
 // Plugins
 import InstalledPluginsPage from "./Plugins/Core/Installed";
 import PluginMarketplacePage from "./Plugins/Core/Marketplace";
+import InstalledPluginsPublicPage from "./Plugins/Installed";
 
 export {
     Home, Proposal, Transaction, DiscoverCollectives, Profile, BuildDAO, NotFound, CreatorDashboard, Example,
-    InstalledPluginsPage, PluginMarketplacePage
+    InstalledPluginsPage, PluginMarketplacePage, InstalledPluginsPublicPage
 };

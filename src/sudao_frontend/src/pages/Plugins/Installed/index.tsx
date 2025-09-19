@@ -1,0 +1,88 @@
+import { Input } from "@/components/ui/input";
+import { PluginDetailModal, PluginCard } from "@/components/Plugins";
+import { usePluginStore } from "@/lib/plugin-store";
+import { motion } from "framer-motion";
+import { useState, useMemo } from "react";
+import { Separator } from "@/components/ui/separator";
+
+export default function PluginInstalledPage() {
+    const { plugins, installPlugin, uninstallPlugin } = usePluginStore();
+    const [searchTerm, setSearchTerm] = useState("");
+    const [selectedPlugin, setSelectedPlugin] = useState<any>();
+    const [isModalOpen, setIsModalOpen] = useState(false);
+
+    const handleInstallPlugin = (id: any) => {
+        installPlugin(id);
+        setIsModalOpen(false);
+    };
+
+    const handleUninstallPlugin = (id: any) => {
+        uninstallPlugin(id);
+        setIsModalOpen(false);
+    };
+
+    const handlePluginClick = (id: any) => {
+        const plugin = plugins.find((p) => p.id === id);
+        if (plugin) {
+            setSelectedPlugin(plugin);
+            setIsModalOpen(true);
+        }
+    };
+
+    // Use useMemo to filter plugins for performance
+    const filteredPlugins = useMemo(() => {
+        const searchFiltered = plugins.filter((plugin) =>
+            plugin.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            plugin.description.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+        
+        return searchFiltered.filter(plugin => plugin.installed);
+    }, [plugins, searchTerm]);
+
+    return (
+        <div className="space-y-6 min-h-screen max-w-7xl mx-auto pt-8 mt-[4.5rem]">
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+                <h1 className="text-2xl font-bold">Plugins Installed</h1>
+            </motion.div>
+
+            <Separator />
+
+            <div className="flex items-center justify-between">
+                <Input
+                    placeholder="Search for plugins..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="max-w-sm"
+                />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {filteredPlugins.map((plugin, index) => (
+                    <motion.div
+                        key={plugin.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.1 }}
+                    >
+                        <PluginCard
+                            plugin={plugin}
+                            onInstall={handleInstallPlugin}
+                            onUninstall={handleUninstallPlugin}
+                            onClick={handlePluginClick}
+                            variant="installed"
+                        />
+                    </motion.div>
+                ))}
+            </div>
+
+            <PluginDetailModal
+                plugin={selectedPlugin}
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                onInstall={handleInstallPlugin}
+                onUninstall={handleUninstallPlugin}
+                variant="installed"
+            />
+        </div>
+    );
+}

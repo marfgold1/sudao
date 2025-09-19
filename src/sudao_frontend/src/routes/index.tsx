@@ -1,5 +1,5 @@
 import { Outlet, RouteObject, createBrowserRouter } from "react-router-dom";
-import { Home, Example, Proposal, Transaction, DiscoverCollectives, Profile, BuildDAO, NotFound, CreatorDashboard, InstalledPluginsPage, PluginMarketplacePage } from "@/pages";
+import { Home, Example, Proposal, Transaction, DiscoverCollectives, Profile, BuildDAO, NotFound, CreatorDashboard, InstalledPluginsPage, PluginMarketplacePage, InstalledPluginsPublicPage } from "@/pages";
 import { NavbarDAO, NavbarSUDAO, FooterSUDAO, FooterDAO } from "@/components";
 import { CreatorDashboardLayout } from "@/layouts";
 
@@ -65,6 +65,10 @@ const routes: RouteObject[] = [
             {
                 path: ":daoId/profile",
                 element: <Profile />,
+            },
+            {
+                path: ":daoId/plugins",
+                element: <InstalledPluginsPublicPage />,
             },
             {
                 path: ":daoId/creator-dashboard",

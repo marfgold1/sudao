@@ -14,9 +14,17 @@ interface PluginDetailModalProps {
     onClose: () => void;
     onInstall?: (id: string) => void;
     onUninstall?: (id: string) => void;
+    variant?: "marketplace" | "installed";
 }
 
-export default function PluginDetailModal({ plugin, isOpen, onClose, onInstall, onUninstall }: PluginDetailModalProps) {
+export default function PluginDetailModal({ 
+    plugin, 
+    isOpen, 
+    onClose, 
+    onInstall, 
+    onUninstall,
+    variant = "marketplace" 
+}: PluginDetailModalProps) {
     if (!plugin) return null;
 
     return (
@@ -110,7 +118,7 @@ export default function PluginDetailModal({ plugin, isOpen, onClose, onInstall, 
 
                                 <Separator />
 
-                                <div className="grid grid-cols-2 gap-6">
+                                <div className="grid grid-cols-2 gap-6 pb-4">
                                     <div>
                                         <h4 className="font-semibold mb-2">Creator</h4>
                                         <p className="text-sm text-muted-foreground">{plugin.developer}</p>
@@ -142,19 +150,21 @@ export default function PluginDetailModal({ plugin, isOpen, onClose, onInstall, 
                                     )}
                                 </div>
 
-                                <div className="flex justify-end gap-3 pt-4 border-t">
-                                    {plugin.installed ? (
-                                        <Button
-                                            variant="outline"
-                                            onClick={() => onUninstall?.(plugin.id)}
-                                            className="text-destructive border-destructive hover:bg-destructive hover:text-destructive-foreground"
-                                        >
-                                        Uninstall Plugin
-                                        </Button>
-                                    ) : (
-                                        <Button onClick={() => onInstall?.(plugin.id)}>Install Plugin</Button>
-                                    )}
-                                </div>
+                                {variant == "marketplace" &&
+                                    <div className="flex justify-end gap-3 pt-4 border-t">
+                                        {plugin.installed ? (
+                                            <Button
+                                                variant="outline"
+                                                onClick={() => onUninstall?.(plugin.id)}
+                                                className="text-destructive border-destructive hover:bg-destructive hover:text-destructive-foreground"
+                                            >
+                                            Uninstall Plugin
+                                            </Button>
+                                        ) : (
+                                            <Button onClick={() => onInstall?.(plugin.id)}>Install Plugin</Button>
+                                        )}
+                                    </div>
+                                }
                             </div>
                         </div>
                     </DialogContent>
