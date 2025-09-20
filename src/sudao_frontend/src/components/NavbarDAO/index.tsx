@@ -3,67 +3,47 @@ import { Menu, Settings } from "lucide-react";
 import React, { useState } from "react";
 import { useParams, useLocation, Link } from "react-router-dom";
 import { ConnectWallet } from "@nfid/identitykit/react";
-import { Avatar, AvatarFallback } from "../ui/avatar";
-import Logo from "@/assets/logos/SUDAOWhite.png";
+import { Avatar, AvatarFallback } from '../ui/avatar';
+import ExpandableLogo from '../ExpandableLogo';
 
 const NavbarDAO: React.FC = () => {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { daoId } = useParams<{ daoId: string }>();
-  const location = useLocation();
-
-  const isActive = (path: string) => location.pathname.includes(path);
-
-  return (
-    <>
-      {/* Navigation */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-        className="fixed top-0 left-0 right-0 z-40 px-6 py-4 bg-slate-900 text-white backdrop-blur-sm"
-      >
-        <div className="px-6 mx-auto flex items-center justify-between">
-          <div className="flex items-center space-x-10">
-            <Link to="/" className="w-10 h-10">
-              <img
-                src={Logo}
-                alt="SUDAO"
-                className="w-full h-full object-contain"
-              />
-            </Link>
-            <div className="hidden md:flex items-center space-x-10">
-              <Link
-                to={`/home/${daoId}`}
-                className={`transition-colors ${
-                  isActive("/home/")
-                    ? "text-blue-200 font-semibold"
-                    : "text-white hover:text-blue-200"
-                }`}
-              >
-                Home
-              </Link>
-              <Link
-                to={`/proposal/${daoId}`}
-                className={`transition-colors ${
-                  isActive("/proposal/")
-                    ? "text-blue-200 font-semibold"
-                    : "text-white hover:text-blue-200"
-                }`}
-              >
-                Proposals
-              </Link>
-              <Link
-                to={`/transaction/${daoId}`}
-                className={`transition-colors ${
-                  isActive("/transaction/")
-                    ? "text-blue-200 font-semibold"
-                    : "text-white hover:text-blue-200"
-                }`}
-              >
-                Transactions
-              </Link>
-            </div>
-          </div>
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const { daoId } = useParams<{ daoId: string }>();
+    const location = useLocation();
+    
+    const isActive = (path: string) => location.pathname.includes(path);
+    
+    return (
+        <>
+            {/* Navigation */}
+            <motion.div
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6 }}
+                className="fixed top-0 left-0 right-0 z-40 px-6 py-4 bg-slate-900 text-white backdrop-blur-sm"
+            >
+                <div className="max-w-7xl mx-auto flex items-center justify-between">
+                    <div className="flex items-center space-x-10">
+                        <ExpandableLogo />
+                        <div className="hidden md:flex items-center space-x-10">
+                            <Link 
+                                to={`/home/${daoId}`} 
+                                className={`transition-colors ${
+                                    isActive('/home/') ? 'text-blue-200 font-semibold' : 'text-white hover:text-blue-200'
+                                }`}
+                            >
+                                [DAO Name]
+                            </Link>
+                            <Link 
+                                to={`/proposal/${daoId}`} 
+                                className={`transition-colors ${
+                                    isActive('/proposal/') ? 'text-blue-200 font-semibold' : 'text-white hover:text-blue-200'
+                                }`}
+                            >
+                                Proposals
+                            </Link>
+                        </div>
+                    </div>
 
           <div className="flex items-center space-x-4">
             <ConnectWallet />

@@ -72,20 +72,22 @@ const Home: React.FC = () => {
                             style={{
                                 opacity: heroOpacityRem,
                             }}
-                            className="max-w-5xl relative z-10"
+                            className="max-w-5xl relative z-10 pt-20"
                         >
                             <h1 className="text-5xl md:text-7xl font-bold text-white leading-tight mb-6 tracking-tight">
-                                FROM COMMUNITY
+                                Build 
                                 <br />
-                                ENERGY TO
+                                Your Community
                                 <br />
-                                COLLECTIVE ACTION
+                                in Seconds
                             </h1>
                             <p className="text-xl text-white/[74%] mb-8 max-w-3xl leading-relaxed">
-                                Launch a transparent and community-owned organization with Decentralized Autonomous Organizations.
+                                Launch a transparent and community-owned organization
+                                <br />
+                                with Decentralized Autonomous Organizations.
                             </p>
                             <Button className="bg-blue-950 hover:bg-blue-500 text-white px-8 py-6 text-lg font-semibold rounded-lg">
-                                Start Now
+                                Start Building  →
                             </Button>
                         </motion.div>
                         
@@ -194,9 +196,6 @@ const Home: React.FC = () => {
                                                 ))}
                                             </Accordion>
 
-                                            <Button className="mt-8 bg-green-500 hover:bg-green-600 text-white px-8 py-4 rounded-lg shadow-lg hover:shadow-xl transition-all">
-                                                Learn More
-                                            </Button>
                                         </div>
 
                                         <motion.div
@@ -207,7 +206,7 @@ const Home: React.FC = () => {
                                             className="bg-white rounded-2xl p-8 pb-20 shadow-xl border border-slate-200"
                                         >
                                             <div className="flex items-center justify-between mb-6">
-                                                <h3 className="text-lg font-semibold text-slate-800">Diisi Screen Snippets</h3>
+                                                <h3 className="text-lg font-semibold text-slate-800">Your Incredible Movement</h3>
                                                 <div className="flex space-x-1">
                                                     <div className="w-3 h-3 bg-red-400 rounded-full"></div>
                                                     <div className="w-3 h-3 bg-yellow-400 rounded-full"></div>
@@ -249,7 +248,7 @@ const Home: React.FC = () => {
                         viewport={{ once: true }}
                         className="text-center mb-16 justify-center"
                     >
-                        <h2 className="text-4xl font-bold text-slate-800 mb-4">SUDAO HELPS YOU CREATE GREAT DAO</h2>
+                        <h2 className="text-4xl font-bold text-slate-800 mb-4">SUDAO Makes Great DAOs</h2>
                         <p className="text-slate-600 text-lg max-w-2xl mx-auto">From transparent governance and fair funding to community-focused support, SUDAO helps movements of any size grow and thrive.</p>
                     </motion.div>
 
@@ -259,33 +258,51 @@ const Home: React.FC = () => {
                         viewport={{ once: true }}
                         className="grid md:grid-cols-3 gap-8"
                     >
-                        {[
-                            {
-                                title: "Transparent Treasury",
-                                description: "All transactions are on-chain and open to everyone.",
-                            },
-                            {
-                                title: "Collective Governance",
-                                description: "Propose, vote, and execute together.",
-                            },
-                            {
-                                title: "No-Code Setup",
-                                description: "Skip the smart contract hassle and focus on impact.",
-                            },
-                        ].map((feature, index) => (
-                            <motion.div
-                                key={index}
-                                variants={fadeInUp}
-                                whileHover={{ y: -10 }}
-                                className="bg-slate-100 backdrop-blur-sm border border-slate-400 rounded-2xl p-8 pb-24 text-center hover:bg-slate-200 transition-all duration-300"
-                            >
-                                <div className="w-16 h-16 bg-gradient-to-br from-slate-700 to-slate-800 rounded-2xl mx-auto mb-6 flex items-center justify-center">
-                                    <div className="w-8 h-8 bg-cyan-400 rounded-lg"></div>
-                                </div>
-                                <h3 className="text-xl font-bold mb-4">{feature.title}</h3>
-                                <p className="leading-relaxed">{feature.description}</p>
-                            </motion.div>
-                        ))}
+                        <motion.div
+                            variants={fadeInUp}
+                            whileHover={{ y: -10 }}
+                            className="bg-gradient-to-b from-blue-900 via-blue-900 to-blue-900/85 text-white backdrop-blur-sm border border-slate-400 rounded-2xl p-8 pt-12 text-center transition-all duration-300"
+                        >
+                            <div className="w-full mx-auto mb-[-1rem] flex items-center justify-center">
+                                <img
+                                    src="/src/assets/images/b_1.png"
+                                    alt="Icon"
+                                    className="w-60"
+                                />
+                            </div>
+                            <h3 className="text-xl font-semibold mb-4">Transparent Treasury</h3>
+                            <p className="font-normal leading-relaxed">All transactions are on-chain <br></br>and open to everyone.</p>
+                        </motion.div>
+                        <motion.div
+                            variants={fadeInUp}
+                            whileHover={{ y: -10 }}
+                            className="bg-gradient-to-b from-blue-900 via-blue-900 to-blue-900/85 text-white backdrop-blur-sm border border-slate-400 rounded-2xl p-8 pt-0 text-center transition-all duration-300"
+                        >
+                            <div className="w-full mx-auto mb-[-2rem] flex items-center justify-center">
+                                <img
+                                    src="/src/assets/images/b_2.png"
+                                    alt="Icon"
+                                    className="w-72"
+                                />
+                            </div>
+                            <h3 className="text-xl font-semibold mb-4">Collective Governance</h3>
+                            <p className="font-normal leading-relaxed">Propose, vote, and execute together.</p>
+                        </motion.div>
+                        <motion.div
+                            variants={fadeInUp}
+                            whileHover={{ y: -10 }}
+                            className="bg-gradient-to-b from-blue-900 via-blue-900 to-blue-900/85 text-white backdrop-blur-sm border border-slate-400 rounded-2xl p-8 pt-12 text-center transition-all duration-300"
+                        >
+                            <div className="w-full mx-auto mb-5 flex items-center justify-center">
+                                <img
+                                    src="/src/assets/images/b_3.png"
+                                    alt="Icon"
+                                    className="w-60"
+                                />
+                            </div>
+                            <h3 className="text-xl font-semibold mb-4">Plugin Ecosystem</h3>
+                            <p className="font-normal leading-relaxed">Extend your DAO with powerful tools, made by the community.</p>
+                        </motion.div>
                     </motion.div>
                 </div>
             </section>
@@ -481,7 +498,9 @@ const Home: React.FC = () => {
                             security.
                         </p>
 
-                        <Button className="bg-slate-800 hover:bg-slate-700 text-white px-8 py-4 rounded-lg">
+                        <Button 
+                            onClick={() => window.open("https://internetcomputer.org", "_blank")}
+                            className="bg-slate-800 hover:bg-slate-700 text-white px-8 py-4 rounded-lg">
                             Learn More About ICP
                         </Button>
                     </motion.div>

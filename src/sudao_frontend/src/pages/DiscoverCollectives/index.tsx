@@ -99,18 +99,18 @@ const DiscoverCollectives: React.FC = () => {
                             initial={{ opacity: 0, y: 30 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.8, delay: 0.2 }}
-                            className="text-4xl md:text-6xl font-bold mb-6 leading-tight"
+                            className="text-4xl md:text-6xl font-regular mb-6 leading-tight"
                         >
-                            READY TO LAUNCH
+                            Ready to Launch
                             <br />
-                            YOUR MOVEMENT WITH DAO?
+                            Your Movement with DAO?
                         </motion.h1>
 
                         <motion.p
                             initial={{ opacity: 0, y: 30 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.8, delay: 0.4 }}
-                            className="text-xl md:text-2xl mb-8 text-blue-100 max-w-2xl mx-auto"
+                            className="text-xl md:text-2xl mb-8 font-light text-blue-100 max-w-2xl mx-auto"
                         >
                             Create a transparent, community-powered organization today—with no code, no setup hassles.
                         </motion.p>
