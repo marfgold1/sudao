@@ -46,26 +46,6 @@ export default function CollectiveCard({ collective, index, isOwned }: Collectiv
                                 </AvatarFallback>
                             </Avatar>
                         </div>
-                        <div className="flex items-center">
-                            <div className="*:data-[slot=avatar]:ring-background flex items-center bg-slate-100 rounded-3xl py-1 px-2 pr-4 -space-x-2 *:data-[slot=avatar]:ring-2 *:data-[slot=avatar]:grayscale">
-                                <Avatar className="w-8 h-8">
-                                    <AvatarImage src="https://github.com/shadcn.png" alt="@shadcn" />
-                                    <AvatarFallback>CN</AvatarFallback>
-                                </Avatar>
-                                <Avatar className="w-8 h-8">
-                                    <AvatarImage src="https://github.com/leerob.png" alt="@leerob" />
-                                    <AvatarFallback>LR</AvatarFallback>
-                                </Avatar>
-                                <Avatar className="w-8 h-8">
-                                    <AvatarImage
-                                        src="https://github.com/evilrabbit.png"
-                                        alt="@evilrabbit"
-                                    />
-                                    <AvatarFallback>ER</AvatarFallback>
-                                </Avatar>
-                                <div className="font-medium text-sm text-blue-600 pl-4">+{collective.members}</div>
-                            </div>
-                        </div>
                     </div>
                 </CardHeader>
                 
