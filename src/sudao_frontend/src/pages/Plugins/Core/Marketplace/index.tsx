@@ -2,7 +2,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Breadcrumb } from "@/layouts";
-import { PluginDetailModal, PluginCard } from "@/components/Plugins";
+import { PluginDetailModal, PluginCard, ConfirmationModal } from "@/components/Plugins";
 import { usePluginStore } from "@/lib/plugin-store";
 import { Filter } from "lucide-react";
 import { motion } from "framer-motion";
@@ -11,11 +11,14 @@ import { useParams } from "react-router-dom";
 
 export default function PluginMarketplacePage() {
     const { daoId } = useParams(); // Get the dynamic DAO ID from the URL
-    const { plugins, installPlugin, uninstallPlugin } = usePluginStore();
+    const { plugins, installPlugin, uninstallPlugin, loadingPlugins } = usePluginStore();
     const [searchTerm, setSearchTerm] = useState("");
     const [filter, setFilter] = useState("All Plugins");
     const [selectedPlugin, setSelectedPlugin] = useState<any>();
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+    const [pluginToAction, setPluginToAction] = useState<any>(null);
+    const [actionType, setActionType] = useState<"install" | "uninstall">("install");
 
     // Adjust breadcrumb items to use dynamic paths for react-router-dom
     const breadcrumbItems = [
@@ -23,14 +26,34 @@ export default function PluginMarketplacePage() {
         { label: "Plugin Marketplace" },
     ];
 
-    const handleInstallPlugin = (id: any) => {
-        installPlugin(id);
-        setIsModalOpen(false);
+    const handleInstallRequest = (id: any) => {
+        const plugin = plugins.find((p) => p.id === id);
+        if (plugin) {
+            setPluginToAction(plugin);
+            setActionType("install");
+            setIsConfirmModalOpen(true);
+        }
     };
 
-    const handleUninstallPlugin = (id: any) => {
-        uninstallPlugin(id);
-        setIsModalOpen(false);
+    const handleUninstallRequest = (id: any) => {
+        const plugin = plugins.find((p) => p.id === id);
+        if (plugin) {
+            setPluginToAction(plugin);
+            setActionType("uninstall");
+            setIsConfirmModalOpen(true);
+        }
+    };
+
+    const handleConfirmAction = async () => {
+        if (pluginToAction) {
+            if (actionType === "install") {
+                await installPlugin(pluginToAction.id);
+            } else {
+                await uninstallPlugin(pluginToAction.id);
+            }
+            setIsConfirmModalOpen(false);
+            setPluginToAction(null);
+        }
     };
 
     const handlePluginClick = (id: any) => {
@@ -100,10 +123,11 @@ export default function PluginMarketplacePage() {
                     >
                         <PluginCard
                             plugin={plugin}
-                            onInstall={handleInstallPlugin}
-                            onUninstall={handleUninstallPlugin}
+                            onInstall={handleInstallRequest}
+                            onUninstall={handleUninstallRequest}
                             onClick={handlePluginClick}
                             variant="marketplace"
+                            isLoading={loadingPlugins.has(plugin.id)}
                         />
                     </motion.div>
                 ))}
@@ -113,8 +137,18 @@ export default function PluginMarketplacePage() {
                 plugin={selectedPlugin}
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
-                onInstall={handleInstallPlugin}
-                onUninstall={handleUninstallPlugin}
+                onInstall={handleInstallRequest}
+                onUninstall={handleUninstallRequest}
+                isLoading={selectedPlugin && loadingPlugins.has(selectedPlugin.id)}
+            />
+
+            <ConfirmationModal
+                isOpen={isConfirmModalOpen}
+                onClose={() => setIsConfirmModalOpen(false)}
+                onConfirm={handleConfirmAction}
+                plugin={pluginToAction}
+                action={actionType}
+                isLoading={pluginToAction && loadingPlugins.has(pluginToAction.id)}
             />
         </div>
     );

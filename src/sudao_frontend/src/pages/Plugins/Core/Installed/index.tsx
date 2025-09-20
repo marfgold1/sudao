@@ -1,7 +1,7 @@
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Breadcrumb } from "@/layouts";
-import { InstalledPluginsTable, PluginDetailModal } from "@/components/Plugins";
+import { InstalledPluginsTable, PluginDetailModal, ConfirmationModal } from "@/components/Plugins";
 import { usePluginStore } from "@/lib/plugin-store";
 import { Filter } from "lucide-react";
 import { motion } from "framer-motion";
@@ -11,11 +11,13 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 
 export default function InstalledPluginsPage() {
     const { daoId } = useParams(); // Get the dynamic DAO ID from the URL
-    const { plugins, togglePlugin, uninstallPlugin } = usePluginStore();
+    const { plugins, togglePlugin, uninstallPlugin, loadingPlugins } = usePluginStore();
     const [searchTerm, setSearchTerm] = useState("");
     const [filterStatus, setFilterStatus] = useState("all");
     const [selectedPlugin, setSelectedPlugin] = useState<any>();
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+    const [pluginToUninstall, setPluginToUninstall] = useState<any>(null);
 
     const installedPlugins = useMemo(() => plugins.filter((plugin) => plugin.installed), [plugins]);
 
@@ -29,9 +31,29 @@ export default function InstalledPluginsPage() {
         togglePlugin(id, enabled);
     };
 
-    const handleUninstallPlugin = (id: any) => {
-        uninstallPlugin(id);
-        setIsModalOpen(false);
+    const handleUninstallRequest = (id: any) => {
+        const plugin = plugins.find((p) => p.id === id);
+        if (plugin) {
+            setPluginToUninstall(plugin);
+            setIsConfirmModalOpen(true);
+        }
+    };
+
+    const handleConfirmUninstall = async () => {
+        if (pluginToUninstall) {
+            await uninstallPlugin(pluginToUninstall.id);
+            setIsConfirmModalOpen(false);
+            setPluginToUninstall(null);
+        }
+    };
+
+    const handleUninstallFromModal = async (id: any) => {
+        const plugin = plugins.find((p) => p.id === id);
+        if (plugin) {
+            setPluginToUninstall(plugin);
+            setIsConfirmModalOpen(true);
+            setIsModalOpen(false);
+        }
     };
 
     const handlePluginClick = (id: any) => {
@@ -110,7 +132,7 @@ export default function InstalledPluginsPage() {
                     <InstalledPluginsTable
                         plugins={filteredPlugins}
                         onToggle={handleTogglePlugin}
-                        onUninstall={handleUninstallPlugin}
+                        onUninstall={handleUninstallRequest}
                         onPluginClick={handlePluginClick}
                     />
                 </div>
@@ -120,7 +142,17 @@ export default function InstalledPluginsPage() {
                 plugin={selectedPlugin}
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
-                onUninstall={handleUninstallPlugin}
+                onUninstall={handleUninstallFromModal}
+                variant="installed"
+            />
+
+            <ConfirmationModal
+                isOpen={isConfirmModalOpen}
+                onClose={() => setIsConfirmModalOpen(false)}
+                onConfirm={handleConfirmUninstall}
+                plugin={pluginToUninstall}
+                action="uninstall"
+                isLoading={pluginToUninstall && loadingPlugins.has(pluginToUninstall.id)}
             />
         </div>
     );

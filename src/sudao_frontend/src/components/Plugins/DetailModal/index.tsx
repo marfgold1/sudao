@@ -3,9 +3,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Info } from "lucide-react";
+import { Info, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
-import { Plugin } from "@/lib/plugin-store";
+import { Plugin, usePluginStore } from "@/lib/plugin-store";
 import PluginLogo from '@/assets/images/plugin.png';
 
 interface PluginDetailModalProps {
@@ -15,16 +15,23 @@ interface PluginDetailModalProps {
     onInstall?: (id: string) => void;
     onUninstall?: (id: string) => void;
     variant?: "marketplace" | "installed";
+    isLoading?: boolean;
 }
 
 export default function PluginDetailModal({ 
-    plugin, 
+    plugin: selectedPlugin, 
     isOpen, 
     onClose, 
     onInstall, 
     onUninstall,
-    variant = "marketplace" 
+    variant = "marketplace",
+    isLoading = false
 }: PluginDetailModalProps) {
+    const { plugins } = usePluginStore();
+    
+    // Get the latest plugin data from the store instead of using the snapshot
+    const plugin = selectedPlugin ? plugins.find(p => p.id === selectedPlugin.id) : null;
+    
     if (!plugin) return null;
 
     return (
@@ -157,11 +164,31 @@ export default function PluginDetailModal({
                                                 variant="outline"
                                                 onClick={() => onUninstall?.(plugin.id)}
                                                 className="text-destructive border-destructive hover:bg-destructive hover:text-destructive-foreground"
+                                                disabled={isLoading}
                                             >
-                                            Uninstall Plugin
+                                                {isLoading ? (
+                                                    <>
+                                                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                                        Uninstalling...
+                                                    </>
+                                                ) : (
+                                                    "Uninstall Plugin"
+                                                )}
                                             </Button>
                                         ) : (
-                                            <Button onClick={() => onInstall?.(plugin.id)}>Install Plugin</Button>
+                                            <Button 
+                                                onClick={() => onInstall?.(plugin.id)}
+                                                disabled={isLoading}
+                                            >
+                                                {isLoading ? (
+                                                    <>
+                                                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                                        Installing...
+                                                    </>
+                                                ) : (
+                                                    "Install Plugin"
+                                                )}
+                                            </Button>
                                         )}
                                     </div>
                                 }

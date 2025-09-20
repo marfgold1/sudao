@@ -1,21 +1,39 @@
 import { Input } from "@/components/ui/input";
-import { PluginDetailModal, PluginCard } from "@/components/Plugins";
+import { PluginDetailModal, PluginCard, ConfirmationModal } from "@/components/Plugins";
 import { usePluginStore } from "@/lib/plugin-store";
 import { motion } from "framer-motion";
 import { useState, useMemo } from "react";
 import { Separator } from "@/components/ui/separator";
 
 export default function PluginInstalledPage() {
-    const { plugins } = usePluginStore();
+    const { plugins, uninstallPlugin, loadingPlugins } = usePluginStore();
     const [searchTerm, setSearchTerm] = useState("");
     const [selectedPlugin, setSelectedPlugin] = useState<any>();
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+    const [pluginToUninstall, setPluginToUninstall] = useState<any>(null);
 
     const handlePluginClick = (id: any) => {
         const plugin = plugins.find((p) => p.id === id);
         if (plugin) {
             setSelectedPlugin(plugin);
             setIsModalOpen(true);
+        }
+    };
+
+    const handleUninstallRequest = (id: any) => {
+        const plugin = plugins.find((p) => p.id === id);
+        if (plugin) {
+            setPluginToUninstall(plugin);
+            setIsConfirmModalOpen(true);
+        }
+    };
+
+    const handleConfirmUninstall = async () => {
+        if (pluginToUninstall) {
+            await uninstallPlugin(pluginToUninstall.id);
+            setIsConfirmModalOpen(false);
+            setPluginToUninstall(null);
         }
     };
 
@@ -57,7 +75,9 @@ export default function PluginInstalledPage() {
                         <PluginCard
                             plugin={plugin}
                             onClick={handlePluginClick}
+                            onUninstall={handleUninstallRequest}
                             variant="installed"
+                            isLoading={loadingPlugins.has(plugin.id)}
                         />
                     </motion.div>
                 ))}
@@ -68,6 +88,15 @@ export default function PluginInstalledPage() {
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
                 variant="installed"
+            />
+
+            <ConfirmationModal
+                isOpen={isConfirmModalOpen}
+                onClose={() => setIsConfirmModalOpen(false)}
+                onConfirm={handleConfirmUninstall}
+                plugin={pluginToUninstall}
+                action="uninstall"
+                isLoading={pluginToUninstall && loadingPlugins.has(pluginToUninstall.id)}
             />
         </div>
     );

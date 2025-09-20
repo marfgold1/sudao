@@ -2,10 +2,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import { Trash2, ChevronsUpDown } from "lucide-react";
+import { Trash2, ChevronsUpDown, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useMemo, useState } from "react";
-import { Plugin } from "@/lib/plugin-store";
+import { Plugin, usePluginStore } from "@/lib/plugin-store";
 
 interface InstalledPluginsTableProps {
     plugins: Plugin[];
@@ -15,6 +15,7 @@ interface InstalledPluginsTableProps {
 }
 
 export default function InstalledPluginsTable({ plugins, onToggle, onUninstall, onPluginClick }: InstalledPluginsTableProps) {
+    const { loadingPlugins } = usePluginStore();
     const [sortField, setSortField] = useState<string>("");
     const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
 
@@ -139,14 +140,23 @@ export default function InstalledPluginsTable({ plugins, onToggle, onUninstall, 
                             </TableCell>
                             <TableCell>
                                 <div className="flex items-center justify-start gap-3">
-                                    <Switch checked={plugin.enabled} onCheckedChange={(enabled: boolean) => onToggle(plugin.id, enabled)} />
+                                    <Switch 
+                                        checked={plugin.enabled} 
+                                        onCheckedChange={(enabled: boolean) => onToggle(plugin.id, enabled)}
+                                        disabled={loadingPlugins.has(plugin.id)}
+                                    />
                                     <Button
                                         variant="outline"
                                         size="sm"
                                         onClick={() => onUninstall(plugin.id)}
                                         className="text-destructive border-destructive hover:bg-destructive hover:text-destructive-foreground"
+                                        disabled={loadingPlugins.has(plugin.id)}
                                     >
-                                        <Trash2 className="h-4 w-4" />
+                                        {loadingPlugins.has(plugin.id) ? (
+                                            <Loader2 className="h-4 w-4 animate-spin" />
+                                        ) : (
+                                            <Trash2 className="h-4 w-4" />
+                                        )}
                                     </Button>
                                 </div>
                             </TableCell>

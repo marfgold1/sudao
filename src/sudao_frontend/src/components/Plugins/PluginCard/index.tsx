@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { Plugin } from "@/lib/plugin-store";
 import { memo, useMemo } from "react";
+import { Loader2 } from "lucide-react";
 
 interface PluginCardProps {
     plugin: Plugin;
@@ -10,9 +11,10 @@ interface PluginCardProps {
     onUninstall?: (id: string) => void;
     onClick?: (id: string) => void;
     variant?: "marketplace" | "installed" | "view";
+    isLoading?: boolean;
 }
 
-const InstallButton = ({ plugin, onInstall, onUninstall }: Pick<PluginCardProps, 'plugin' | 'onInstall' | 'onUninstall'>) => (
+const InstallButton = ({ plugin, onInstall, onUninstall, isLoading }: Pick<PluginCardProps, 'plugin' | 'onInstall' | 'onUninstall' | 'isLoading'>) => (
     <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
         {plugin.installed ? (
             <Button
@@ -20,16 +22,32 @@ const InstallButton = ({ plugin, onInstall, onUninstall }: Pick<PluginCardProps,
                 size="sm"
                 onClick={() => onUninstall?.(plugin.id)}
                 className="text-destructive border-destructive hover:bg-destructive hover:text-destructive-foreground"
+                disabled={isLoading}
             >
-                Uninstall Plugin
+                {isLoading ? (
+                    <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Uninstalling...
+                    </>
+                ) : (
+                    "Uninstall Plugin"
+                )}
             </Button>
         ) : (
             <Button
                 size="sm"
                 onClick={() => onInstall?.(plugin.id)}
                 className="bg-blue-500 hover:bg-blue-700"
+                disabled={isLoading}
             >
-                Install Plugin
+                {isLoading ? (
+                    <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Installing...
+                    </>
+                ) : (
+                    "Install Plugin"
+                )}
             </Button>
         )}
     </div>
@@ -47,17 +65,40 @@ const PluginCard = ({
     onUninstall,
     onClick,
     variant = "marketplace",
+    isLoading = false,
 }: PluginCardProps) => {
 
     const actionComponent = useMemo(() => {
         if (variant === "marketplace") {
-            return <InstallButton plugin={plugin} onInstall={onInstall} onUninstall={onUninstall} />;
+            return <InstallButton plugin={plugin} onInstall={onInstall} onUninstall={onUninstall} isLoading={isLoading} />;
+        }
+        if (variant === "installed") {
+            return (
+                <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => onUninstall?.(plugin.id)}
+                        className="text-destructive border-destructive hover:bg-destructive hover:text-destructive-foreground"
+                        disabled={isLoading}
+                    >
+                        {isLoading ? (
+                            <>
+                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                Uninstalling...
+                            </>
+                        ) : (
+                            "Uninstall"
+                        )}
+                    </Button>
+                </div>
+            );
         }
         if (variant === "view") {
             return <ViewDetails plugin={plugin} />;
         }
         return null;
-    }, [variant, plugin, onInstall, onUninstall]);
+    }, [variant, plugin, onInstall, onUninstall, isLoading]);
 
     return (
         <motion.div whileHover={{ y: -2 }} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>

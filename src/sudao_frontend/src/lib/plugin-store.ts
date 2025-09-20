@@ -26,8 +26,9 @@ export interface Plugin {
 
 interface PluginStore {
     plugins: Plugin[]
-    installPlugin: (id: string) => void
-    uninstallPlugin: (id: string) => void
+    loadingPlugins: Set<string>
+    installPlugin: (id: string) => Promise<void>
+    uninstallPlugin: (id: string) => Promise<void>
     togglePlugin: (id: string, enabled: boolean) => void
 }
 
@@ -115,20 +116,52 @@ const initialPlugins: Plugin[] = [
     },
 ]
 
-export const usePluginStore = create<PluginStore>((set) => ({
+export const usePluginStore = create<PluginStore>((set, get) => ({
     plugins: initialPlugins,
-    installPlugin: (id) =>
+    loadingPlugins: new Set(),
+    installPlugin: async (id) => {
         set((state) => ({
-            plugins: state.plugins.map((plugin) =>
-                plugin.id === id ? { ...plugin, installed: true, enabled: true } : plugin,
-            ),
-        })),
-    uninstallPlugin: (id) =>
+            loadingPlugins: new Set(state.loadingPlugins).add(id)
+        }));
+        
+        // Simulate async operation
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        
+        set((state) => {
+            const newLoadingPlugins = new Set(state.loadingPlugins);
+            newLoadingPlugins.delete(id);
+            return {
+                loadingPlugins: newLoadingPlugins,
+                plugins: state.plugins.map((plugin) =>
+                    plugin.id === id ? { 
+                        ...plugin, 
+                        installed: true, 
+                        enabled: false,
+                        showInMyPages: false
+                    } : plugin,
+                ),
+            };
+        });
+    },
+    uninstallPlugin: async (id) => {
         set((state) => ({
-            plugins: state.plugins.map((plugin) =>
-                plugin.id === id ? { ...plugin, installed: false, enabled: false, showInMyPages: false } : plugin,
-            ),
-        })),
+            loadingPlugins: new Set(state.loadingPlugins).add(id)
+        }));
+        
+        // Simulate async operation
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        
+        set((state) => {
+            const newLoadingPlugins = new Set(state.loadingPlugins);
+            newLoadingPlugins.delete(id);
+            return {
+                loadingPlugins: newLoadingPlugins,
+                plugins: state.plugins.map((plugin) =>
+                    plugin.id === id ? { ...plugin, installed: false, enabled: false, showInMyPages: false } : plugin,
+                ),
+            };
+        });
+    },
     togglePlugin: (id, enabled) =>
         set((state) => ({
             plugins: state.plugins.map((plugin) =>
