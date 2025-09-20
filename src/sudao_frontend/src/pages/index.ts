@@ -7,6 +7,7 @@ import Profile from "./Profile";
 import BuildDAO from "./BuildDAO";
 import NotFound from "./NotFound";
 import CreatorDashboard from "./CreatorDashboard";
+import Marketplace from "./Marketplace";
 
 // Plugins
 import InstalledPluginsPage from "./Plugins/Core/Installed";
@@ -14,6 +15,6 @@ import PluginMarketplacePage from "./Plugins/Core/Marketplace";
 import InstalledPluginsPublicPage from "./Plugins/Installed";
 
 export {
-    Home, Proposal, Transaction, DiscoverCollectives, Profile, BuildDAO, NotFound, CreatorDashboard, Example,
+    Home, Proposal, Transaction, DiscoverCollectives, Profile, BuildDAO, NotFound, CreatorDashboard, Marketplace, Example,
     InstalledPluginsPage, PluginMarketplacePage, InstalledPluginsPublicPage
 };

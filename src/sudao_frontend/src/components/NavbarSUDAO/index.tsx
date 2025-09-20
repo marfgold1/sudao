@@ -48,6 +48,14 @@ const NavbarSUDAO: React.FC = () => {
                             >
                                 Discover Collectives
                             </a>
+                            <a  
+                                href="/plugins" 
+                                className={`transition-colors ${
+                                    isActive('/plugins') ? 'text-white font-semibold' : 'text-slate-400 hover:text-blue-200'
+                                }`}
+                            >
+                                Plugin Marketplace
+                            </a>
                             {/* <a href="#" className="text-white hover:text-blue-200 transition-colors">
                                 How it Works
                             </a>
