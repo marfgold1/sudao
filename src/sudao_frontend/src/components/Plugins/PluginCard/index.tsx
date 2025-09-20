@@ -127,10 +127,13 @@ const PluginCard = ({
                     {(variant === "marketplace" || variant === "view") && (
                         <div className="border-t py-3 p-5 bg-slate-100">
                             <div className="flex items-center justify-between">
-                                {plugin.installCount && (
-                                    <span className="text-xs">Installed by: {plugin.installCount}</span>
-                                )}
-                                {actionComponent}
+                                <div className="flex flex-col gap-1">
+                                    {plugin.installCount && (
+                                        <span className="text-xs text-muted-foreground">Installed by: {plugin.installCount}</span>
+                                    )}
+                                    <ViewDetails plugin={plugin} />
+                                </div>
+                                {variant === "marketplace" && actionComponent}
                             </div>
                         </div>
                     )}

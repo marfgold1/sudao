@@ -24,12 +24,20 @@ export interface Plugin {
     showInMyPages?: boolean
 }
 
+interface NavbarPreferences {
+    visiblePluginIds: string[] // First 2 plugins to show in navbar
+    pluginOrder: string[]      // Full order of all plugins
+}
+
 interface PluginStore {
     plugins: Plugin[]
     loadingPlugins: Set<string>
+    navbarPreferences: NavbarPreferences
     installPlugin: (id: string) => Promise<void>
     uninstallPlugin: (id: string) => Promise<void>
     togglePlugin: (id: string, enabled: boolean) => void
+    updateNavbarPreferences: (preferences: NavbarPreferences) => void
+    getOrderedNavPlugins: () => Plugin[]
 }
 
 const initialPlugins: Plugin[] = [
@@ -119,6 +127,10 @@ const initialPlugins: Plugin[] = [
 export const usePluginStore = create<PluginStore>((set, get) => ({
     plugins: initialPlugins,
     loadingPlugins: new Set(),
+    navbarPreferences: {
+        visiblePluginIds: [], // Will be populated with first 3 enabled plugins
+        pluginOrder: []       // Will be populated with all plugin IDs
+    },
     installPlugin: async (id) => {
         set((state) => ({
             loadingPlugins: new Set(state.loadingPlugins).add(id)
@@ -168,4 +180,37 @@ export const usePluginStore = create<PluginStore>((set, get) => ({
                 plugin.id === id ? { ...plugin, enabled, showInMyPages: enabled && plugin.installed } : plugin,
             ),
         })),
+    
+    updateNavbarPreferences: (preferences) =>
+        set(() => ({
+            navbarPreferences: preferences
+        })),
+
+    getOrderedNavPlugins: () => {
+        const { plugins, navbarPreferences } = get();
+        const navPlugins = plugins.filter(plugin => plugin.showInMyPages);
+        
+        if (navbarPreferences.pluginOrder.length === 0) {
+            // Default order: alphabetical
+            return navPlugins.sort((a, b) => a.name.localeCompare(b.name));
+        }
+        
+        // Apply user's custom order
+        const orderedPlugins: Plugin[] = [];
+        const pluginMap = new Map(navPlugins.map(plugin => [plugin.id, plugin]));
+        
+        // First, add plugins in the user's specified order
+        for (const pluginId of navbarPreferences.pluginOrder) {
+            const plugin = pluginMap.get(pluginId);
+            if (plugin) {
+                orderedPlugins.push(plugin);
+                pluginMap.delete(pluginId);
+            }
+        }
+        
+        // Then add any remaining plugins (newly installed ones)
+        orderedPlugins.push(...Array.from(pluginMap.values()).sort((a, b) => a.name.localeCompare(b.name)));
+        
+        return orderedPlugins;
+    },
 }))

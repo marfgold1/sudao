@@ -139,8 +139,8 @@ const CreatorDashboardSidebar: React.FC = () => {
                                                     : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
                                                 )}
                                             >
-                                                <FileText className="w-4 h-4 mr-2" />
-                                                {plugin.name}
+                                                <FileText className="w-4 h-4 mr-2 flex-shrink-0" />
+                                                <span className="truncate">{plugin.name}</span>
                                             </Button>
                                         </Link>
                                     ))}
