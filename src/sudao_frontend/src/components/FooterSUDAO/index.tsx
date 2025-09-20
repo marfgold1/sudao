@@ -1,8 +1,17 @@
 import React from 'react';
 
 import Logo from '@/assets/logos/SUDAOWhite.png';
+import { Link } from 'react-router-dom';
 
 const FooterSUDAO: React.FC = () => {
+    const handleLinkClick = () => {
+        // Smooth scroll to top when navigating
+        window.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+        });
+    };
+
     return (
         <footer className="bg-blue-950 text-white py-16 px-6">
             <div className="max-w-6xl mx-auto">
@@ -28,18 +37,18 @@ const FooterSUDAO: React.FC = () => {
                     <div className="space-y-4">
                         <h3 className="text-xl font-semibold">Sitemap</h3>
                         <nav className="space-y-3">
-                            <a href="/" className="block text-gray-300 hover:text-white transition-colors duration-200">
+                            <Link to="/" onClick={handleLinkClick} className="block text-gray-300 hover:text-white transition-colors duration-200">
                                 Home
-                            </a>
-                            <a href="/discover" className="block text-gray-300 hover:text-white transition-colors duration-200">
+                            </Link>
+                            <Link to="/discover" onClick={handleLinkClick} className="block text-gray-300 hover:text-white transition-colors duration-200">
                                 Discover Collective
-                            </a>
-                            <a href="/plugin" className="block text-gray-300 hover:text-white transition-colors duration-200">
+                            </Link>
+                            <Link to="/plugins" onClick={handleLinkClick} className="block text-gray-300 hover:text-white transition-colors duration-200">
                                 Plugin Marketplace
-                            </a>
-                            <a href="#" className="block text-gray-300 hover:text-white transition-colors duration-200">
+                            </Link>
+                            <Link to="#" onClick={handleLinkClick} className="block text-gray-300 hover:text-white transition-colors duration-200">
                                 Documentation
-                            </a>
+                            </Link>
                         </nav>
                     </div>
                 </div>

@@ -5,13 +5,29 @@ import { useParams, useLocation, Link } from 'react-router-dom';
 import { ConnectWallet } from "@nfid/identitykit/react";
 import { Avatar, AvatarFallback } from '../ui/avatar';
 import ExpandableLogo from '../ExpandableLogo';
+import { useDAO } from '@/hooks/useDAO';
 
 const NavbarDAO: React.FC = () => {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const { daoId } = useParams<{ daoId: string }>();
     const location = useLocation();
     
-    const isActive = (path: string) => location.pathname.includes(path);
+    // Fetch DAO data with fallback handling
+    const { dao, loading } = useDAO(daoId || '');
+    
+    // Fallback values if data fetch fails or is loading
+    const daoName = dao?.name || 'My DAO';
+    const daoDescription = dao?.description || 'A community-driven organization';
+    
+    const isActive = (path: string) => location.pathname.endsWith(path);
+    
+    const handleLinkClick = () => {
+        // Smooth scroll to top when navigating
+        window.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+        });
+    };
     
     return (
         <>
@@ -27,34 +43,48 @@ const NavbarDAO: React.FC = () => {
                         <ExpandableLogo />
                         <div className="hidden md:flex items-center space-x-10">
                             <Link 
-                                to={`/home/${daoId}`} 
+                                to={`/dao/${daoId}/home`} 
+                                onClick={handleLinkClick}
                                 className={`transition-colors ${
-                                    isActive('/home/') ? 'text-blue-200 font-semibold' : 'text-white hover:text-blue-200'
+                                    isActive('/home') ? 'text-white font-semibold' : 'text-slate-400 hover:text-blue-200'
                                 }`}
+                                title={daoDescription}
                             >
-                                [DAO Name]
+                                {loading ? 'Loading...' : daoName}
                             </Link>
                             <Link 
-                                to={`/proposal/${daoId}`} 
+                                to={`/dao/${daoId}/proposal`} 
+                                onClick={handleLinkClick}
                                 className={`transition-colors ${
-                                    isActive('/proposal/') ? 'text-blue-200 font-semibold' : 'text-white hover:text-blue-200'
+                                    isActive('/proposal') ? 'text-white font-semibold' : 'text-slate-400 hover:text-blue-200'
                                 }`}
                             >
                                 Proposals
+                            </Link>
+                            <Link 
+                                to={`/dao/${daoId}/plugins`} 
+                                onClick={handleLinkClick}
+                                className={`transition-colors ${
+                                    isActive('/plugins') ? 'text-white font-semibold' : 'text-slate-400 hover:text-blue-200'
+                                }`}
+                            >
+                                Plugins
                             </Link>
                         </div>
                     </div>
 
                     <div className="flex items-center space-x-4">
                         <ConnectWallet />
-                        <motion.button
-                            className="flex items-center space-x-2 text-white/80 bg-blue-600/30 rounded-lg p-2 px-4 hover:text-blue-300 transition-colors"
-                            whileHover={{ scale: 1.05 }}
-                        >
-                            <Settings className="w-4 h-4" />
-                            <span>Creator Dashboard</span>
-                        </motion.button>
-                        <Link to={"/profile"}>
+                        <Link to={`/dao/${daoId}/creator-dashboard`} onClick={handleLinkClick}>
+                            <motion.button
+                                className="flex items-center space-x-2 text-white/80 bg-blue-600/30 rounded-lg p-2 px-4 hover:text-blue-300 transition-colors"
+                                whileHover={{ scale: 1.05 }}
+                            >
+                                <Settings className="w-4 h-4" />
+                                <span>Creator Dashboard</span>
+                            </motion.button>
+                        </Link>
+                        <Link to={`/dao/${daoId}/profile`} onClick={handleLinkClick}>
                             <motion.button
                                 whileHover={{ scale: 1.05 }}
                             >
@@ -78,22 +108,24 @@ const NavbarDAO: React.FC = () => {
                         className="md:hidden mt-4 pb-4 border-t border-slate-700"
                     >
                         <div className="flex flex-col space-y-3 pt-4">
-                            <a 
-                                href={`/home/${daoId}`} 
+                            <Link 
+                                to={`/home/${daoId}`} 
+                                onClick={handleLinkClick}
                                 className={`transition-colors font-semibold ${
                                     isActive('/home/') ? 'text-blue-200 font-semibold' : 'text-white hover:text-blue-200'
                                 }`}
                             >
                                 Home
-                            </a>
-                            <a 
-                                href={`/proposal/${daoId}`} 
+                            </Link>
+                            <Link 
+                                to={`/proposal/${daoId}`} 
+                                onClick={handleLinkClick}
                                 className={`transition-colors ${
                                     isActive('/proposal/') ? 'text-blue-200 font-semibold' : 'text-white hover:text-blue-200'
                                 }`}
                             >
                                 Proposals
-                            </a>
+                            </Link>
                         </div>
                     </motion.div>
                 )}

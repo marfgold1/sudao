@@ -3,7 +3,7 @@ import { Menu } from 'lucide-react';
 import React, { useState } from 'react';
 import { ConnectWallet } from "@nfid/identitykit/react";
 import { GitHubLogoIcon } from '@radix-ui/react-icons';
-import { useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import Logo from '@/assets/logos/SUDAOWhite.png';
 
 const NavbarSUDAO: React.FC = () => {
@@ -15,6 +15,14 @@ const NavbarSUDAO: React.FC = () => {
             return location.pathname === '/';
         }
         return location.pathname.includes(path);
+    };
+    
+    const handleLinkClick = () => {
+        // Smooth scroll to top when navigating
+        window.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+        });
     };
     
     return (
@@ -32,31 +40,33 @@ const NavbarSUDAO: React.FC = () => {
                             <img src={Logo} />
                         </div>
                         <div className="hidden md:flex items-center space-x-10">
-                            <a  
-                                href="/" 
+                            <Link  
+                                to="/" 
+                                onClick={handleLinkClick}
                                 className={`transition-colors ${
-                                    isActive('/') ? 'text-blue-200 font-semibold' : 'text-white hover:text-blue-200'
+                                    isActive('/') ? 'text-white font-semibold' : 'text-slate-400 hover:text-blue-200'
                                 }`}
                             >
                                 Home
-                            </a>
-                            <a  
-                                href="/discover" 
+                            </Link>
+                            <Link  
+                                to="/discover" 
+                                onClick={handleLinkClick}
                                 className={`transition-colors ${
-                                    isActive('/discover') ? 'text-blue-200 font-semibold' : 'text-white hover:text-blue-200'
+                                    isActive('/discover') ? 'text-white font-semibold' : 'text-slate-400 hover:text-blue-200'
                                 }`}
                             >
                                 Discover Collectives
-                            </a>
-                            {/* <a href="#" className="text-white hover:text-blue-200 transition-colors">
-                                How it Works
-                            </a>
-                            <a href="#" className="text-white hover:text-blue-200 transition-colors">
-                                About Us
-                            </a>
-                            <a href="#" className="text-white hover:text-blue-200 transition-colors">
-                                Meet Us
-                            </a> */}
+                            </Link>
+                            <Link  
+                                to="/plugins" 
+                                onClick={handleLinkClick}
+                                className={`transition-colors ${
+                                    isActive('/plugins') ? 'text-white font-semibold' : 'text-slate-400 hover:text-blue-200'
+                                }`}
+                            >
+                                Plugin Marketplace
+                            </Link>
                         </div>
                     </div>
 

@@ -4,6 +4,7 @@ import FooterSUDAO from "./FooterSUDAO";
 import FooterDAO from "./FooterDAO";
 import CollectiveCard from "./CollectiveCard";
 import ExpandableLogo from "./ExpandableLogo";
+import CreatorDashboardSidebar from "./DashboardSidebar";
 import { ProposalItem } from "./ProposalItem";
 
-export { NavbarSUDAO, NavbarDAO, FooterSUDAO, FooterDAO, CollectiveCard, ExpandableLogo, ProposalItem };
+export { NavbarSUDAO, NavbarDAO, FooterSUDAO, FooterDAO, CollectiveCard, ExpandableLogo, CreatorDashboardSidebar, ProposalItem };

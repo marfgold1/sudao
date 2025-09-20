@@ -1,6 +1,7 @@
 import { Outlet, RouteObject, createBrowserRouter } from "react-router-dom";
-import { Home, Example, Proposal, Transaction, DiscoverCollectives, Profile, BuildDAO, NotFound } from "@/pages";
+import { Home, Example, Proposal, Transaction, DiscoverCollectives, Profile, BuildDAO, NotFound, CreatorDashboard, InstalledPluginsPage, PluginMarketplacePage, InstalledPluginsPublicPage, Marketplace } from "@/pages";
 import { NavbarDAO, NavbarSUDAO, FooterSUDAO, FooterDAO } from "@/components";
+import { CreatorDashboardLayout } from "@/layouts";
 
 const SUDAOLayout = () => {
     return (
@@ -44,6 +45,10 @@ const routes: RouteObject[] = [
                 element: <Example />,
             },
             {
+                path: "plugins",
+                element: <Marketplace />,
+            },
+            {
                 path: "*",
                 element: <NotFound />,
             },
@@ -64,6 +69,33 @@ const routes: RouteObject[] = [
             {
                 path: ":daoId/profile",
                 element: <Profile />,
+            },
+            {
+                path: ":daoId/plugins",
+                element: <InstalledPluginsPublicPage />,
+            },
+            {
+                path: ":daoId/creator-dashboard",
+                element: <CreatorDashboardLayout />,
+                children: [
+                    {
+                        index: true,
+                        element: <CreatorDashboard />,
+                    },
+                    {
+                        path: "plugins",
+                        children: [
+                            {
+                                path: "installed",
+                                element: <InstalledPluginsPage />,
+                            },
+                            {
+                                path: "marketplace",
+                                element: <PluginMarketplacePage />,
+                            },
+                        ],
+                    },
+                ],
             },
             {
                 path: "404",

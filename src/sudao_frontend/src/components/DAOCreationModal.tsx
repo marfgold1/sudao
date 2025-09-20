@@ -33,11 +33,17 @@ export const DAOCreationModal: React.FC<DAOCreationModalProps> = ({
     const newErrors: Record<string, string> = {};
     
     if (!formData.name.trim()) {
-      newErrors.name = 'DAO name is required';
+      newErrors.name = "DAO name is required";
+    } else if (formData.name.length > 50) {
+      newErrors.name = "DAO name must be under 50 characters";
     }
+
     if (!formData.description.trim()) {
       newErrors.description = 'Description is required';
+    } else if (formData.description.length < 10) {
+      newErrors.description = "Description must be at least 10 characters";
     }
+
     if (formData.tags.length === 0) {
       newErrors.tags = 'At least one tag is required';
     }
@@ -103,7 +109,7 @@ export const DAOCreationModal: React.FC<DAOCreationModalProps> = ({
           <form onSubmit={handleSubmit} className="space-y-4 pt-4">
             <div>
               <label className="text-sm font-medium text-gray-700 mb-2 block">
-                DAO Name *
+                DAO Name <span className='text-red-500'>*</span>
               </label>
               <Input
                 value={formData.name}
@@ -112,8 +118,11 @@ export const DAOCreationModal: React.FC<DAOCreationModalProps> = ({
                   if (errors.name) setErrors(prev => ({ ...prev, name: '' }));
                 }}
                 placeholder="Enter DAO name"
-                className={errors.name ? "border-red-500" : ""}
+                className={errors.name ? "border-red-500 focus:border-red-500" : ""}
               />
+              <p className="text-sm text-gray-500 mt-1">
+                The name should be clear, under 50 characters, and avoid special symbols or emojis. ({formData.name.length}/50)
+              </p>
               {errors.name && (
                 <p className="text-red-500 text-xs mt-1">{errors.name}</p>
               )}
@@ -121,7 +130,7 @@ export const DAOCreationModal: React.FC<DAOCreationModalProps> = ({
 
             <div>
               <label className="text-sm font-medium text-gray-700 mb-2 block">
-                Description *
+                Description <span className='text-red-500'>*</span>
               </label>
               <Textarea
                 value={formData.description}
@@ -131,8 +140,9 @@ export const DAOCreationModal: React.FC<DAOCreationModalProps> = ({
                 }}
                 placeholder="Describe your DAO's mission and goals"
                 rows={3}
-                className={errors.description ? "border-red-500" : ""}
+                className={`w-full resize-none ${errors.description ? 'border-red-500 focus:border-red-500' : ''}`}
               />
+              <p className="text-sm text-gray-500 mt-1">Enter what's best describe your collective. (min. 10 characters)</p>
               {errors.description && (
                 <p className="text-red-500 text-xs mt-1">{errors.description}</p>
               )}
@@ -140,7 +150,7 @@ export const DAOCreationModal: React.FC<DAOCreationModalProps> = ({
 
             <div>
               <label className="text-sm font-medium text-gray-700 mb-2 block">
-                Tags *
+                Tags <span className='text-red-500'>*</span>
               </label>
               <div className="flex gap-2 mb-2">
                 <Input
@@ -148,7 +158,7 @@ export const DAOCreationModal: React.FC<DAOCreationModalProps> = ({
                   onChange={(e) => setTagInput(e.target.value)}
                   onKeyPress={handleKeyPress}
                   placeholder="Add tags (press Enter)"
-                  className="flex-1"
+                  className={`flex-1 ${errors.description ? 'border-red-500 focus:border-red-500' : ''}`}
                 />
                 <Button
                   type="button"
