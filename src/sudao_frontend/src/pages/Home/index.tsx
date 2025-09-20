@@ -255,7 +255,6 @@ const Home: React.FC = () => {
                     <motion.div
                         initial="initial"
                         whileInView="animate"
-                        viewport={{ once: true }}
                         className="grid md:grid-cols-3 gap-8"
                     >
                         <motion.div

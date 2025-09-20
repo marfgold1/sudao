@@ -6,20 +6,10 @@ import { useState, useMemo } from "react";
 import { Separator } from "@/components/ui/separator";
 
 export default function PluginInstalledPage() {
-    const { plugins, installPlugin, uninstallPlugin } = usePluginStore();
+    const { plugins } = usePluginStore();
     const [searchTerm, setSearchTerm] = useState("");
     const [selectedPlugin, setSelectedPlugin] = useState<any>();
     const [isModalOpen, setIsModalOpen] = useState(false);
-
-    const handleInstallPlugin = (id: any) => {
-        installPlugin(id);
-        setIsModalOpen(false);
-    };
-
-    const handleUninstallPlugin = (id: any) => {
-        uninstallPlugin(id);
-        setIsModalOpen(false);
-    };
 
     const handlePluginClick = (id: any) => {
         const plugin = plugins.find((p) => p.id === id);
@@ -66,8 +56,6 @@ export default function PluginInstalledPage() {
                     >
                         <PluginCard
                             plugin={plugin}
-                            onInstall={handleInstallPlugin}
-                            onUninstall={handleUninstallPlugin}
                             onClick={handlePluginClick}
                             variant="installed"
                         />
@@ -79,8 +67,6 @@ export default function PluginInstalledPage() {
                 plugin={selectedPlugin}
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
-                onInstall={handleInstallPlugin}
-                onUninstall={handleUninstallPlugin}
                 variant="installed"
             />
         </div>
