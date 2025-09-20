@@ -47,7 +47,7 @@ const CreatorDashboardSidebar: React.FC = () => {
                 {/* Public Profile Link */}
                 <div className="mb-4">
                     {/* Using a standard <a> tag for external navigation */}
-                    <a href={`/dao/${daoId}/home`} className="block">
+                    <Link to={`/dao/${daoId}/home`} className="block">
                         <Button variant="ghost" className="w-full justify-between text-muted-foreground hover:bg-accent">
                         <div className="flex items-center">
                             <User className="w-4 h-4 mr-4" />
@@ -55,7 +55,7 @@ const CreatorDashboardSidebar: React.FC = () => {
                         </div>
                         <ChevronRight className="w-4 h-4" />
                         </Button>
-                    </a>
+                    </Link>
                 </div>
 
                 {/* My Pages Section */}

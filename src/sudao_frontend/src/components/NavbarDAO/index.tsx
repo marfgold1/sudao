@@ -88,22 +88,22 @@ const NavbarDAO: React.FC = () => {
                         className="md:hidden mt-4 pb-4 border-t border-slate-700"
                     >
                         <div className="flex flex-col space-y-3 pt-4">
-                            <a 
-                                href={`/home/${daoId}`} 
+                            <Link 
+                                to={`/home/${daoId}`} 
                                 className={`transition-colors font-semibold ${
                                     isActive('/home/') ? 'text-blue-200 font-semibold' : 'text-white hover:text-blue-200'
                                 }`}
                             >
                                 Home
-                            </a>
-                            <a 
-                                href={`/proposal/${daoId}`} 
+                            </Link>
+                            <Link 
+                                to={`/proposal/${daoId}`} 
                                 className={`transition-colors ${
                                     isActive('/proposal/') ? 'text-blue-200 font-semibold' : 'text-white hover:text-blue-200'
                                 }`}
                             >
                                 Proposals
-                            </a>
+                            </Link>
                         </div>
                     </motion.div>
                 )}

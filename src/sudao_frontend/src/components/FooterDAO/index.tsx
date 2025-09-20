@@ -1,6 +1,7 @@
 import React from 'react';
 
 import Logo from '@/assets/logos/SUDAOWhite.png';
+import { Link } from 'react-router-dom';
 
 const FooterDAO: React.FC = () => {
     return (
@@ -28,18 +29,18 @@ const FooterDAO: React.FC = () => {
                     <div className="space-y-4">
                         <h3 className="text-xl font-semibold">Sitemap</h3>
                         <nav className="space-y-3">
-                            <a href="#" className="block text-gray-300 hover:text-white transition-colors duration-200">
+                            <Link to="#" className="block text-gray-300 hover:text-white transition-colors duration-200">
                                 Homepage
-                            </a>
-                            <a href="#" className="block text-gray-300 hover:text-white transition-colors duration-200">
+                            </Link>
+                            <Link to="#" className="block text-gray-300 hover:text-white transition-colors duration-200">
                                 Contributions
-                            </a>
-                            <a href="#" className="block text-gray-300 hover:text-white transition-colors duration-200">
+                            </Link>
+                            <Link to="#" className="block text-gray-300 hover:text-white transition-colors duration-200">
                                 Proposals
-                            </a>
-                            <a href="#" className="block text-gray-300 hover:text-white transition-colors duration-200">
+                            </Link>
+                            <Link to="#" className="block text-gray-300 hover:text-white transition-colors duration-200">
                                 Plugins
-                            </a>
+                            </Link>
                         </nav>
                     </div>
                 </div>
