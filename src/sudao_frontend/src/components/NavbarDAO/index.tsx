@@ -63,7 +63,13 @@ const NavbarDAO: React.FC = () => {
     const daoName = dao?.name || 'My DAO';
     const daoDescription = dao?.description || 'A community-driven organization';
     
-    const isActive = (path: string) => location.pathname.endsWith(path);
+    const isActive = (path: string) => {
+        // Check if req exists and if the path is not 'creator-dashboard'
+        if (!location.pathname.includes('/creator-dashboard')) {
+            return location.pathname.endsWith(path);
+        }
+        return false;
+    };
     
     const handleLinkClick = () => {
         // Smooth scroll to top when navigating

@@ -1,6 +1,6 @@
 import { Outlet, RouteObject, createBrowserRouter } from "react-router-dom";
 import { Home, Example, Proposal, Transaction, DiscoverCollectives, Profile, BuildDAO, NotFound, CreatorDashboard, InstalledPluginsPage, PluginMarketplacePage, InstalledPluginsPublicPage, Marketplace } from "@/pages";
-import { NavbarDAO, NavbarSUDAO, FooterSUDAO, FooterDAO } from "@/components";
+import { NavbarDAO, NavbarSUDAO, FooterSUDAO, FooterDAO, PluginRouteHandler } from "@/components";
 import { CreatorDashboardLayout } from "@/layouts";
 
 const SUDAOLayout = () => {
@@ -75,6 +75,10 @@ const routes: RouteObject[] = [
                 element: <InstalledPluginsPublicPage />,
             },
             {
+                path: ":daoId/:pluginId",
+                element: <PluginRouteHandler />,
+            },
+            {
                 path: ":daoId/creator-dashboard",
                 element: <CreatorDashboardLayout />,
                 children: [
@@ -94,6 +98,10 @@ const routes: RouteObject[] = [
                                 element: <PluginMarketplacePage />,
                             },
                         ],
+                    },
+                    {
+                        path: ":pluginId",
+                        element: <PluginRouteHandler />,
                     },
                 ],
             },
