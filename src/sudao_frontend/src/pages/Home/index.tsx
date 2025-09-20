@@ -8,6 +8,7 @@ import * as THREE from "three";
 import { Canvas } from "@react-three/fiber"
 import { OrbitControls, Sphere } from "@react-three/drei"
 import { EarthSphere, FloatingParticles, FlyingConnections } from "@/components/Globe3D";
+import { Link } from "react-router-dom";
 
 
 const Home: React.FC = () => {
@@ -86,9 +87,11 @@ const Home: React.FC = () => {
                                 <br />
                                 with Decentralized Autonomous Organizations.
                             </p>
-                            <Button className="bg-blue-950 hover:bg-blue-500 text-white px-8 py-6 text-lg font-semibold rounded-lg">
-                                Start Building  →
-                            </Button>
+                            <Link to={"/discover"}>
+                                <Button className="bg-blue-950 hover:bg-blue-500 text-white px-8 py-6 text-lg font-semibold rounded-lg">
+                                    Start Building  →
+                                </Button>
+                            </Link>
                         </motion.div>
                         
                         {/* 3D Globe Decoration */}

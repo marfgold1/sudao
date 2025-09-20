@@ -64,7 +64,7 @@ const NavbarDAO: React.FC = () => {
                                 <span>Creator Dashboard</span>
                             </motion.button>
                         </Link>
-                        <Link to={"/profile"}>
+                        <Link to={`/dao/${daoId}/profile`}>
                             <motion.button
                                 whileHover={{ scale: 1.05 }}
                             >
