@@ -48,14 +48,14 @@ import { useAgents } from "@/hooks/useAgents";
 import { useDAO } from "@/hooks/useDAO";
 import { useTreasury } from "@/hooks/useTreasury";
 import { ApproveArgs } from "declarations/icp_ledger_canister/icp_ledger_canister.did";
-import { MakeOpt, PrincipalReq } from "@/utils/converter";
+import { MakeOpt, PrincipalReq, iterLinkList, keyVariant } from "@/utils/converter";
 import { ApproveResult } from "declarations/sudao_ledger/sudao_ledger.did";
 
 // All props are now handled internally by hooks - no interface needed
 
 const TransactionContent: React.FC = () => {
   // Use hooks to get data and functionality
-  const { daoInfo } = useDAO();
+  const { daoInfo, deploymentInfo } = useDAO();
   const { currentAccount, getUserBalances } = useAccount();
   const { agents, canisterIds } = useAgents();
   const {
@@ -161,6 +161,15 @@ const TransactionContent: React.FC = () => {
         switch (step) {
           case 1: {
             // Approve ICP transfer
+
+            const canisterIdMap = deploymentInfo ? 
+              Object.fromEntries(
+                Array.from(iterLinkList(deploymentInfo.canisterIds)).map(([codeType, canisterId]) => [
+                  keyVariant(codeType),
+                  canisterId.toString()
+                ])
+              ) : {};
+
             const approveArgs: ApproveArgs = {
               fee: MakeOpt(BigInt(10000)),
               memo: MakeOpt(new Uint8Array()),
@@ -170,7 +179,7 @@ const TransactionContent: React.FC = () => {
               expected_allowance: MakeOpt(),
               expires_at: MakeOpt(),
               spender: {
-                owner: PrincipalReq(ammCanisterId || canisterIds.daoAmm || ""),
+                owner: PrincipalReq(ammCanisterId || canisterIds.daoAmm || canisterIdMap.swap || ""),
                 subaccount: MakeOpt(),
               },
             };
