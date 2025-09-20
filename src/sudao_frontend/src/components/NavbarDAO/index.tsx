@@ -3,47 +3,51 @@ import { Menu, Settings } from "lucide-react";
 import React, { useState } from "react";
 import { useParams, useLocation, Link } from "react-router-dom";
 import { ConnectWallet } from "@nfid/identitykit/react";
-import { Avatar, AvatarFallback } from '../ui/avatar';
-import ExpandableLogo from '../ExpandableLogo';
+import { Avatar, AvatarFallback } from "../ui/avatar";
+import ExpandableLogo from "../ExpandableLogo";
 
 const NavbarDAO: React.FC = () => {
-    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-    const { daoId } = useParams<{ daoId: string }>();
-    const location = useLocation();
-    
-    const isActive = (path: string) => location.pathname.includes(path);
-    
-    return (
-        <>
-            {/* Navigation */}
-            <motion.div
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6 }}
-                className="fixed top-0 left-0 right-0 z-40 px-6 py-4 bg-slate-900 text-white backdrop-blur-sm"
-            >
-                <div className="max-w-7xl mx-auto flex items-center justify-between">
-                    <div className="flex items-center space-x-10">
-                        <ExpandableLogo />
-                        <div className="hidden md:flex items-center space-x-10">
-                            <Link 
-                                to={`/home/${daoId}`} 
-                                className={`transition-colors ${
-                                    isActive('/home/') ? 'text-blue-200 font-semibold' : 'text-white hover:text-blue-200'
-                                }`}
-                            >
-                                [DAO Name]
-                            </Link>
-                            <Link 
-                                to={`/proposal/${daoId}`} 
-                                className={`transition-colors ${
-                                    isActive('/proposal/') ? 'text-blue-200 font-semibold' : 'text-white hover:text-blue-200'
-                                }`}
-                            >
-                                Proposals
-                            </Link>
-                        </div>
-                    </div>
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { daoId } = useParams<{ daoId: string }>();
+  const location = useLocation();
+
+  const isActive = (path: string) => location.pathname.includes(path);
+
+  return (
+    <>
+      {/* Navigation */}
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+        className="fixed top-0 left-0 right-0 z-40 px-6 py-4 bg-slate-900 text-white backdrop-blur-sm"
+      >
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <div className="flex items-center space-x-10">
+            <ExpandableLogo />
+            <div className="hidden md:flex items-center space-x-10">
+              <Link
+                to={`/dao/${daoId}/home`}
+                className={`transition-colors ${
+                  isActive("/dao/") && isActive("/home")
+                    ? "text-blue-200 font-semibold"
+                    : "text-white hover:text-blue-200"
+                }`}
+              >
+                [DAO Name]
+              </Link>
+              <Link
+                to={`/dao/${daoId}/proposal`}
+                className={`transition-colors ${
+                  isActive("/dao/") && isActive("/proposal")
+                    ? "text-blue-200 font-semibold"
+                    : "text-white hover:text-blue-200"
+                }`}
+              >
+                Proposals
+              </Link>
+            </div>
+          </div>
 
           <div className="flex items-center space-x-4">
             <ConnectWallet />
@@ -54,7 +58,7 @@ const NavbarDAO: React.FC = () => {
               <Settings className="w-4 h-4" />
               <span>Creator Dashboard</span>
             </motion.button>
-            <Link to={"/profile"}>
+            <Link to={`/dao/${daoId}/profile`}>
               <motion.button whileHover={{ scale: 1.05 }}>
                 <Avatar>
                   <AvatarFallback className="bg-white/60 text-black">
@@ -82,9 +86,9 @@ const NavbarDAO: React.FC = () => {
           >
             <div className="flex flex-col space-y-3 pt-4">
               <a
-                href={`/home/${daoId}`}
+                href={`/dao/${daoId}/home`}
                 className={`transition-colors font-semibold ${
-                  isActive("/home/")
+                  isActive("/dao/") && isActive("/home")
                     ? "text-blue-200 font-semibold"
                     : "text-white hover:text-blue-200"
                 }`}
@@ -92,9 +96,9 @@ const NavbarDAO: React.FC = () => {
                 Home
               </a>
               <a
-                href={`/proposal/${daoId}`}
+                href={`/dao/${daoId}/proposal`}
                 className={`transition-colors ${
-                  isActive("/proposal/")
+                  isActive("/dao/") && isActive("/proposal")
                     ? "text-blue-200 font-semibold"
                     : "text-white hover:text-blue-200"
                 }`}
@@ -102,9 +106,9 @@ const NavbarDAO: React.FC = () => {
                 Proposals
               </a>
               <a
-                href={`/transaction/${daoId}`}
+                href={`/dao/${daoId}/home`}
                 className={`transition-colors ${
-                  isActive("/transaction/")
+                  isActive("/dao/") && isActive("/home")
                     ? "text-blue-200 font-semibold"
                     : "text-white hover:text-blue-200"
                 }`}
