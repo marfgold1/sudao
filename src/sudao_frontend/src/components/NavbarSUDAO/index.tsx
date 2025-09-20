@@ -17,6 +17,14 @@ const NavbarSUDAO: React.FC = () => {
         return location.pathname.includes(path);
     };
     
+    const handleLinkClick = () => {
+        // Smooth scroll to top when navigating
+        window.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+        });
+    };
+    
     return (
         <>
             {/* Navigation */}
@@ -34,6 +42,7 @@ const NavbarSUDAO: React.FC = () => {
                         <div className="hidden md:flex items-center space-x-10">
                             <Link  
                                 to="/" 
+                                onClick={handleLinkClick}
                                 className={`transition-colors ${
                                     isActive('/') ? 'text-white font-semibold' : 'text-slate-400 hover:text-blue-200'
                                 }`}
@@ -42,6 +51,7 @@ const NavbarSUDAO: React.FC = () => {
                             </Link>
                             <Link  
                                 to="/discover" 
+                                onClick={handleLinkClick}
                                 className={`transition-colors ${
                                     isActive('/discover') ? 'text-white font-semibold' : 'text-slate-400 hover:text-blue-200'
                                 }`}
@@ -50,6 +60,7 @@ const NavbarSUDAO: React.FC = () => {
                             </Link>
                             <Link  
                                 to="/plugins" 
+                                onClick={handleLinkClick}
                                 className={`transition-colors ${
                                     isActive('/plugins') ? 'text-white font-semibold' : 'text-slate-400 hover:text-blue-200'
                                 }`}

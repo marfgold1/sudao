@@ -2,6 +2,16 @@ import { Button } from "@/components/ui/button"
 import { motion } from "framer-motion"
 
 export function HeroSection() {
+    const scrollToMarketplace = () => {
+        const marketplaceSection = document.getElementById('marketplace-section');
+        if (marketplaceSection) {
+            marketplaceSection.scrollIntoView({ 
+                behavior: 'smooth',
+                block: 'start'
+            });
+        }
+    };
+
     return (
         <section className="bg-blue-900 relative overflow-hidden min-h-screen pt-[4.5rem] flex items-center">
             <div className="absolute inset-0">
@@ -179,6 +189,7 @@ export function HeroSection() {
                         <Button
                             size="lg"
                             className="bg-transparent hover:bg-white text-white hover:text-blue-900 border-2 border-white/80 px-8 py-5 text-lg backdrop-blur-sm"
+                            onClick={scrollToMarketplace}
                         >
                         Discover Available Plugins
                         </Button>

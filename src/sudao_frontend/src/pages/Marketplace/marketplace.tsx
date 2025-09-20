@@ -29,7 +29,7 @@ export function Marketplace() {
     }, [plugins, searchTerm]);
 
     return (
-        <div className="space-y-6 min-h-screen max-w-7xl mx-auto py-20 px-4">
+        <div id="marketplace-section" className="space-y-6 min-h-screen max-w-7xl mx-auto py-20 px-4">
             <div className="flex items-center justify-between">
                 <Input
                     placeholder="Search for plugins..."

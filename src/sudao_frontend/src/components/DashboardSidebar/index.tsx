@@ -24,7 +24,12 @@ const CreatorDashboardSidebar: React.FC = () => {
     const plugins = usePluginStore((state) => state.plugins);
     const [isMyPagesOpen, setIsMyPagesOpen] = useState(false);
 
-    const myPagesPlugins = useMemo(() => plugins.filter((plugin) => plugin.showInMyPages), [plugins]);
+    const myPagesPlugins = useMemo(() => 
+        plugins
+            .filter((plugin) => plugin.showInMyPages)
+            .sort((a, b) => a.name.localeCompare(b.name)), 
+        [plugins]
+    );
 
     const totalPages = useMemo(
         () => sidebarItems.length + myPagesPlugins.length + 1, // +1 for Home
