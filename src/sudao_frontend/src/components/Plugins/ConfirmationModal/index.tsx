@@ -7,7 +7,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { AlertTriangle, Loader2 } from "lucide-react";
+import { AlertTriangle, Loader2, Download } from "lucide-react";
 import { Plugin } from "@/lib/plugin-store";
 
 interface ConfirmationModalProps {
@@ -36,9 +36,13 @@ export default function ConfirmationModal({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <div className="flex items-center gap-3">
-            {isUninstall && (
+            {isUninstall ? (
               <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
                 <AlertTriangle className="w-5 h-5 text-red-600" />
+              </div>
+            ) : (
+              <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                <Download className="w-5 h-5 text-blue-600" />
               </div>
             )}
             <div>
