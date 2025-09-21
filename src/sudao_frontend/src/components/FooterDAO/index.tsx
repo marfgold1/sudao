@@ -67,7 +67,7 @@ const FooterDAO: React.FC = () => {
                             <Link to={`/dao/${daoId}/home`} onClick={handleLinkClick} className="block text-gray-300 hover:text-white transition-colors duration-200">
                                 Homepage
                             </Link>
-                            <Link to={`/dao/${daoId}/home`} onClick={handleLinkClick} className="block text-gray-300 hover:text-white transition-colors duration-200">
+                            <Link to={`/dao/${daoId}/transaction`} onClick={handleLinkClick} className="block text-gray-300 hover:text-white transition-colors duration-200">
                                 Contributions
                             </Link>
                             <Link to={`/dao/${daoId}/proposal`} onClick={handleLinkClick} className="block text-gray-300 hover:text-white transition-colors duration-200">

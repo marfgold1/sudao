@@ -8,7 +8,7 @@ import { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 const sidebarItems = [
-    { icon: CreditCard, label: "Transactions", path: "transactions" },
+    { icon: CreditCard, label: "Transactions", path: "transaction" },
 ];
 
 const pluginItems = [

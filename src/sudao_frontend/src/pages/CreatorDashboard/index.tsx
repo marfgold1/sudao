@@ -9,12 +9,12 @@ const CreatorDashboard: React.FC = () => {
     const quickActions = [
         {
             title: "Manage Transactions",
-            href: `/dao/${daoId}/creator-dashboard/transactions`,
+            href: `/dao/${daoId}/creator-dashboard/transaction`,
             description: "View and manage all treasury transactions",
         },
         {
             title: "Review Proposals",
-            href: `/dao/${daoId}/creator-dashboard/proposals`,
+            href: `/dao/${daoId}/creator-dashboard/proposal`,
             description: "Track and manage community proposals",
         },
         {

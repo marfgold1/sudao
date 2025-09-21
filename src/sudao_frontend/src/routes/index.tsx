@@ -91,6 +91,10 @@ const routes: RouteObject[] = [
                         element: <CreatorDashboard />,
                     },
                     {
+                        path: "transaction",
+                        element: <Transaction />,
+                    },
+                    {
                         path: "plugins",
                         children: [
                             {
