@@ -533,7 +533,7 @@ const BuildDAO: React.FC = () => {
     if (isVariant(deploymentInfo?.status, "deployed") && currentStep === 3) {
       const timeout = setTimeout(() => {
         setCurrentStep(4); // Move to completion screen
-      }, 3000);
+      }, 700);
 
       return () => clearTimeout(timeout);
     }
