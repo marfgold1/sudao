@@ -22,7 +22,7 @@ export interface Proposal {
   id: string;
   title: string;
   description: string;
-  status: 'draft' | 'active' | 'approved' | 'rejected' | 'executed';
+  status: 'Draft' | 'Active' | 'Approved' | 'Rejected' | 'Executed';
   creator: string;
   createdAt: bigint;
   votingEndsAt: bigint;
@@ -30,6 +30,7 @@ export interface Proposal {
   noVotes: number;
   totalVotingPower: number;
   comments: any[];
+  publishedDate: string;
 }
 
 export const useProposals = (daoId: string | null) => {
@@ -39,7 +40,7 @@ export const useProposals = (daoId: string | null) => {
   const [error, setError] = useState<string | null>(null);
   const cacheRef = useRef<{ data: Proposal[]; timestamp: number; daoId: string } | null>(null);
   
-  const proposalService = createProposalService(agents.proposal);
+  const proposalService = createProposalService(agents.proposalAuth || agents.proposal);
 
   const fetchProposals = useCallback(async (forceRefresh = false) => {
     if (!daoId) return;
@@ -61,20 +62,38 @@ export const useProposals = (daoId: string | null) => {
     try {
       const result = await proposalService.listProposals(daoId);
       
+      console.log('[useProposals] Raw proposals from backend:', result);
+      
       // Convert backend format to frontend format
-      const convertedProposals: Proposal[] = result.map(p => ({
-        id: p.id,
-        title: p.title,
-        description: p.description,
-        status: Object.keys(p.status)[0] as 'draft' | 'active' | 'approved' | 'rejected' | 'executed',
-        creator: p.proposer.toString(),
-        createdAt: p.createdAt,
-        votingEndsAt: p.votingDeadline,
-        yesVotes: Number(p.votesFor),
-        noVotes: Number(p.votesAgainst),
-        totalVotingPower: Number(p.votesFor) + Number(p.votesAgainst),
-        comments: p.comments || []
-      }));
+      const convertedProposals: Proposal[] = result.map(p => {
+        const backendStatus = Object.keys(p.status)[0];
+        // Map backend status to frontend status
+        const statusMap: Record<string, string> = {
+          'draft': 'Draft',
+          'active': 'Active', 
+          'approved': 'Approved',
+          'rejected': 'Rejected',
+          'executed': 'Executed'
+        };
+        
+        const proposal = {
+          id: p.id,
+          title: p.title,
+          description: p.description,
+          status: statusMap[backendStatus] || backendStatus,
+          creator: p.proposer.toString(),
+          createdAt: p.createdAt,
+          votingEndsAt: p.votingDeadline,
+          yesVotes: Number(p.votesFor),
+          noVotes: Number(p.votesAgainst),
+          totalVotingPower: Number(p.votesFor) + Number(p.votesAgainst),
+          comments: p.comments || [],
+          publishedDate: p.publishedAt ? new Date(Number(p.publishedAt) / 1000000).toLocaleDateString() : new Date(Number(p.createdAt) / 1000000).toLocaleDateString()
+        };
+        
+        console.log('[useProposals] Converted proposal:', proposal);
+        return proposal;
+      });
       
       // Update cache
       cacheRef.current = {
@@ -106,14 +125,35 @@ export const useProposals = (daoId: string | null) => {
     }
     
     try {
+      console.log('[useProposals] Creating proposal with args:', args);
+      console.log('[useProposals] beneficiaryAddress type:', typeof args.beneficiaryAddress);
+      console.log('[useProposals] beneficiaryAddress value:', args.beneficiaryAddress);
+      
       const proposalType = args.proposalType === 'funding' ? { funding: null } : { governance: null };
+      
+      // Convert beneficiaryAddress to optional array format for Motoko
+      const beneficiaryOpt = args.beneficiaryAddress ? [Principal.fromText(args.beneficiaryAddress)] : [];
+      const requestedAmountOpt = args.requestedAmount ? [BigInt(args.requestedAmount)] : [];
+      
+      console.log('[useProposals] Final params:', {
+        daoId,
+        title: args.title,
+        description: args.description,
+        proposalType,
+        beneficiaryOpt,
+        requestedAmountOpt,
+        votingDuration: BigInt((args.votingDurationHours || 168) * 3600 * 1000000000),
+        minimumParticipation: BigInt(args.minimumParticipation || 50),
+        minimumApproval: BigInt(args.minimumApproval || 51)
+      });
+      
       const proposalId = await proposalService.createDraftProposal(
         daoId,
         args.title,
         args.description,
         proposalType,
-        args.beneficiaryAddress ? Principal.fromText(args.beneficiaryAddress) : undefined,
-        args.requestedAmount ? BigInt(args.requestedAmount) : undefined,
+        beneficiaryOpt,
+        requestedAmountOpt,
         BigInt((args.votingDurationHours || 168) * 3600 * 1000000000),
         BigInt(args.minimumParticipation || 50),
         BigInt(args.minimumApproval || 51)
@@ -190,8 +230,19 @@ export const useProposals = (daoId: string | null) => {
     daoCanisterId: string
   ) => {
     try {
-      await proposalService.registerDAO(daoId, daoCanisterId, ledgerCanisterId, ammCanisterId);
-      toast.success('DAO registered with proposal system!');
+      const authService = createProposalService(agents.proposalAuth!);
+      // Try to register first, if already registered, update instead
+      try {
+        await authService.registerDAO(daoId, daoCanisterId, ledgerCanisterId, ammCanisterId);
+        toast.success('DAO registered with proposal system!');
+      } catch (registerErr) {
+        if (registerErr instanceof Error && registerErr.message.includes('already registered')) {
+          await authService.updateDAORegistration(daoId, daoCanisterId, ledgerCanisterId, ammCanisterId);
+          toast.success('DAO registration updated!');
+        } else {
+          throw registerErr;
+        }
+      }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to register DAO';
       toast.error(errorMessage);

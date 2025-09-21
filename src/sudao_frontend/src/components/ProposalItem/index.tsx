@@ -1,45 +1,66 @@
 import { Proposal } from "@/types";
-import { motion } from "framer-motion";
-import { CircleUserRound, Copy } from "lucide-react";
+import { CircleUserRound, Copy, ExternalLink } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { TableRow, TableCell } from "@/components/ui/table";
 import { useState } from "react";
 
 export const ProposalItem: React.FC<{ proposal: Proposal, onProposalClick: any }> = ({ proposal, onProposalClick }) => {
     const [copied, setCopied] = useState(false);
 
-    const handleCopy = () => {
+    const handleCopy = (e: React.MouseEvent) => {
+        e.stopPropagation();
         navigator.clipboard.writeText(proposal.id);
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
     };
 
     return (
-        <motion.div 
-            className="border-t border-gray-200 dark:border-gray-700 py-6 cursor-pointer"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
+        <TableRow 
+            className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50"
             onClick={() => onProposalClick(proposal)}
         >
-            <div className="flex justify-between items-center mb-2">
-                <Badge variant={proposal.status}>{proposal.status}</Badge>
-                <a href="#" className="text-sm font-medium text-blue-600 hover:underline dark:text-blue-400">View details</a>
-            </div>
-            <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-2">{proposal.title}</h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                {proposal.description}
-            </p>
-            <div className="flex justify-between items-center text-xs text-gray-500 dark:text-gray-400">
-                <div className="flex items-center gap-2">
-                    <CircleUserRound />
-                    <span className="font-mono bg-gray-100 dark:bg-gray-700/50 px-2 py-1 rounded">{proposal.id}</span>
-                    <button onClick={handleCopy} title="Copy ID">
-                        <Copy className="w-3.5 h-3.5 hover:text-gray-800 dark:hover:text-gray-200" />
-                    </button>
-                    {copied && <span className="text-green-500">Copied!</span>}
+            <TableCell className="font-medium">
+                <div className="flex flex-col gap-1">
+                    <span className="font-semibold">{proposal.title}</span>
+                    <span className="text-sm text-gray-500 dark:text-gray-400 line-clamp-2">
+                        {proposal.description}
+                    </span>
                 </div>
-                <span>Published {proposal.publishedDate}</span>
-            </div>
-        </motion.div>
+            </TableCell>
+            <TableCell>
+                <Badge variant={proposal.status}>{proposal.status}</Badge>
+            </TableCell>
+            <TableCell className="text-sm text-gray-500 dark:text-gray-400">
+                <div className="flex items-center gap-2">
+                    <CircleUserRound className="w-4 h-4" />
+                    <span className="font-mono text-xs">
+                        {proposal.creator.slice(0, 8)}...{proposal.creator.slice(-4)}
+                    </span>
+                </div>
+            </TableCell>
+            <TableCell className="text-sm text-gray-500 dark:text-gray-400">
+                {proposal.publishedDate}
+            </TableCell>
+            <TableCell className="text-sm">
+                <div className="flex items-center gap-2">
+                    <span className="text-green-600 dark:text-green-400">{proposal.yesVotes}</span>
+                    <span className="text-gray-400">/</span>
+                    <span className="text-red-600 dark:text-red-400">{proposal.noVotes}</span>
+                </div>
+            </TableCell>
+            <TableCell>
+                <div className="flex items-center gap-2">
+                    <button 
+                        onClick={handleCopy} 
+                        className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"
+                        title="Copy ID"
+                    >
+                        <Copy className="w-3.5 h-3.5" />
+                    </button>
+                    <ExternalLink className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                    {copied && <span className="text-green-500 text-xs">Copied!</span>}
+                </div>
+            </TableCell>
+        </TableRow>
     );
 };

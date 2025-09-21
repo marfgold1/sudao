@@ -18,6 +18,7 @@ export const AgentsProvider = ({ children }: { children: React.ReactNode }) => {
       return new HttpAgent({ host: process.env.DFX_NETWORK === "local" ? "http://localhost:4943" : "https://ic0.app" });
     }, []);
   
+    // Read-only operations use anonymous agent
     const explorerDao = useMemo(() => {
       return createExplorerDaoActor(explorerDaoId, { agent: anonymousAgent });
     }, [anonymousAgent]);
@@ -27,23 +28,33 @@ export const AgentsProvider = ({ children }: { children: React.ReactNode }) => {
       return canId ? createDaoBeActor(canId, { agent: anonymousAgent }) : null;
     }, [canisterContext?.canisterIds?.daoBe, anonymousAgent]);
   
-    const daoLedger = useMemo(() => {
-      const canId = canisterContext?.canisterIds?.daoLedger;
-      return canId ? createDaoLedgerActor(canId, { agent: anonymousAgent }) : null;
-    }, [canisterContext?.canisterIds?.daoLedger, anonymousAgent]);
-  
+    const proposal = useMemo(() => {
+      return createProposalActor(proposalId, { agent: anonymousAgent });
+    }, [anonymousAgent]);
+
     const daoAmm = useMemo(() => {
       const canId = canisterContext?.canisterIds?.daoAmm;
       return canId ? createDaoAmmActor(canId, { agent: anonymousAgent }) : null;
     }, [canisterContext?.canisterIds?.daoAmm, anonymousAgent]);
 
-    const icpLedger = useMemo(() => {
-      return createICPActor(icpLedgerId, { agent: anonymousAgent });
-    }, [anonymousAgent]);
+    // Write operations need authenticated agent
+    const daoLedger = useMemo(() => {
+      const canId = canisterContext?.canisterIds?.daoLedger;
+      return canId ? createDaoLedgerActor(canId, { agent }) : null;
+    }, [canisterContext?.canisterIds?.daoLedger, agent]);
+  
+    const daoAmmAuth = useMemo(() => {
+      const canId = canisterContext?.canisterIds?.daoAmm;
+      return canId ? createDaoAmmActor(canId, { agent }) : null;
+    }, [canisterContext?.canisterIds?.daoAmm, agent]);
 
-    const proposal = useMemo(() => {
-      return createProposalActor(proposalId, { agent: anonymousAgent });
-    }, [anonymousAgent]);
+    const icpLedger = useMemo(() => {
+      return createICPActor(icpLedgerId, { agent });
+    }, [agent]);
+
+    const proposalAuth = useMemo(() => {
+      return createProposalActor(proposalId, { agent });
+    }, [agent]);
   
     return (
       <AgentsContext.Provider value={{ 
@@ -52,8 +63,10 @@ export const AgentsProvider = ({ children }: { children: React.ReactNode }) => {
           daoBe,
           daoLedger,
           daoAmm,
+          daoAmmAuth,
           icpLedger,
           proposal,
+          proposalAuth,
         }
        }}>
         {children}

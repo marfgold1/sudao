@@ -7,9 +7,19 @@ class ProposalService {
   async registerDAO(daoId: string, daoCanisterId: string, ledgerCanisterId: string, ammCanisterId: string) {
     const result = await this.actor.registerDAO(
       daoId,
-      Principal.fromText(daoCanisterId),
       Principal.fromText(ledgerCanisterId),
-      Principal.fromText(ammCanisterId)
+      Principal.fromText(ammCanisterId),
+      Principal.fromText(daoCanisterId)
+    );
+    return 'ok' in result ? result.ok : false;
+  }
+
+  async updateDAORegistration(daoId: string, daoCanisterId: string, ledgerCanisterId: string, ammCanisterId: string) {
+    const result = await this.actor.updateDAORegistration(
+      daoId,
+      Principal.fromText(ledgerCanisterId),
+      Principal.fromText(ammCanisterId), 
+      Principal.fromText(daoCanisterId)
     );
     return 'ok' in result ? result.ok : false;
   }
@@ -27,8 +37,8 @@ class ProposalService {
     title: string,
     description: string,
     proposalType: any,
-    beneficiaryAddress?: Principal,
-    requestedAmount?: bigint,
+    beneficiaryAddress: Principal[],
+    requestedAmount: bigint[],
     votingDuration: bigint = BigInt(7 * 24 * 60 * 60 * 1000000000),
     minimumParticipation: bigint = BigInt(10),
     minimumApproval: bigint = BigInt(51)

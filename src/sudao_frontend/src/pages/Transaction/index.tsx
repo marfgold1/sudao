@@ -49,7 +49,12 @@ import { useAgents } from "@/hooks/useAgents";
 import { useDAO } from "@/hooks/useDAO";
 import { useTreasury } from "@/hooks/useTreasury";
 import { ApproveArgs } from "declarations/icp_ledger_canister/icp_ledger_canister.did";
-import { MakeOpt, PrincipalReq, iterLinkList, keyVariant } from "@/utils/converter";
+import {
+  MakeOpt,
+  PrincipalReq,
+  iterLinkList,
+  keyVariant,
+} from "@/utils/converter";
 import { ApproveResult } from "declarations/sudao_ledger/sudao_ledger.did";
 
 // All props are now handled internally by hooks - no interface needed
@@ -59,13 +64,34 @@ const TransactionContent: React.FC = () => {
   const { daoInfo, deploymentInfo } = useDAO();
   const { currentAccount, getUserBalances } = useAccount();
   const { agents, canisterIds } = useAgents();
-  const {
-    transactions,
-    loading: treasuryLoading,
-    refetch: refetchTreasury,
-    refreshTreasury,
-  } = useTreasury(canisterIds.daoBe);
-  const { handleGetQuote, handleSwap, tokenInfo, reserves, fetchAMMData } = useAMM();
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+
+  // Fetch transactions from AMM
+  React.useEffect(() => {
+    const fetchAMMTransactions = async () => {
+      if (!agents.daoAmm) return;
+      
+      try {
+        const ammTransactions = await agents.daoAmm.get_transaction_history();
+        const formattedTransactions: Transaction[] = ammTransactions.map(tx => ({
+          id: tx.id.toString(),
+          account: tx.user.toString().slice(0, 8) + '...' + tx.user.toString().slice(-6),
+          amount: BigInt(tx.amount_in),
+          type: 'In' as const,
+          beneficiary: tx.transaction_type === 'swap' ? 'Token Swap' : 'Add Liquidity',
+          address: tx.token_in.toString().slice(0, 8) + '...' + tx.token_in.toString().slice(-6),
+          date: new Date(Number(tx.timestamp) / 1000000).toISOString().split('T')[0]
+        }));
+        setTransactions(formattedTransactions);
+      } catch (error) {
+        console.error('Failed to fetch AMM transactions:', error);
+      }
+    };
+    
+    fetchAMMTransactions();
+  }, [agents.daoAmm]);
+  const { handleGetQuote, handleSwap, tokenInfo, reserves, fetchAMMData } =
+    useAMM();
 
   // Local state for UI
   const [searchTerm, setSearchTerm] = useState("");
@@ -164,13 +190,16 @@ const TransactionContent: React.FC = () => {
           case 1: {
             // Approve ICP transfer
 
-            const canisterIdMap = deploymentInfo ? 
-              Object.fromEntries(
-                Array.from(iterLinkList(deploymentInfo.canisterIds)).map(([codeType, canisterId]) => [
-                  keyVariant(codeType),
-                  canisterId.toString()
-                ])
-              ) : {};
+            const canisterIdMap = deploymentInfo
+              ? Object.fromEntries(
+                  Array.from(iterLinkList(deploymentInfo.canisterIds)).map(
+                    ([codeType, canisterId]) => [
+                      keyVariant(codeType),
+                      canisterId.toString(),
+                    ]
+                  )
+                )
+              : {};
 
             const approveArgs: ApproveArgs = {
               fee: MakeOpt(BigInt(10000)),
@@ -181,7 +210,12 @@ const TransactionContent: React.FC = () => {
               expected_allowance: MakeOpt(),
               expires_at: MakeOpt(),
               spender: {
-                owner: PrincipalReq(ammCanisterId || canisterIds.daoAmm || canisterIdMap.swap || ""),
+                owner: PrincipalReq(
+                  ammCanisterId ||
+                    canisterIds.daoAmm ||
+                    canisterIdMap.swap ||
+                    ""
+                ),
                 subaccount: MakeOpt(),
               },
             };
@@ -193,11 +227,21 @@ const TransactionContent: React.FC = () => {
           }
           case 2: {
             // Get AMM info
-            if (tokenInfo && reserves) {
-              const ammInfo = { tokenInfo, reserves, is_initialized: true };
-              addDebugLog(`AMM info: ${JSON.stringify(ammInfo)}`);
-              setStepResults((prev) => ({ ...prev, ammInfo }));
+            if (!agents.daoAmmAuth || !currentAccount) {
+              throw new Error("AMM not available or user not authenticated");
             }
+            
+            const [tokenInfoResult, reservesResult] = await Promise.all([
+              agents.daoAmmAuth.get_token_info(),
+              agents.daoAmmAuth.get_reserves()
+            ]);
+            
+            const ammInfo = { 
+              tokenInfo: tokenInfoResult, 
+              reserves: reservesResult, 
+              is_initialized: true 
+            };
+            setStepResults((prev) => ({ ...prev, ammInfo }));
             break;
           }
           case 3: {
@@ -206,16 +250,19 @@ const TransactionContent: React.FC = () => {
               canisterIds.icpLedger,
               BigInt(Number(contributionData.amount) * 100000000)
             );
-            addDebugLog(`Quote: ${quote?.toString()}`);
 
-            // Handle quote result which may be a Result type
             const quoteBigint =
               typeof quote === "object" && quote && "ok" in quote
                 ? (quote.ok as bigint)
                 : (quote as unknown as bigint);
+            
+            if (!quoteBigint || quoteBigint === BigInt(0)) {
+              throw new Error("Invalid quote received");
+            }
+            
             setStepResults((prev) => ({
               ...prev,
-              quote: quoteBigint || BigInt(0),
+              quote: quoteBigint,
             }));
             break;
           }
@@ -245,15 +292,47 @@ const TransactionContent: React.FC = () => {
             }));
             setContributionCompleted(true);
             toast.success("Contribution completed successfully!");
-            refreshTreasury(); // Force refresh transaction list
+            // Refresh AMM transactions after contribution
+            if (agents.daoAmm) {
+              try {
+                const ammTransactions = await agents.daoAmm.get_transaction_history();
+                const formattedTransactions: Transaction[] = ammTransactions.map(tx => ({
+                  id: tx.id.toString(),
+                  account: tx.user.toString().slice(0, 8) + '...' + tx.user.toString().slice(-6),
+                  amount: BigInt(tx.amount_in),
+                  type: 'In' as const,
+                  beneficiary: tx.transaction_type === 'swap' ? 'Token Swap' : 'Add Liquidity',
+                  address: tx.token_in.toString().slice(0, 8) + '...' + tx.token_in.toString().slice(-6),
+                  date: new Date(Number(tx.timestamp) / 1000000).toISOString().split('T')[0]
+                }));
+                setTransactions(formattedTransactions);
+              } catch (error) {
+                console.error('Failed to refresh AMM transactions:', error);
+              }
+            }
             break;
           }
         }
       } catch (error) {
         const errorMessage =
           error instanceof Error ? error.message : "Unknown error";
-        addDebugLog(`Step ${step} failed: ${errorMessage}`);
-        toast.error(`Step ${step} failed: ${errorMessage}`);
+        
+        // Handle specific error cases gracefully
+        if (errorMessage.includes("Anonymous principal cannot approve")) {
+          addDebugLog(`Step ${step} failed: Please connect your wallet to continue`);
+          toast.error("Please connect your wallet to make contributions");
+        } else if (errorMessage.includes("InsufficientFunds")) {
+          addDebugLog(`Step ${step} failed: Insufficient balance`);
+          toast.error("Insufficient ICP balance for this transaction");
+        } else if (errorMessage.includes("BadFee")) {
+          addDebugLog(`Step ${step} failed: Incorrect fee amount`);
+          toast.error("Transaction fee error. Please try again.");
+        } else {
+          addDebugLog(`Step ${step} failed: ${errorMessage}`);
+          toast.error(`Step ${step} failed: ${errorMessage}`);
+        }
+        
+        throw error; // Stop execution on error
       }
     },
     [
@@ -267,7 +346,6 @@ const TransactionContent: React.FC = () => {
       getUserBalances,
       canisterIds,
       addDebugLog,
-      refetchTreasury,
     ]
   );
 
@@ -275,13 +353,18 @@ const TransactionContent: React.FC = () => {
     async (canisterId?: string, ammCanisterId?: string) => {
       setIsProcessingPayment(true);
 
-      for (let step = 1; step <= 5; step++) {
-        await executeStep(step, canisterId, ammCanisterId);
-        // Small delay between steps
-        await new Promise((resolve) => setTimeout(resolve, 1000));
+      try {
+        for (let step = 1; step <= 5; step++) {
+          await executeStep(step, canisterId, ammCanisterId);
+          // Small delay between steps
+          await new Promise((resolve) => setTimeout(resolve, 1000));
+        }
+      } catch (error) {
+        // Stop processing on any step failure
+        console.error("Contribution flow stopped due to error:", error);
+      } finally {
+        setIsProcessingPayment(false);
       }
-
-      setIsProcessingPayment(false);
     },
     [executeStep]
   );
@@ -407,15 +490,6 @@ const TransactionContent: React.FC = () => {
                 />
               </div>
               <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={refreshTreasury}
-                  disabled={treasuryLoading}
-                >
-                  <RefreshCw className={`w-4 h-4 mr-2 ${treasuryLoading ? 'animate-spin' : ''}`} />
-                  Refresh
-                </Button>
                 <Button
                   variant="outline"
                   size="sm"
@@ -577,7 +651,7 @@ const TransactionContent: React.FC = () => {
               </TableHeader>
               <TableBody>
                 <AnimatePresence>
-                  {treasuryLoading ? (
+                  {false ? (
                     <motion.tr
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
@@ -852,7 +926,7 @@ const TransactionContent: React.FC = () => {
       <AnimatePresence>
         {showConfirmationModal && (
           <Dialog open={showConfirmationModal} onOpenChange={() => {}}>
-            <DialogContent className="sm:max-w-md">
+            <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
               <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
@@ -861,7 +935,7 @@ const TransactionContent: React.FC = () => {
                 <DialogHeader>
                   <DialogTitle>Payment Confirmation</DialogTitle>
                 </DialogHeader>
-                <div className="space-y-6 pt-4">
+                <div className="space-y-4 pt-4 max-w-full">
                   <div>
                     <h3 className="font-medium text-gray-900 mb-3">
                       Contributor Information
@@ -873,9 +947,12 @@ const TransactionContent: React.FC = () => {
                           {contributionData.contributorName}
                         </span>
                       </div>
-                      <div className="flex justify-between">
+                      <div className="flex justify-between items-center">
                         <span className="text-gray-600">Wallet</span>
-                        <span className="font-mono text-sm">
+                        <span
+                          className="font-mono text-sm truncate max-w-xs"
+                          title={currentAccount?.principal.toString()}
+                        >
                           {currentAccount
                             ? currentAccount.principal.toString().slice(0, 8) +
                               "..." +
@@ -891,11 +968,14 @@ const TransactionContent: React.FC = () => {
                       Payment Information
                     </h3>
                     <div className="space-y-2">
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">
-                          Contribution to {daoInfo?.name || "DAO"}
+                      <div className="flex justify-between items-start gap-4">
+                        <span className="text-gray-600 flex-shrink-0">
+                          Contribution to{" "}
+                          <span className="font-medium break-words">
+                            {daoInfo?.name || "DAO"}
+                          </span>
                         </span>
-                        <span className="font-medium">
+                        <span className="font-medium text-right flex-shrink-0">
                           {contributionData.amount} ICP
                         </span>
                       </div>
@@ -1034,16 +1114,20 @@ const TransactionContent: React.FC = () => {
 
                   {/* Debug Log */}
                   {debugInfo.length > 0 && (
-                    <div className="mt-4 p-2 bg-gray-100 border rounded text-xs max-h-32 overflow-y-auto">
-                      <h4 className="font-semibold mb-1">Debug Log:</h4>
-                      {debugInfo.map((log, index) => (
-                        <div
-                          key={index}
-                          className="text-gray-600 font-mono text-xs"
-                        >
-                          {log}
-                        </div>
-                      ))}
+                    <div className="mt-4 p-3 bg-gray-100 border rounded text-xs max-h-40 overflow-y-auto">
+                      <h4 className="font-semibold mb-2 text-gray-900">
+                        Debug Log:
+                      </h4>
+                      <div className="space-y-1">
+                        {debugInfo.map((log, index) => (
+                          <div
+                            key={index}
+                            className="text-gray-600 font-mono text-xs break-all leading-relaxed p-1 bg-white rounded border-l-2 border-gray-300"
+                          >
+                            {log}
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   )}
 

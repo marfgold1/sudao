@@ -1,18 +1,18 @@
 import React, { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { FileText, Search, Filter, RefreshCw } from 'lucide-react';
+import { FileText, Search, Filter, RefreshCw, CheckCircle2, Hammer, XCircle, File } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import { Proposal, Status } from '@/types';
-import { statCards } from '@/mocks';
 import { ProposalItem } from '@/components';
-
+import { useAccount } from '@/hooks/useAccount';
 
 const allStatuses: Status[] = ['Active', 'Approved', 'Rejected', 'Draft', 'Executed'];
 
-const ProposalList: React.FC<any> = ({ proposals, onProposalClick, onCreateClick, onRefresh, filterOpen, setFilterOpen, loading }) => {
+const ProposalList: React.FC<any> = ({ proposals, onProposalClick, onCreateClick, onRefresh, filterOpen, setFilterOpen, loading, proposalState }) => {
+    const { currentAccount } = useAccount();
     const [searchTerm, setSearchTerm] = useState('');
     const [filters, setFilters] = useState<Record<Status, boolean>>({
         Active: false,
@@ -21,6 +21,9 @@ const ProposalList: React.FC<any> = ({ proposals, onProposalClick, onCreateClick
         Draft: false,
         Executed: false,
     });
+    
+    console.log('[ProposalList] Received proposals:', proposals);
+    console.log('[ProposalList] Proposals length:', proposals?.length);
 
     const handleFilterChange = (status: Status) => {
         setFilters(prev => ({ ...prev, [status]: !prev[status] }));
@@ -31,7 +34,12 @@ const ProposalList: React.FC<any> = ({ proposals, onProposalClick, onCreateClick
         .map(([status]) => status as Status), [filters]);
 
     const filteredProposals = useMemo(() => {
-        return proposals.filter((proposal: Proposal) => {
+        if (!proposals || !Array.isArray(proposals)) {
+            console.log('[ProposalList] No proposals or not array:', proposals);
+            return [];
+        }
+        
+        const filtered = proposals.filter((proposal: Proposal) => {
             const matchesSearch = proposal.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                                   proposal.description.toLowerCase().includes(searchTerm.toLowerCase());
             
@@ -39,7 +47,10 @@ const ProposalList: React.FC<any> = ({ proposals, onProposalClick, onCreateClick
 
             return matchesSearch && matchesFilter;
         });
-    }, [searchTerm, activeFilters]);
+        
+        console.log('[ProposalList] Filtered proposals:', filtered);
+        return filtered;
+    }, [proposals, searchTerm, activeFilters]);
 
     const cardVariants = {
         hidden: { opacity: 0, y: 20 },
@@ -76,7 +87,13 @@ const ProposalList: React.FC<any> = ({ proposals, onProposalClick, onCreateClick
                     initial="hidden"
                     animate="visible"
                 >
-                    {statCards.map((card, index) => (
+                    {proposalState && [
+                        { title: 'Active Proposals', value: proposalState.activeProposals.toString(), icon: FileText, color: 'text-blue-500', bgColor: 'bg-blue-100 dark:bg-blue-900/50' },
+                        { title: 'Approved Proposals', value: proposalState.approvedProposals.toString(), icon: CheckCircle2, color: 'text-green-500', bgColor: 'bg-green-100 dark:bg-green-900/50' },
+                        { title: 'Rejected Proposals', value: proposalState.rejectedProposals.toString(), icon: XCircle, color: 'text-red-500', bgColor: 'bg-red-100 dark:bg-red-900/50' },
+                        { title: 'Draft', value: proposalState.draftProposals.toString(), icon: File, color: 'text-yellow-500', bgColor: 'bg-yellow-100 dark:bg-yellow-900/50' },
+                        { title: 'Executed', value: proposalState.executedProposals.toString(), icon: Hammer, color: 'text-gray-500', bgColor: 'bg-gray-200 dark:bg-gray-700' },
+                    ].map((card, index) => (
                         <motion.div key={index} variants={cardVariants}>
                             <Card className="bg-white dark:bg-gray-900">
                                 <CardHeader className='pb-0 pt-4 flex flex-row w-full items-center justify-between'>
@@ -148,9 +165,11 @@ const ProposalList: React.FC<any> = ({ proposals, onProposalClick, onCreateClick
                                     <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
                                     Refresh
                                 </Button>
-                                <Button onClick={onCreateClick} className="gap-2 bg-blue-600 hover:bg-blue-700">
-                                    Make a New Proposal
-                                </Button>
+                                {currentAccount && (
+                                    <Button onClick={onCreateClick} className="gap-2 bg-blue-600 hover:bg-blue-700">
+                                        Make a New Proposal
+                                    </Button>
+                                )}
                             </div>
                         </div>
                         <p className="text-sm text-gray-500 dark:text-gray-400">Total Proposals {filteredProposals.length}</p>
@@ -162,7 +181,25 @@ const ProposalList: React.FC<any> = ({ proposals, onProposalClick, onCreateClick
                                 <p className="text-gray-500 dark:text-gray-400">Loading proposals...</p>
                             </div>
                         ) : filteredProposals.length > 0 ? (
-                            filteredProposals.map((proposal: Proposal) => <ProposalItem key={proposal.id} proposal={proposal} onProposalClick={onProposalClick} />)
+                            <div className="border-t border-gray-200 dark:border-gray-700">
+                                <table className="w-full">
+                                    <thead>
+                                        <tr className="border-b border-gray-200 dark:border-gray-700">
+                                            <th className="text-left py-3 px-2 text-sm font-medium text-gray-500 dark:text-gray-400">Proposal</th>
+                                            <th className="text-left py-3 px-2 text-sm font-medium text-gray-500 dark:text-gray-400">Status</th>
+                                            <th className="text-left py-3 px-2 text-sm font-medium text-gray-500 dark:text-gray-400">Creator</th>
+                                            <th className="text-left py-3 px-2 text-sm font-medium text-gray-500 dark:text-gray-400">Date</th>
+                                            <th className="text-left py-3 px-2 text-sm font-medium text-gray-500 dark:text-gray-400">Votes</th>
+                                            <th className="text-left py-3 px-2 text-sm font-medium text-gray-500 dark:text-gray-400">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {filteredProposals.map((proposal: Proposal) => (
+                                            <ProposalItem key={proposal.id} proposal={proposal} onProposalClick={onProposalClick} />
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
                         ) : (
                             <div className="text-center py-12 border-t border-gray-200 dark:border-gray-700">
                                 <p className="text-gray-500 dark:text-gray-400">No proposals found.</p>

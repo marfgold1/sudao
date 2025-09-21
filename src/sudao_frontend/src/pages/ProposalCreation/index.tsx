@@ -9,7 +9,8 @@ import { ArrowLeft, Search } from "lucide-react"
 import { useState, useEffect } from "react"
 import { Link } from "react-router-dom"
 import { Proposal } from "@/types"
-import { members } from "@/mocks"
+import { useAccount } from "@/hooks/useAccount"
+import { ProposalArgs } from "@/hooks/useProposals"
 
 interface FormData {
     title: string;
@@ -26,12 +27,13 @@ interface ValidationErrors {
     [key: string]: string;
 }
 
-const ProposalCreation: React.FC<{ onBack: any, onDraftCreated?: (proposal: Proposal) => void, editingProposal?: Proposal | null }> = ({ onBack, onDraftCreated, editingProposal }) => {
+const ProposalCreation: React.FC<{ onBack: any, onDraftCreated?: (args: ProposalArgs, shouldPublish?: boolean) => void, editingProposal?: Proposal | null }> = ({ onBack, onDraftCreated, editingProposal }) => {
+    const { currentAccount } = useAccount();
     const [currentStep, setCurrentStep] = useState(1)
     const [formData, setFormData] = useState<FormData>({
         title: editingProposal?.title || "",
         description: editingProposal?.description || "",
-        beneficiary: "Alisha Listya",
+        beneficiary: currentAccount?.principal.toString() || "",
         proposalType: "Asking for funds",
         fundingAmount: editingProposal?.fundingAmount?.toString() || "",
         votingDeadline: editingProposal?.deadline || "",
@@ -41,8 +43,6 @@ const ProposalCreation: React.FC<{ onBack: any, onDraftCreated?: (proposal: Prop
     const [validationErrors, setValidationErrors] = useState<ValidationErrors>({})
     const [showConfirmation, setShowConfirmation] = useState(false)
     const [_, setIsDraft] = useState(false)
-    const [showBeneficiaryDropdown, setShowBeneficiaryDropdown] = useState(false)
-    const [beneficiarySearch, setBeneficiarySearch] = useState("")
 
     // Scroll to top when component mounts or step changes
     useEffect(() => {
@@ -112,19 +112,19 @@ const ProposalCreation: React.FC<{ onBack: any, onDraftCreated?: (proposal: Prop
 
     const handleSaveDraft = () => {
         if (validateStep(1) && validateStep(2)) {
-            const draftProposal: Proposal = {
-                id: editingProposal?.id || `draft-${Date.now()}`,
+            const proposalArgs = {
                 title: formData.title,
                 description: formData.description,
-                status: 'Draft',
-                publishedDate: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
-                deadline: formData.votingDeadline,
-                votes: 0,
-                fundingAmount: Number(formData.fundingAmount.replace(/[^0-9.]/g, '')) || 0
+                proposalType: 'funding' as const,
+                beneficiaryAddress: currentAccount?.principal.toString(),
+                requestedAmount: Number(formData.fundingAmount.replace(/[^0-9.]/g, '')) || 0,
+                votingDurationHours: 168,
+                minimumParticipation: parseInt(formData.minParticipation.replace('%', '')) || 50,
+                minimumApproval: parseInt(formData.minApproval.replace(/[^0-9]/g, '')) || 51
             };
             
             if (onDraftCreated) {
-                onDraftCreated(draftProposal);
+                onDraftCreated(proposalArgs, false);
             }
         }
     };
@@ -137,20 +137,20 @@ const ProposalCreation: React.FC<{ onBack: any, onDraftCreated?: (proposal: Prop
     }
 
     const confirmPublish = () => {
-        const activeProposal: Proposal = {
-            id: editingProposal?.id || `proposal-${Date.now()}`,
+        const proposalArgs = {
             title: formData.title,
             description: formData.description,
-            status: 'Active',
-            publishedDate: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
-            deadline: formData.votingDeadline,
-            votes: 0,
-            fundingAmount: Number(formData.fundingAmount.replace(/[^0-9.]/g, '')) || 0
+            proposalType: 'funding' as const,
+            beneficiaryAddress: currentAccount?.principal.toString(),
+            requestedAmount: Number(formData.fundingAmount.replace(/[^0-9.]/g, '')) || 0,
+            votingDurationHours: 168,
+            minimumParticipation: parseInt(formData.minParticipation.replace('%', '')) || 50,
+            minimumApproval: parseInt(formData.minApproval.replace(/[^0-9]/g, '')) || 51
         };
         
         setShowConfirmation(false);
         if (onDraftCreated) {
-            onDraftCreated(activeProposal);
+            onDraftCreated(proposalArgs, true);
         }
     }
 
@@ -254,117 +254,21 @@ const ProposalCreation: React.FC<{ onBack: any, onDraftCreated?: (proposal: Prop
 
                                 <div>
                                     <label className="block text-sm font-medium mb-2">Beneficiary Address</label>
-                                    <div className="relative">
-                                        <div
-                                            className="flex items-center space-x-2 p-3 border rounded-lg cursor-pointer hover:bg-gray-50"
-                                            onClick={() => setShowBeneficiaryDropdown(!showBeneficiaryDropdown)}
-                                        >
-                                            <Avatar>
-                                                <AvatarFallback>CN</AvatarFallback>
-                                            </Avatar>
-                                            <div className="flex-1">
-                                                <p className="font-medium">{formData.beneficiary}</p>
-                                                <p className="text-sm text-gray-500">h3b5k-c2a...aad-aaa</p>
-                                            </div>
-                                            <motion.div
-                                                animate={{ rotate: showBeneficiaryDropdown ? 180 : 0 }}
-                                                transition={{ duration: 0.2 }}
-                                            >
-                                                <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                                </svg>
-                                            </motion.div>
+                                    <div className="flex items-center space-x-2 p-3 border rounded-lg bg-gray-50">
+                                        <Avatar>
+                                            <AvatarFallback>ME</AvatarFallback>
+                                        </Avatar>
+                                        <div className="flex-1">
+                                            <p className="font-medium">Your Account</p>
+                                            <p className="text-sm text-gray-500 font-mono">
+                                                {currentAccount ? 
+                                                    `${currentAccount.principal.toString().slice(0, 8)}...${currentAccount.principal.toString().slice(-8)}` : 
+                                                    'Not connected'
+                                                }
+                                            </p>
                                         </div>
-
-                                        {showBeneficiaryDropdown && (
-                                            <motion.div
-                                                initial={{ opacity: 0, y: -10 }}
-                                                animate={{ opacity: 1, y: 0 }}
-                                                exit={{ opacity: 0, y: -10 }}
-                                                className="absolute top-full mt-2 w-full bg-white border rounded-lg shadow-lg z-10 p-4"
-                                            >
-                                                <div className="mb-4">
-                                                    <div className="relative">
-                                                        <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                                                        <Input
-                                                        placeholder="Search for members..."
-                                                        value={beneficiarySearch}
-                                                        onChange={(e) => setBeneficiarySearch(e.target.value)}
-                                                        className="pl-10"
-                                                        />
-                                                    </div>
-                                                </div>
-
-                                                <div className="space-y-4">
-                                                    <div>
-                                                        <h3 className="text-sm font-medium text-gray-700 mb-2">My profile</h3>
-                                                        {members
-                                                            .filter((member) => member.isCurrentUser)
-                                                            .filter(
-                                                                (member) =>
-                                                                member.name.toLowerCase().includes(beneficiarySearch.toLowerCase()) ||
-                                                                member.address.toLowerCase().includes(beneficiarySearch.toLowerCase()),
-                                                            )
-                                                            .map((member) => (
-                                                                <motion.div
-                                                                    key={member.id}
-                                                                    whileHover={{ backgroundColor: "#f9fafb" }}
-                                                                    className="flex items-center space-x-3 p-2 rounded-lg cursor-pointer"
-                                                                    onClick={() => {
-                                                                        setFormData({ ...formData, beneficiary: member.name })
-                                                                        setShowBeneficiaryDropdown(false)
-                                                                    }}
-                                                                >
-                                                                    <Avatar className="w-8 h-8">
-                                                                        <AvatarFallback className="bg-blue-100 text-blue-600">
-                                                                            {member.avatar}
-                                                                        </AvatarFallback>
-                                                                    </Avatar>
-                                                                    <div>
-                                                                        <p className="font-medium text-sm">{member.name}</p>
-                                                                        <p className="text-xs text-gray-500">{member.address}</p>
-                                                                    </div>
-                                                                </motion.div>
-                                                        ))}
-                                                    </div>
-
-                                                    <div>
-                                                        <h3 className="text-sm font-medium text-gray-700 mb-2">Collective Members</h3>
-                                                        <div className="space-y-1">
-                                                            {members
-                                                                .filter((member) => !member.isCurrentUser)
-                                                                .filter(
-                                                                (member) =>
-                                                                    member.name.toLowerCase().includes(beneficiarySearch.toLowerCase()) ||
-                                                                    member.address.toLowerCase().includes(beneficiarySearch.toLowerCase()),
-                                                                )
-                                                                .map((member) => (
-                                                                    <motion.div
-                                                                        key={member.id}
-                                                                        whileHover={{ backgroundColor: "#f9fafb" }}
-                                                                        className="flex items-center space-x-3 p-2 rounded-lg cursor-pointer"
-                                                                        onClick={() => {
-                                                                        setFormData({ ...formData, beneficiary: member.name })
-                                                                        setShowBeneficiaryDropdown(false)
-                                                                        }}
-                                                                    >
-                                                                        <Avatar className="w-8 h-8">
-                                                                            <AvatarFallback className="bg-blue-100 text-blue-600">
-                                                                                {member.avatar}
-                                                                            </AvatarFallback>
-                                                                        </Avatar>
-                                                                        <div>
-                                                                            <p className="font-medium text-sm">{member.name}</p>
-                                                                            <p className="text-xs text-gray-500">{member.address}</p>
-                                                                        </div>
-                                                                    </motion.div>
-                                                            ))}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </motion.div>
-                                        )}
                                     </div>
+                                    <p className="text-sm text-gray-500 mt-1">Proposals are automatically created for your connected account.</p>
                                 </div>
                             </div>
                         )}
@@ -493,11 +397,16 @@ const ProposalCreation: React.FC<{ onBack: any, onDraftCreated?: (proposal: Prop
                                             <h4 className="font-medium mb-2">Actions</h4>
                                             <div className="flex justify-between">
                                                 <span className="text-gray-600">Request funds to</span>
-                                                <Link to={"#"} className="text-blue-600 hover:underline font-medium">
-                                                    Michael Lewellen
-                                                </Link>
+                                                <span className="text-blue-600 font-medium">
+                                                    Your Account
+                                                </span>
                                             </div>
-                                            <p className="text-sm text-gray-500">rwlgt-iia...aai-aaa</p>
+                                            <p className="text-sm text-gray-500 font-mono">
+                                                {currentAccount ? 
+                                                    `${currentAccount.principal.toString().slice(0, 8)}...${currentAccount.principal.toString().slice(-8)}` : 
+                                                    'Not connected'
+                                                }
+                                            </p>
                                         </div>
                                     </CardContent>
                                 </Card>

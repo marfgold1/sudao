@@ -9,6 +9,7 @@ import { useProposals } from "../../hooks/useProposals"
 import { useDAORegistration } from "../../hooks/useDAORegistration"
 import { usePluginRegistry } from "../../contexts/pluginRegistry/context"
 import { useCanisters } from "../../contexts/canisters/context"
+import { useProposalState } from "../../hooks/useProposalState"
 import { Proposal } from "../../hooks/useProposals"
 
 const ProposalPage: React.FC = () => {
@@ -23,6 +24,7 @@ const ProposalPage: React.FC = () => {
 
     const { registerDAO, registering } = useDAORegistration()
     const { checkPluginRegistration, updatePluginRegistration, registrationMemo } = usePluginRegistry()
+    const { proposalState, loading: stateLoading } = useProposalState(daoId || null)
     const [isRegistered, setIsRegistered] = useState<boolean | null>(null)
     const [checkingRegistration, setCheckingRegistration] = useState(true)
 
@@ -88,9 +90,9 @@ const ProposalPage: React.FC = () => {
         try {
             await registerDAO(
                 daoId,
-                canisterIds.daoLedger,
-                canisterIds.daoAmm,
-                canisterIds.daoBe
+                canisterIds.daoLedger,  // ledgerCanisterId (vizcg-th777-77774-qaaea-cai)
+                canisterIds.daoAmm,     // ammCanisterId (vpyes-67777-77774-qaaeq-cai)
+                canisterIds.daoBe       // daoCanisterId (ufxgi-4p777-77774-qaadq-cai)
             )
             setIsRegistered(true)
             updatePluginRegistration(daoId, 'proposal', true)
@@ -106,17 +108,15 @@ const ProposalPage: React.FC = () => {
         setCurrentView("detail")
     }
 
-    const handleDraftCreated = async (proposalArgs: any) => {
+    const handleDraftCreated = async (proposalArgs: any, shouldPublish = false) => {
         try {
             const proposalId = await handleCreateProposal(proposalArgs)
+            if (proposalId && shouldPublish) {
+                await handlePublish(proposalId)
+            }
             if (proposalId) {
-                // Fetch the created proposal and navigate to detail view
                 await fetchProposals()
-                const createdProposal = proposals.find(p => p.id === proposalId)
-                if (createdProposal) {
-                    setSelectedProposal(createdProposal)
-                    setCurrentView("detail")
-                }
+                setCurrentView("list")
             }
         } catch (err) {
             console.error('Failed to create proposal:', err)
@@ -201,6 +201,7 @@ const ProposalPage: React.FC = () => {
                     filterOpen={filterOpen}
                     setFilterOpen={setFilterOpen}
                     loading={loading}
+                    proposalState={proposalState}
                 />
             )}
 

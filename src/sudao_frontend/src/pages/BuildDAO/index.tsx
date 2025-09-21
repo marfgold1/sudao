@@ -824,7 +824,7 @@ const BuildDAO: React.FC = () => {
           )}
         </div>
 
-        <div className="relative h-96 perspective-1000">
+        <div className="relative min-h-96 mb-8 perspective-1000">
           {/* Step-by-step UI: Fades out and disappears */}
           <div
             className={`transition-all duration-700 ${
@@ -853,10 +853,10 @@ const BuildDAO: React.FC = () => {
 
           {/* Final card UI: Fades in and slides up */}
           <div
-            className={`absolute inset-0 transition-all duration-700 ease-out ${
+            className={`transition-all duration-700 ease-out ${
               status === "complete"
-                ? "opacity-100 translate-y-0"
-                : "opacity-0 translate-y-16"
+                ? "opacity-100 translate-y-0 relative"
+                : "opacity-0 translate-y-16 absolute inset-0 pointer-events-none"
             }`}
           >
             <Card className="bg-white backdrop-blur-sm mt-[2rem] border-slate-600/50 p-6 shadow-2xl transition-all duration-700 ease-out">
