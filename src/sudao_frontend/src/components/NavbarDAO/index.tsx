@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import {  Menu, Settings, ChevronDown, Sliders } from 'lucide-react';
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useParams, useLocation, Link } from 'react-router-dom';
 import { ConnectWallet } from "@nfid/identitykit/react";
 import { Avatar, AvatarFallback } from '../ui/avatar';
@@ -9,10 +9,21 @@ import { useDAO } from '@/hooks/useDAO';
 import { usePluginStore, Plugin } from '@/lib/plugin-store';
 import PluginCustomizationModal from '../PluginCustomizationModal';
 
+// Utility function to truncate text (plugins, DAO names, etc.)
+const truncateText = (text: string, maxLength: number = 12) => {
+    if (!text || text.length <= maxLength) return text;
+    return text.slice(0, maxLength) + '...';
+};
+
+// Convenience functions for specific use cases
+const truncatePluginName = (name: string, maxLength: number = 12) => truncateText(name, maxLength);
+const truncateDAOName = (name: string) => truncateText(name, 12); // Same as plugins for laptop compatibility
+
 const NavbarDAO: React.FC = () => {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [pluginDropdownOpen, setPluginDropdownOpen] = useState(false);
     const [customizationModalOpen, setCustomizationModalOpen] = useState(false);
+    const [visiblePluginCount, setVisiblePluginCount] = useState(2);
     const { daoId } = useParams<{ daoId: string }>();
     const location = useLocation();
     
@@ -24,7 +35,25 @@ const NavbarDAO: React.FC = () => {
     const plugins = usePluginStore((state) => state.plugins); // Subscribe to plugins for reactivity
     const navPlugins = useMemo(() => getOrderedNavPlugins(), [getOrderedNavPlugins, plugins]);
 
-    // Split plugins for navigation with auto-fill logic
+    // Dynamic space detection for responsive plugin visibility
+    useEffect(() => {
+        const handleResize = () => {
+            const width = window.innerWidth;
+            if (width < 1300) {
+                setVisiblePluginCount(0); // Hide all plugins on smaller screens
+            } else if (width < 1500) {
+                setVisiblePluginCount(1); // Show 1 plugin on medium screens
+            } else {
+                setVisiblePluginCount(2); // Show 2 plugins on larger screens
+            }
+        };
+        
+        handleResize();
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
+    // Split plugins for navigation with dynamic space management
     const { visiblePlugins, dropdownPlugins } = useMemo(() => {
         if (navbarPreferences.visiblePluginIds.length > 0) {
             // Get preferred visible plugins (that still exist and are active)
@@ -36,34 +65,40 @@ const NavbarDAO: React.FC = () => {
             const preferredVisibleIds = preferredVisible.map(p => p.id);
             const remaining = navPlugins.filter(p => !preferredVisibleIds.includes(p.id));
             
-            // Auto-fill empty slots: if we have less than 2 visible, fill with remaining plugins
+            // Auto-fill empty slots based on available space
             let finalVisible = [...preferredVisible];
             let finalDropdown = [...remaining];
             
-            if (finalVisible.length < 2 && finalDropdown.length > 0) {
-                const slotsToFill = 2 - finalVisible.length;
+            if (finalVisible.length < visiblePluginCount && finalDropdown.length > 0) {
+                const slotsToFill = visiblePluginCount - finalVisible.length;
                 const pluginsToPromote = finalDropdown.splice(0, slotsToFill);
                 finalVisible.push(...pluginsToPromote);
             }
             
             return {
-                visiblePlugins: finalVisible.slice(0, 2), // Ensure max 2
-                dropdownPlugins: finalDropdown
+                visiblePlugins: finalVisible.slice(0, visiblePluginCount), // Respect dynamic count
+                dropdownPlugins: [...finalDropdown, ...finalVisible.slice(visiblePluginCount)]
             };
         }
         
-        // Default behavior: first 2 visible, rest in dropdown
+        // Default behavior: respect dynamic plugin count
         return {
-            visiblePlugins: navPlugins.slice(0, 2),
-            dropdownPlugins: navPlugins.slice(2)
+            visiblePlugins: navPlugins.slice(0, visiblePluginCount),
+            dropdownPlugins: navPlugins.slice(visiblePluginCount)
         };
-    }, [navPlugins, navbarPreferences.visiblePluginIds]);
+    }, [navPlugins, navbarPreferences.visiblePluginIds, visiblePluginCount]);
     
     // Fallback values if data fetch fails or is loading
-    const daoName = dao?.name || 'My DAO';
+    const daoName = dao?.name || 'Yayasan Anak Muda Indonesia Coral Restoration Foundation';
     const daoDescription = dao?.description || 'A community-driven organization';
     
-    const isActive = (path: string) => location.pathname.endsWith(path);
+    const isActive = (path: string) => {
+        // Check if req exists and if the path is not 'creator-dashboard'
+        if (!location.pathname.includes('/creator-dashboard')) {
+            return location.pathname.endsWith(path);
+        }
+        return false;
+    };
     
     const handleLinkClick = () => {
         // Smooth scroll to top when navigating
@@ -81,9 +116,9 @@ const NavbarDAO: React.FC = () => {
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6 }}
-                className="fixed top-0 left-0 right-0 z-40 px-6 py-4 bg-slate-900 text-white backdrop-blur-sm"
+                className="fixed top-0 left-0 right-0 z-40 px-20 py-4 bg-slate-900 text-white backdrop-blur-sm"
             >
-                <div className="max-w-7xl mx-auto flex items-center justify-between">
+                <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-10">
                         <ExpandableLogo />
                         <div className="hidden md:flex items-center space-x-10">
@@ -93,9 +128,22 @@ const NavbarDAO: React.FC = () => {
                                 className={`transition-colors ${
                                     isActive('/home') ? 'text-white font-semibold' : 'text-slate-400 hover:text-blue-200'
                                 }`}
-                                title={daoDescription}
+                                title={loading ? 'Loading DAO information...' : `${daoName} - ${daoDescription}`}
                             >
-                                {loading ? 'Loading...' : daoName}
+                                {loading ? (
+                                    <div className="animate-pulse bg-slate-600 h-4 w-24 rounded"></div>
+                                ) : (
+                                    truncateDAOName(daoName)
+                                )}
+                            </Link>
+                            <Link 
+                                to={`/dao/${daoId}/transaction`} 
+                                onClick={handleLinkClick}
+                                className={`transition-colors ${
+                                    isActive('/transaction') ? 'text-white font-semibold' : 'text-slate-400 hover:text-blue-200'
+                                }`}
+                            >
+                                Contributions
                             </Link>
                             <Link 
                                 to={`/dao/${daoId}/plugins`} 
@@ -121,8 +169,9 @@ const NavbarDAO: React.FC = () => {
                                     className={`transition-colors ${
                                         isActive(`/${plugin.id}`) ? 'text-white font-semibold' : 'text-slate-400 hover:text-blue-200'
                                     }`}
+                                    title={plugin.name} // Full name on hover
                                 >
-                                    {plugin.name}
+                                    {truncatePluginName(plugin.name)}
                                 </Link>
                             ))}
                             
@@ -177,8 +226,9 @@ const NavbarDAO: React.FC = () => {
                                                             ? 'text-white bg-blue-600' 
                                                             : 'text-slate-300 hover:text-white hover:bg-slate-700'
                                                     }`}
+                                                    title={plugin.name} // Full name on hover
                                                 >
-                                                    {plugin.name}
+                                                    {truncatePluginName(plugin.name, 20)} {/* Slightly longer in dropdown */}
                                                 </Link>
                                             ))}
                                         </motion.div>
@@ -224,7 +274,7 @@ const NavbarDAO: React.FC = () => {
                     >
                         <div className="flex flex-col space-y-3 pt-4">
                             <Link 
-                                to={`/home/${daoId}`} 
+                                to={`/dao/${daoId}/home`} 
                                 onClick={handleLinkClick}
                                 className={`transition-colors font-semibold ${
                                     isActive('/home/') ? 'text-blue-200 font-semibold' : 'text-white hover:text-blue-200'
@@ -233,7 +283,7 @@ const NavbarDAO: React.FC = () => {
                                 Home
                             </Link>
                             <Link 
-                                to={`/proposal/${daoId}`} 
+                                to={`/dao/${daoId}/proposal`} 
                                 onClick={handleLinkClick}
                                 className={`transition-colors ${
                                     isActive('/proposal/') ? 'text-blue-200 font-semibold' : 'text-white hover:text-blue-200'
@@ -259,8 +309,9 @@ const NavbarDAO: React.FC = () => {
                                     className={`transition-colors ${
                                         isActive(`/${plugin.id}`) ? 'text-blue-200 font-semibold' : 'text-white hover:text-blue-200'
                                     }`}
+                                    title={plugin.name} // Full name on hover
                                 >
-                                    {plugin.name}
+                                    {truncatePluginName(plugin.name, 18)} {/* Mobile gets more space */}
                                 </Link>
                             ))}
                         </div>

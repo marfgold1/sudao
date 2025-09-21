@@ -22,6 +22,10 @@ export interface Plugin {
     dependencies?: string[]
     longDescription?: string
     showInMyPages?: boolean
+    // Dynamic component metadata
+    componentUrl?: string // URL to load component from (for user-uploaded plugins)
+    componentType?: 'builtin' | 'remote' | 'iframe' // How to load the plugin
+    manifestUrl?: string // URL to plugin manifest (for remote plugins)
 }
 
 interface NavbarPreferences {
@@ -53,6 +57,7 @@ const initialPlugins: Plugin[] = [
         installCount: "128 collectives",
         showInMyPages: false,
         features: ["Real-time news updates", "Customizable news feed", "Member notifications", "Rich media support"],
+        componentType: 'builtin',
     },
     {
         id: "proposal",
@@ -80,6 +85,7 @@ const initialPlugins: Plugin[] = [
         dependencies: [],
         longDescription:
             "The Proposal Plugin lets members create, discuss, and vote on initiatives directly on-chain. From budget approvals to community rules, every decision is transparent, verifiable, and powered by ICP.",
+        componentType: 'builtin',
     },
     {
         id: "top-contributor",
@@ -95,32 +101,37 @@ const initialPlugins: Plugin[] = [
         pricing: "10 ICP",
         showInMyPages: false,
         features: ["Activity tracking", "Contribution metrics", "Member rankings", "Customizable criteria"],
+        componentType: 'builtin',
     },
+    // Example user-uploaded plugins to demonstrate dynamic loading
     {
-        id: "dao-analytics",
-        name: "DAO Analytics",
-        description:
-            "Visualize key stats: voting participation, funding trends, treasury flow, and proposal outcomes. Build transparency and spot patterns over time.",
-        developer: "SUDAO Core Team",
+        id: "custom-dashboard",
+        name: "Custom Dashboard",
+        description: "A user-uploaded custom dashboard plugin that loads remotely from a CDN.",
+        developer: "Community Developer",
         icon: PluginDAOAnalytics,
         installed: false,
         enabled: false,
-        installCount: "76 collectives",
+        installCount: "12 collectives",
         showInMyPages: false,
-        features: ["Voting analytics", "Treasury tracking", "Participation metrics", "Custom dashboards"],
+        features: ["Custom widgets", "Real-time data", "Personalized views"],
+        componentType: 'remote',
+        componentUrl: 'https://cdn.jsdelivr.net/npm/dayjs@1.11.9/dayjs.min.js', // Date library
+        manifestUrl: 'https://unpkg.com/react@18.2.0/package.json'
     },
     {
-        id: "engagement-scoreboard",
-        name: "Engagement Scoreboard",
-        description:
-            "Track and display community involvement in real time — votes cast, discussions joined, and proposals submitted. Motivate members to stay involved.",
-        developer: "SUDAO Core Team",
+        id: "external-tool",
+        name: "External Tool",  
+        description: "Integration with external tools via iframe for secure sandboxing.",
+        developer: "Third Party Inc",
         icon: PluginEngagementDashboard,
         installed: false,
         enabled: false,
         installCount: "45 collectives",
         showInMyPages: false,
-        features: ["Real-time tracking", "Member engagement", "Gamification", "Progress visualization"],
+        features: ["External integration", "Secure iframe", "Cross-origin support"],
+        componentType: 'iframe',
+        componentUrl: 'https://www.example.com' // Valid iframe URL for testing
     },
 ]
 

@@ -1,6 +1,6 @@
 import { Outlet, RouteObject, createBrowserRouter } from "react-router-dom";
-import { Home, Example, Proposal, Transaction, DiscoverCollectives, Profile, BuildDAO, NotFound, CreatorDashboard, InstalledPluginsPage, PluginMarketplacePage, InstalledPluginsPublicPage, Marketplace } from "@/pages";
-import { NavbarDAO, NavbarSUDAO, FooterSUDAO, FooterDAO } from "@/components";
+import { Home, Example, Proposal, Transaction, DiscoverCollectives, Profile, BuildDAO, NotFound, CreatorDashboard, InstalledPluginsPage, PluginMarketplacePage, InstalledPluginsPublicPage, Marketplace, HomeDAO } from "@/pages";
+import { NavbarDAO, NavbarSUDAO, FooterSUDAO, FooterDAO, PluginRouteHandler } from "@/components";
 import { CreatorDashboardLayout } from "@/layouts";
 
 const SUDAOLayout = () => {
@@ -60,6 +60,10 @@ const routes: RouteObject[] = [
         children: [
             {
                 path: ":daoId/home",
+                element: <HomeDAO />,
+            },
+            {
+                path: ":daoId/transaction",
                 element: <Transaction />,
             },
             {
@@ -75,12 +79,20 @@ const routes: RouteObject[] = [
                 element: <InstalledPluginsPublicPage />,
             },
             {
+                path: ":daoId/:pluginId",
+                element: <PluginRouteHandler />,
+            },
+            {
                 path: ":daoId/creator-dashboard",
                 element: <CreatorDashboardLayout />,
                 children: [
                     {
                         index: true,
                         element: <CreatorDashboard />,
+                    },
+                    {
+                        path: "transaction",
+                        element: <Transaction />,
                     },
                     {
                         path: "plugins",
@@ -94,6 +106,10 @@ const routes: RouteObject[] = [
                                 element: <PluginMarketplacePage />,
                             },
                         ],
+                    },
+                    {
+                        path: ":pluginId",
+                        element: <PluginRouteHandler />,
                     },
                 ],
             },
