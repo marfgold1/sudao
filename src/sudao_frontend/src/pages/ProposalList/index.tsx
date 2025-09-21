@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { FileText, Search, Filter } from 'lucide-react';
+import { FileText, Search, Filter, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
@@ -12,7 +12,7 @@ import { ProposalItem } from '@/components';
 
 const allStatuses: Status[] = ['Active', 'Approved', 'Rejected', 'Draft', 'Executed'];
 
-const ProposalList: React.FC<any> = ({ proposals, onProposalClick, onCreateClick, filterOpen, setFilterOpen, loading }) => {
+const ProposalList: React.FC<any> = ({ proposals, onProposalClick, onCreateClick, onRefresh, filterOpen, setFilterOpen, loading }) => {
     const [searchTerm, setSearchTerm] = useState('');
     const [filters, setFilters] = useState<Record<Status, boolean>>({
         Active: false,
@@ -139,6 +139,15 @@ const ProposalList: React.FC<any> = ({ proposals, onProposalClick, onCreateClick
                                         </motion.div>
                                     )}
                                 </div>
+                                <Button 
+                                    variant="outline" 
+                                    onClick={onRefresh}
+                                    className="gap-2 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+                                    disabled={loading}
+                                >
+                                    <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                                    Refresh
+                                </Button>
                                 <Button onClick={onCreateClick} className="gap-2 bg-blue-600 hover:bg-blue-700">
                                     Make a New Proposal
                                 </Button>

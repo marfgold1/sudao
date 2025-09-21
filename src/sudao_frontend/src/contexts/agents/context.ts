@@ -4,6 +4,7 @@ import type { _SERVICE as DaoBe } from "declarations/sudao_backend/sudao_backend
 import type { _SERVICE as DaoLedger } from "declarations/sudao_ledger/sudao_ledger.did";
 import type { _SERVICE as DaoAmm } from "declarations/sudao_amm/sudao_amm.did";
 import type { _SERVICE as ICPLedger } from "declarations/icp_ledger_canister/icp_ledger_canister.did";
+import type { _SERVICE as Proposal } from "declarations/sudao_proposal/sudao_proposal.did";
 
 type Agents = {
   daoBe: DaoBe | null;
@@ -11,6 +12,7 @@ type Agents = {
   daoAmm: DaoAmm | null;
   explorerDao: ExplorerDao;
   icpLedger: ICPLedger;
+  proposal: Proposal;
 };
 
 type AgentsContextType = {

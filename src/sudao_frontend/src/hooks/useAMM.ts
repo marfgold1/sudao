@@ -134,9 +134,7 @@ export const useAMM = () => {
     }
   }, [daoAmm, checkDaoAmm]);
 
-  useEffect(() => {
-    fetchAMMData();
-  }, [fetchAMMData]);
+  // Remove automatic fetching - let parent component control when to fetch AMM data
 
   return {
     tokenInfo,
@@ -149,5 +147,6 @@ export const useAMM = () => {
     handleAddLiquidity,
     getHistory,
     refetch: fetchAMMData,
+    fetchAMMData, // Expose for manual fetching
   };
 };

@@ -14,6 +14,7 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { useDAO } from "@/hooks/useDAO";
+import { useAgents } from "@/hooks/useAgents";
 import {
   isVariant,
   matchVariant,
@@ -240,6 +241,7 @@ const BuildDAO: React.FC = () => {
   const { daoId } = useParams<{ daoId: string }>();
   const navigate = useNavigate();
   const { daoInfo, deploymentInfo, refetch } = useDAO();
+  const { agents } = useAgents();
 
   const [currentStep, setCurrentStep] = useState(0);
   const [completedItems, setCompletedItems] = useState<number[]>([]);
@@ -578,10 +580,21 @@ const BuildDAO: React.FC = () => {
     };
   }, [currentStep, deploymentInfo, dynamicSteps.length]);
 
-  const handleProceed = () => {
-    // Navigate to DAO home page with ICP amount (could be passed as state or URL param)
+  const handleProceed = async () => {
+    // Mark initial investment as completed before navigating
     if (daoId) {
-      // You could pass the ICP amount as state or URL parameter if needed
+      try {
+        await agents.explorerDao.markInitialInvestmentCompleted(daoId);
+        console.log("✅ Initial investment marked as completed");
+      } catch (error) {
+        console.error(
+          "❌ Failed to mark initial investment as completed:",
+          error
+        );
+        // Continue anyway - user can still proceed to make investment
+      }
+
+      // Navigate to DAO home page with ICP amount
       navigate(`/dao/${daoId}/home`, {
         state: { initialIcpAmount: icpAmount },
       });

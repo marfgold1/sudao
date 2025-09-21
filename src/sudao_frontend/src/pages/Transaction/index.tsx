@@ -38,6 +38,7 @@ import {
   ArrowUp,
   ArrowDown,
   Loader2,
+  RefreshCw,
 } from "lucide-react";
 import { Transaction } from "@/types";
 import { DAOLayout } from "@/components/DAOLayout";
@@ -62,8 +63,9 @@ const TransactionContent: React.FC = () => {
     transactions,
     loading: treasuryLoading,
     refetch: refetchTreasury,
+    refreshTreasury,
   } = useTreasury(canisterIds.daoBe);
-  const { handleGetQuote, handleSwap, tokenInfo, reserves } = useAMM();
+  const { handleGetQuote, handleSwap, tokenInfo, reserves, fetchAMMData } = useAMM();
 
   // Local state for UI
   const [searchTerm, setSearchTerm] = useState("");
@@ -243,7 +245,7 @@ const TransactionContent: React.FC = () => {
             }));
             setContributionCompleted(true);
             toast.success("Contribution completed successfully!");
-            refetchTreasury(); // Refresh transaction list
+            refreshTreasury(); // Force refresh transaction list
             break;
           }
         }
@@ -376,6 +378,8 @@ const TransactionContent: React.FC = () => {
                   return;
                 }
                 setShowContributionModal(true);
+                // Fetch AMM data only when opening contribution modal
+                fetchAMMData();
               }}
               className="bg-blue-600 hover:bg-blue-700"
             >
@@ -402,14 +406,25 @@ const TransactionContent: React.FC = () => {
                   className="pl-10 w-80"
                 />
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowFilter(!showFilter)}
-              >
-                <Filter className="w-4 h-4 mr-2" />
-                Filter
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={refreshTreasury}
+                  disabled={treasuryLoading}
+                >
+                  <RefreshCw className={`w-4 h-4 mr-2 ${treasuryLoading ? 'animate-spin' : ''}`} />
+                  Refresh
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowFilter(!showFilter)}
+                >
+                  <Filter className="w-4 h-4 mr-2" />
+                  Filter
+                </Button>
+              </div>
             </div>
 
             {showFilter && (

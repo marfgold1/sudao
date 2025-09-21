@@ -1,7 +1,7 @@
 import Principal "mo:base/Principal";
 import Map "mo:map/Map";
 import { phash; thash } "mo:map/Map";
-import ProposalManager "Proposal";
+
 import UserService "service/UserService";
 import PaymentService "service/PaymentService";
 import TokenSwapService "service/TokenSwapService";
@@ -29,6 +29,8 @@ persistent actor class DAO(initDAO : CommonTypes.DAOEntry, ledgerCanisterId_ : P
     
     // Ledger canister ID for token-based voting
     private transient let ledgerCanisterId : Principal = ledgerCanisterId_;
+    
+
 
     private func getControllers() : async [Principal] {
         switch (controllers) {
@@ -115,24 +117,16 @@ persistent actor class DAO(initDAO : CommonTypes.DAOEntry, ledgerCanisterId_ : P
     // For now, registered users are automatically members
     // In the future, this could be expanded with roles, permissions, etc.
 
-    // Stable storage for proposals with migration handling
-    private var proposalsEntries : [(Text, ProposalManager.Proposal)] = [];
-    private var migratedToNewProposalFormat : Bool = false;
+
 
     // System lifecycle hooks for stable variables
     system func preupgrade() {
-        proposalsEntries := Map.toArray(proposalState.proposals);
         usersEntries := Map.toArray(userService.getRegistry());
         treasuryData := ?paymentService.stableGet();
         tokenSwapData := ?tokenSwapService.stableGet();
     };
 
     system func postupgrade() {
-        // Clear old proposal data if this is first run with new format
-        if (not migratedToNewProposalFormat) {
-            proposalsEntries := [];
-            migratedToNewProposalFormat := true;
-        };
         usersEntries := [];
 
         // Restore treasury data
@@ -152,177 +146,27 @@ persistent actor class DAO(initDAO : CommonTypes.DAOEntry, ledgerCanisterId_ : P
             };
             case null {};
         };
+        
+
     };
 
-    // Proposal state management with stable recovery
-    private transient var proposalState : ProposalManager.ProposalState = {
-        var proposals = Map.fromIter<Text, ProposalManager.Proposal>(proposalsEntries.vals(), thash);
-    };
+
 
     /**
      * Check if a principal is a member of the DAO.
      * For now, we'll consider registered users as members.
      */
-    private func isMember(p : Principal) : async Bool {
+    public func isMember(p : Principal) : async Bool {
         // For simplicity, any registered user is a member
         return userService.userExists(p);
     };
 
     // Get total eligible voters (for participation calculation)
-    private func getTotalEligibleVoters() : async Nat {
+    public func getTotalEligibleVoters() : async Nat {
         return userService.getUserCount();
     };
+    
 
-    // --- Public Interface for Proposals ---
-
-    // Create a draft proposal
-    public shared (msg) func createDraftProposal(
-        title : Text,
-        description : Text,
-        proposalType : ProposalManager.ProposalType,
-        beneficiaryAddress : ?Principal,
-        requestedAmount : ?Nat,
-        votingDurationSeconds : Nat,
-        minimumParticipation : Nat,
-        minimumApproval : Nat,
-    ) : async Result.Result<Text, ProposalManager.ProposalError> {
-        let totalEligible = await getTotalEligibleVoters();
-        return await ProposalManager.createDraft(
-            proposalState,
-            msg.caller,
-            isMember,
-            title,
-            description,
-            proposalType,
-            beneficiaryAddress,
-            requestedAmount,
-            votingDurationSeconds,
-            minimumParticipation,
-            minimumApproval,
-            totalEligible,
-        );
-    };
-
-    // Publish a draft proposal to make it active
-    public shared (msg) func publishProposal(proposalId : Text) : async Result.Result<Bool, ProposalManager.ProposalError> {
-        return await ProposalManager.publishProposal(proposalState, msg.caller, proposalId);
-    };
-
-    // Vote on an active proposal with token-based weighting
-    public shared (msg) func voteOnProposal(proposalId : Text, choice : ProposalManager.Vote) : async Result.Result<Bool, ProposalManager.ProposalError> {
-        // Get voter's token balance for weighted voting
-        let voterAccount = {
-            owner = msg.caller;
-            subaccount = null;
-        };
-        
-        // Get balance from ledger canister
-        let ledgerActor : actor {
-            icrc1_balance_of : shared query (account : { owner : Principal; subaccount : ?[Nat8] }) -> async Nat;
-        } = actor(Principal.toText(ledgerCanisterId));
-        
-        let tokenBalance = await ledgerActor.icrc1_balance_of(voterAccount);
-        
-        return await ProposalManager.vote(proposalState, msg.caller, isMember, proposalId, choice, tokenBalance);
-    };
-
-    // Finalize a proposal (determine result based on voting period end)
-    public shared (_msg) func finalizeProposal(proposalId : Text) : async Result.Result<ProposalManager.ProposalStatus, ProposalManager.ProposalError> {
-        return ProposalManager.finalizeProposal(proposalState, proposalId);
-    };
-
-    // Execute an approved proposal
-    public shared (msg) func executeProposal(proposalId : Text) : async Result.Result<Bool, ProposalManager.ProposalError> {
-        // Check if caller has permission to execute proposals
-        if (not (await isMember(msg.caller))) {
-            return #err(#unauthorized);
-        };
-
-        // Get proposal details
-        switch (ProposalManager.get(proposalState, proposalId)) {
-            case (?proposal) {
-                if (proposal.status != #approved) {
-                    return #err(#proposalNotActive);
-                };
-
-                // Handle funding proposals
-                if (proposal.proposalType == #funding) {
-                    switch (proposal.beneficiaryAddress, proposal.requestedAmount) {
-                        case (?beneficiary, ?amount) {
-                            // Check if treasury has sufficient funds
-                            if (not paymentService.hasSufficientFunds(amount)) {
-                                return #err(#proposalNotActive); // Insufficient funds
-                            };
-
-                            // Execute the payment
-                            switch (await paymentService.executeProposalPayment(beneficiary, amount, proposalId)) {
-                                case (#ok(_transactionId)) {
-                                    // Mark proposal as executed
-                                    return ProposalManager.executeProposal(proposalState, msg.caller, proposalId);
-                                };
-                                case (#err(_paymentError)) {
-                                    return #err(#proposalNotActive); // Payment failed
-                                };
-                            };
-                        };
-                        case _ {
-                            return #err(#proposalNotActive); // Invalid funding proposal
-                        };
-                    };
-                } else {
-                    // For governance proposals, just mark as executed
-                    return ProposalManager.executeProposal(proposalState, msg.caller, proposalId);
-                };
-            };
-            case null {
-                return #err(#proposalNotFound);
-            };
-        };
-    };
-
-    // Add comment to a proposal
-    public shared (msg) func addComment(proposalId : Text, content : Text) : async Result.Result<Text, ProposalManager.ProposalError> {
-        return await ProposalManager.addComment(proposalState, msg.caller, isMember, proposalId, content);
-    };
-
-    // Add reaction to a comment
-    public shared (msg) func addReaction(proposalId : Text, commentId : Text, reactionType : ProposalManager.ReactionType) : async Result.Result<Bool, ProposalManager.ProposalError> {
-        return await ProposalManager.addReaction(proposalState, msg.caller, isMember, proposalId, commentId, reactionType);
-    };
-
-    // Get a single proposal
-    public query func getProposal(proposalId : Text) : async ?ProposalManager.Proposal {
-        return ProposalManager.get(proposalState, proposalId);
-    };
-
-    // List all proposals (sorted by latest)
-    public query func listProposals() : async [ProposalManager.Proposal] {
-        return ProposalManager.listByStatus(proposalState, null);
-    };
-
-    // List proposals by status (sorted by latest)
-    public query func listProposalsByStatus(status : ?ProposalManager.ProposalStatus) : async [ProposalManager.Proposal] {
-        return ProposalManager.listByStatus(proposalState, status);
-    };
-
-    // Get proposal statistics
-    public query func getProposalStats() : async {
-        total : Nat;
-        draft : Nat;
-        active : Nat;
-        approved : Nat;
-        rejected : Nat;
-        executed : Nat;
-    } {
-        {
-            total = ProposalManager.getTotalCount(proposalState);
-            draft = ProposalManager.getCountByStatus(proposalState, #draft);
-            active = ProposalManager.getCountByStatus(proposalState, #active);
-            approved = ProposalManager.getCountByStatus(proposalState, #approved);
-            rejected = ProposalManager.getCountByStatus(proposalState, #rejected);
-            executed = ProposalManager.getCountByStatus(proposalState, #executed);
-        };
-    };
 
     // --- TREASURY MANAGEMENT ---
 
@@ -503,26 +347,5 @@ persistent actor class DAO(initDAO : CommonTypes.DAOEntry, ledgerCanisterId_ : P
     // --- LEGACY FUNCTIONS (for backward compatibility) ---
     // These maintain compatibility with existing frontend code
 
-    public shared (msg) func createProposal(title : Text, description : Text, votingDurationSeconds : Nat) : async Result.Result<Text, ProposalManager.ProposalError> {
-        // Create a governance proposal with default parameters
-        let totalEligible = await getTotalEligibleVoters();
-        return await ProposalManager.createDraft(
-            proposalState,
-            msg.caller,
-            isMember,
-            title,
-            description,
-            #governance,
-            null,
-            null,
-            votingDurationSeconds,
-            50,
-            51,
-            totalEligible // 50% participation, 51% approval
-        );
-    };
 
-    public shared (_msg) func endProposal(proposalId : Text) : async Result.Result<ProposalManager.ProposalStatus, ProposalManager.ProposalError> {
-        return ProposalManager.finalizeProposal(proposalState, proposalId);
-    };
 };

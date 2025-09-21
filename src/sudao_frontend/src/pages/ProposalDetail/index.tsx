@@ -12,7 +12,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
-import { Proposal } from "@/types"
+import { Proposal } from "../../hooks/useProposals"
 import { motion } from "framer-motion"
 import { AlertTriangle, ArrowLeft, Calendar, Eye, MessageCircle, ChevronDown, ChevronUp, Edit, FileText } from "lucide-react"
 import { useState, useEffect } from "react"
@@ -33,8 +33,8 @@ const ProposalDetail: React.FC<{
     onBack: any, 
     onEdit?: (proposal: Proposal) => void, 
     onPublish?: (proposal: Proposal) => void,
-    onVote?: (choice: 'Yes' | 'No') => void,
-    onAddComment?: (content: string) => void
+    onVote?: (proposalId: string, choice: 'Yes' | 'No') => Promise<void>,
+    onAddComment?: (proposalId: string, content: string) => Promise<string>
 }> = ({ proposal, onBack, onEdit, onPublish, onVote, onAddComment }) => {
     const [vote, setVote] = useState<"support" | "against" | null>(null)
     const [comment, setComment] = useState("")
@@ -42,9 +42,9 @@ const ProposalDetail: React.FC<{
     const [showEmojiPicker, setShowEmojiPicker] = useState<number | null>(null)
     const [hasVoted, setHasVoted] = useState(false)
     const [voteResults, setVoteResults] = useState({
-        support: 60,
-        against: 30,
-        totalVotes: proposal.votes
+        support: proposal.totalVotingPower > 0 ? Math.round((proposal.yesVotes / proposal.totalVotingPower) * 100) : 0,
+        against: proposal.totalVotingPower > 0 ? Math.round((proposal.noVotes / proposal.totalVotingPower) * 100) : 0,
+        totalVotes: proposal.totalVotingPower
     })
     // Initialize comments based on proposal - new projects start with 0 comments
     const [comments, setComments] = useState<Comment[]>(() => {
@@ -102,7 +102,7 @@ const ProposalDetail: React.FC<{
         if (comment.trim()) {
             if (onAddComment) {
                 try {
-                    await onAddComment(comment);
+                    await onAddComment(proposal.id, comment);
                     setComment("");
                 } catch (error) {
                     // Error handled by parent
@@ -159,7 +159,7 @@ const ProposalDetail: React.FC<{
         if (!hasVoted) {
             if (onVote) {
                 try {
-                    await onVote(voteType === "support" ? "Yes" : "No");
+                    await onVote(proposal.id, voteType === "support" ? "Yes" : "No");
                     setVote(voteType);
                     setHasVoted(true);
                 } catch (error) {
@@ -226,7 +226,7 @@ const ProposalDetail: React.FC<{
                                 </div>
                                 <div>
                                     <p>Last edited</p>
-                                    <p className="font-medium">{proposal.publishedDate}</p>
+                                    <p className="font-medium">{new Date(Number(proposal.createdAt) / 1000000).toLocaleDateString()}</p>
                                 </div>
                             </div>
                         ) : (
@@ -237,7 +237,7 @@ const ProposalDetail: React.FC<{
                                     </Avatar>
                                     <div>
                                         <p>Published by</p>
-                                        <p className="font-medium">{proposal.id}</p>
+                                        <p className="font-medium">{proposal.creator}</p>
                                     </div>
                                 </div>
                                 <div className="flex items-center space-x-3">
@@ -246,7 +246,7 @@ const ProposalDetail: React.FC<{
                                     </div>
                                     <div>
                                         <p>Published in</p>
-                                        <p className="font-medium">{proposal.publishedDate}</p>
+                                        <p className="font-medium">{new Date(Number(proposal.createdAt) / 1000000).toLocaleDateString()}</p>
                                     </div>
                                 </div>
                                 <div className="flex items-center space-x-3">
@@ -449,7 +449,7 @@ const ProposalDetail: React.FC<{
                                     <CardTitle className="text-lg">
                                         {hasVoted ? "Your Vote Submitted" : "Ongoing Voting Results"}
                                     </CardTitle>
-                                    <CardDescription>Votes open until {proposal.deadline}</CardDescription>
+                                    <CardDescription>Votes open until {new Date(Number(proposal.votingEndsAt) / 1000000).toLocaleDateString()}</CardDescription>
                                 </CardHeader>
                                 <CardContent>
                                     <div className="space-y-4">
@@ -496,7 +496,7 @@ const ProposalDetail: React.FC<{
                             <Card>
                                 <CardHeader>
                                     <CardTitle className="text-lg">Voting</CardTitle>
-                                    <CardDescription>Votes open until {proposal.deadline}</CardDescription>
+                                    <CardDescription>Votes open until {new Date(Number(proposal.votingEndsAt) / 1000000).toLocaleDateString()}</CardDescription>
                                 </CardHeader>
                                 <CardContent>
                                     <div className="space-y-3">
@@ -535,11 +535,11 @@ const ProposalDetail: React.FC<{
                             <CardContent className="space-y-3">
                                 <div className="flex justify-between">
                                     <span className="text-gray-600">Voting Deadline</span>
-                                    <span className="font-medium">{proposal.deadline}</span>
+                                    <span className="font-medium">{new Date(Number(proposal.votingEndsAt) / 1000000).toLocaleDateString()}</span>
                                 </div>
                                 <div className="flex justify-between">
                                     <span className="text-gray-600">Requested Funding Amounts</span>
-                                    <span className="font-medium">{proposal.fundingAmount} ICP</span>
+                                    <span className="font-medium">N/A</span>
                                 </div>
                                 <div className="flex justify-between">
                                     <span className="text-gray-600">Minimum Participation</span>

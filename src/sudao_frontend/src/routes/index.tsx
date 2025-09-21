@@ -10,6 +10,7 @@ import {
 import BuildDAO from "@/pages/BuildDAO";
 import NotFound from "@/pages/NotFound";
 import { NavbarDAO, NavbarSUDAO, FooterSUDAO, FooterDAO } from "@/components";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 // Layouts
 const SUDAOLayout = () => (
@@ -32,6 +33,7 @@ const routes: RouteObject[] = [
   {
     path: "/",
     element: <SUDAOLayout />,
+    errorElement: <ErrorBoundary />,
     children: [
       {
         index: true,
@@ -58,6 +60,7 @@ const routes: RouteObject[] = [
   {
     path: "/dao",
     element: <DAOLayout />,
+    errorElement: <ErrorBoundary />,
     children: [
       {
         path: ":daoId/home",

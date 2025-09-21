@@ -1,6 +1,7 @@
 import { IdentityKitAuthType, InternetIdentity, NFIDW } from "@nfid/identitykit";
 import { IdentityKitProvider, useAccounts, useIdentity } from "@nfid/identitykit/react";
 import { canisterId as explorerCanId } from "declarations/sudao_be_explorer";
+import { canisterId as proposalCanId } from "declarations/sudao_proposal";
 import React, { useContext, useMemo, useState } from "react";
 import { CanistersContext } from "@/contexts/canisters/context";
 import "@nfid/identitykit/react/styles.css";
@@ -10,10 +11,11 @@ export const IdentityProvider = ({ children }: { children: React.ReactNode }) =>
     const canisterContext = useContext(CanistersContext);
 
     const targets = useMemo(() => {
-        const t = [explorerCanId];
+        const t = [explorerCanId, proposalCanId];
         for (const canId of Object.values(canisterContext?.canisterIds || {})) {
             if (canId) t.push(canId);
         }
+        console.log('NFID Identity Provider Targets:', t);
         return t;
     }, [canisterContext?.canisterIds]);
 

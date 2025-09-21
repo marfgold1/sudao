@@ -8,6 +8,7 @@ export const CANISTER_IDS = {
   AMM: process.env.CANISTER_ID_SUDAO_AMM || 'rdmx6-jaaaa-aaaaa-aaadq-cai',
   ICP_LEDGER: process.env.CANISTER_ID_ICP_LEDGER_CANISTER || 'ryjl3-tyaaa-aaaaa-aaaba-cai',
   SUDAO_LEDGER: process.env.CANISTER_ID_SUDAO_LEDGER || 'u6s2n-gx777-77774-qaaba-cai',
+  PROPOSAL: process.env.CANISTER_ID_SUDAO_PROPOSAL || '4wdf2-nrj7u-5fe7i-ngftq',
 };
 
 // API endpoints

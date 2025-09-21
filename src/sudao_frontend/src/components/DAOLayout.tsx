@@ -65,9 +65,20 @@ const DAOLayoutContent = ({ children }: { children: React.ReactNode }) => {
   const hasUserDismissedBuildDAO =
     location.state?.initialIcpAmount !== undefined;
 
+  // Check if initial investment has been completed
+  const hasInitialInvestmentCompleted =
+    deploymentInfo?.initialInvestmentCompleted || false;
+
   // Check if it's a deployment status - show BuildDAO component
-  // Show BuildDAO for incomplete deployments OR completed deployments that haven't been dismissed
-  if (deploymentInfo && !hasUserDismissedBuildDAO) {
+  // Show BuildDAO for:
+  // 1. Incomplete deployments (queued, deploying, failed)
+  // 2. Completed deployments that haven't had initial investment completed
+  // 3. Unless user has explicitly dismissed via the Proceed button
+  if (
+    deploymentInfo &&
+    !hasInitialInvestmentCompleted &&
+    !hasUserDismissedBuildDAO
+  ) {
     return <BuildDAO />;
   }
 

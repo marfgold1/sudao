@@ -1,67 +1,126 @@
-import { useState, useEffect } from 'react';
-import { useAgent } from '@nfid/identitykit/react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { toast } from 'react-toastify';
-import { 
-  listProposals, 
-  createProposal, 
-  voteOnProposal, 
-  publishProposal, 
-  addComment,
-  type Proposal, 
-  type ProposalArgs 
-} from '../services/dao';
-import { mockProposals } from '../mocks';
+import { Principal } from '@dfinity/principal';
+import { createProposalService } from '../services/proposal';
+import { useAgents } from './useAgents';
+import { handleCertificateError } from '../utils/errorHandler';
 
-export const useProposals = (canisterId: string | null) => {
-  const agent = useAgent();
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
+export interface ProposalArgs {
+  title: string;
+  description: string;
+  proposalType: 'funding' | 'governance';
+  beneficiaryAddress?: string;
+  requestedAmount?: number;
+  votingDurationHours?: number;
+  minimumParticipation?: number;
+  minimumApproval?: number;
+}
+
+export interface Proposal {
+  id: string;
+  title: string;
+  description: string;
+  status: 'draft' | 'active' | 'approved' | 'rejected' | 'executed';
+  creator: string;
+  createdAt: bigint;
+  votingEndsAt: bigint;
+  yesVotes: number;
+  noVotes: number;
+  totalVotingPower: number;
+  comments: any[];
+}
+
+export const useProposals = (daoId: string | null) => {
+  const { agents } = useAgents();
   const [proposals, setProposals] = useState<Proposal[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const cacheRef = useRef<{ data: Proposal[]; timestamp: number; daoId: string } | null>(null);
+  
+  const proposalService = createProposalService(agents.proposal);
 
-  const fetchProposals = async () => {
-    if (!canisterId) return;
+  const fetchProposals = useCallback(async (forceRefresh = false) => {
+    if (!daoId) return;
     
+    // Check cache first
+    const now = Date.now();
+    const cached = cacheRef.current;
+    
+    if (!forceRefresh && cached && cached.daoId === daoId && (now - cached.timestamp) < CACHE_DURATION) {
+      console.log('[useProposals] Using cached proposals');
+      setProposals(cached.data);
+      return;
+    }
+    
+    console.log('[useProposals] Fetching fresh proposals');
     setLoading(true);
     setError(null);
     
     try {
-      const result = await listProposals(canisterId, agent || undefined);
-      setProposals(result);
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch proposals';
-      setError(errorMessage);
-      toast.error(errorMessage);
+      const result = await proposalService.listProposals(daoId);
       
-      // Fallback to mock data
-      const mockProposalsConverted: Proposal[] = mockProposals.map(p => ({
+      // Convert backend format to frontend format
+      const convertedProposals: Proposal[] = result.map(p => ({
         id: p.id,
         title: p.title,
         description: p.description,
-        status: p.status as 'Draft' | 'Active' | 'Approved' | 'Rejected' | 'Executed',
-        creator: 'mock-creator',
-        createdAt: BigInt(Date.now() * 1000000),
-        votingEndsAt: BigInt((Date.now() + 7 * 24 * 60 * 60 * 1000) * 1000000),
-        yesVotes: Math.floor(p.votes * 0.6),
-        noVotes: Math.floor(p.votes * 0.4),
-        totalVotingPower: p.votes,
-        comments: []
+        status: Object.keys(p.status)[0] as 'draft' | 'active' | 'approved' | 'rejected' | 'executed',
+        creator: p.proposer.toString(),
+        createdAt: p.createdAt,
+        votingEndsAt: p.votingDeadline,
+        yesVotes: Number(p.votesFor),
+        noVotes: Number(p.votesAgainst),
+        totalVotingPower: Number(p.votesFor) + Number(p.votesAgainst),
+        comments: p.comments || []
       }));
-      setProposals(mockProposalsConverted);
+      
+      // Update cache
+      cacheRef.current = {
+        data: convertedProposals,
+        timestamp: now,
+        daoId
+      };
+      
+      setProposals(convertedProposals);
+    } catch (err) {
+      // Handle certificate errors with auto-reload
+      if (handleCertificateError(err)) {
+        return; // Page will reload
+      }
+      
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch proposals';
+      setError(errorMessage);
+      toast.error(errorMessage);
+      setProposals([]);
     } finally {
       setLoading(false);
     }
-  };
+  }, [daoId, agents.proposal]);
 
   const handleCreateProposal = async (args: ProposalArgs) => {
-    if (!canisterId) {
-      toast.error('DAO not ready');
+    if (!daoId) {
+      toast.error('DAO ID not available');
       return;
     }
     
     try {
-      const proposalId = await createProposal(canisterId, args, agent || undefined);
+      const proposalType = args.proposalType === 'funding' ? { funding: null } : { governance: null };
+      const proposalId = await proposalService.createDraftProposal(
+        daoId,
+        args.title,
+        args.description,
+        proposalType,
+        args.beneficiaryAddress ? Principal.fromText(args.beneficiaryAddress) : undefined,
+        args.requestedAmount ? BigInt(args.requestedAmount) : undefined,
+        BigInt((args.votingDurationHours || 168) * 3600 * 1000000000),
+        BigInt(args.minimumParticipation || 50),
+        BigInt(args.minimumApproval || 51)
+      );
+      
       toast.success(`Proposal "${args.title}" created successfully!`);
-      await fetchProposals(); // Refresh list
+      await fetchProposals(true); // Force refresh
       return proposalId;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to create proposal';
@@ -71,15 +130,17 @@ export const useProposals = (canisterId: string | null) => {
   };
 
   const handleVote = async (proposalId: string, choice: 'Yes' | 'No') => {
-    if (!canisterId) {
-      toast.error('DAO not ready');
+    if (!daoId) {
+      toast.error('DAO ID not available');
       return;
     }
     
     try {
-      await voteOnProposal(canisterId, proposalId, choice, agent || undefined);
+      const voteChoice = choice.toLowerCase() === 'yes' ? { yes: null } : { no: null };
+      await proposalService.voteOnProposal(daoId, proposalId, voteChoice);
+      
       toast.success(`Vote cast: ${choice}`);
-      await fetchProposals(); // Refresh to show updated vote counts
+      await fetchProposals(true); // Force refresh
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to vote';
       toast.error(errorMessage);
@@ -88,15 +149,15 @@ export const useProposals = (canisterId: string | null) => {
   };
 
   const handlePublish = async (proposalId: string) => {
-    if (!canisterId) {
-      toast.error('DAO not ready');
+    if (!daoId) {
+      toast.error('DAO ID not available');
       return;
     }
     
     try {
-      await publishProposal(canisterId, proposalId, agent || undefined);
+      await proposalService.publishProposal(daoId, proposalId);
       toast.success('Proposal published successfully!');
-      await fetchProposals(); // Refresh to show updated status
+      await fetchProposals(true); // Force refresh
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to publish proposal';
       toast.error(errorMessage);
@@ -105,15 +166,15 @@ export const useProposals = (canisterId: string | null) => {
   };
 
   const handleAddComment = async (proposalId: string, content: string) => {
-    if (!canisterId) {
-      toast.error('DAO not ready');
+    if (!daoId) {
+      toast.error('DAO ID not available');
       return;
     }
     
     try {
-      const commentId = await addComment(canisterId, proposalId, content, agent || undefined);
+      const commentId = await proposalService.addComment ? await proposalService.addComment(daoId, proposalId, content) : null;
       toast.success('Comment added successfully!');
-      await fetchProposals(); // Refresh to show new comment
+      await fetchProposals(true); // Force refresh
       return commentId;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to add comment';
@@ -122,18 +183,45 @@ export const useProposals = (canisterId: string | null) => {
     }
   };
 
+  const handleRegisterDAO = async (
+    daoId: string,
+    ledgerCanisterId: string,
+    ammCanisterId: string,
+    daoCanisterId: string
+  ) => {
+    try {
+      await proposalService.registerDAO(daoId, daoCanisterId, ledgerCanisterId, ammCanisterId);
+      toast.success('DAO registered with proposal system!');
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to register DAO';
+      toast.error(errorMessage);
+      throw err;
+    }
+  };
+
+  // Remove automatic fetching - let parent component control when to fetch
+
+  // Auto-refresh every 5 minutes
   useEffect(() => {
-    fetchProposals();
-  }, [canisterId, agent]);
+    if (!daoId) return;
+    
+    const interval = setInterval(() => {
+      fetchProposals(true);
+    }, CACHE_DURATION);
+    
+    return () => clearInterval(interval);
+  }, [daoId, fetchProposals]);
 
   return {
     proposals,
     loading,
     error,
-    fetchProposals,
+    fetchProposals: () => fetchProposals(false),
+    refreshProposals: () => fetchProposals(true),
     handleCreateProposal,
     handleVote,
     handlePublish,
-    handleAddComment
+    handleAddComment,
+    handleRegisterDAO
   };
 };
