@@ -46,9 +46,9 @@ const FooterSUDAO: React.FC = () => {
                             <Link to="/plugins" onClick={handleLinkClick} className="block text-gray-300 hover:text-white transition-colors duration-200">
                                 Plugin Marketplace
                             </Link>
-                            <Link to="#" onClick={handleLinkClick} className="block text-gray-300 hover:text-white transition-colors duration-200">
+                            <a href="https://sweet-lobster-b5f.notion.site/SUDAO-DOCUMENTATION-26fc1532f6c180fa957cd7723cff22ad" className="block text-gray-300 hover:text-white transition-colors duration-200" target="_blank">
                                 Documentation
-                            </Link>
+                            </a>
                         </nav>
                     </div>
                 </div>

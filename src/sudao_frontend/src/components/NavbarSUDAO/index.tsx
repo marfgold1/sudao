@@ -67,6 +67,13 @@ const NavbarSUDAO: React.FC = () => {
                             >
                                 Plugin Marketplace
                             </Link>
+                            <a  
+                                href="https://sweet-lobster-b5f.notion.site/SUDAO-DOCUMENTATION-26fc1532f6c180fa957cd7723cff22ad" 
+                                className="transition-colors text-slate-400 hover:text-blue-200"
+                                target="_blank"
+                            >
+                                Documentation
+                            </a>
                         </div>
                     </div>
 

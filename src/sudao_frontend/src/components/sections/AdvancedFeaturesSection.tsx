@@ -102,8 +102,8 @@ export function AdvancedFeaturesSection() {
                             whileHover={{ scale: 1.02 }}
                             className="w-[35%] bg-blue-950 h-[18rem] backdrop-blur-sm border border-slate-700 rounded-2xl p-10 transition-all duration-300 relative overflow-hidden group"
                         >
-                            <h1 className="font-bold text-xl pb-1 z-20 relative">MOBILE-FRIENDLY</h1>
-                            <h3 className="z-20 relative">DAO management anywhere, on any device.</h3>
+                            <h1 className="font-bold text-xl pb-1 z-20 relative">CREATOR DASHBOARD</h1>
+                            <h3 className="z-20 relative">Customize your DAO management anywhere.</h3>
 
                             {/* Blurry circle decoration */}
                             <div className="absolute -bottom-20 center w-80 h-80 bg-gradient-to-br from-blue-800 to-blue-700 rounded-full blur-xl opacity-70"></div>
@@ -113,7 +113,7 @@ export function AdvancedFeaturesSection() {
                             <motion.img
                                 src="/src/assets/images/c3.png"
                                 alt="Chat interface"
-                                className="absolute bottom-0 center w-[22rem] h-auto opacity-70"
+                                className="absolute bottom-[-2rem] center w-[22rem] h-auto opacity-70"
                                 initial={{ y: 20, opacity: 0 }}
                                 whileInView={{ y: 0, opacity: 0.8 }}
                                 whileHover={{ y: 5, opacity: 1 }}
