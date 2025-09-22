@@ -24,7 +24,7 @@ const ProposalPage: React.FC = () => {
 
     const { registerDAO, registering } = useDAORegistration()
     const { checkPluginRegistration, updatePluginRegistration, registrationMemo } = usePluginRegistry()
-    const { proposalState, loading: stateLoading, refreshProposalState } = useProposalState(daoId || null)
+    const { proposalState, loading: _stateLoading, refreshProposalState } = useProposalState(daoId || null)
     const [isRegistered, setIsRegistered] = useState<boolean | null>(null)
     const [checkingRegistration, setCheckingRegistration] = useState(true)
 
@@ -38,9 +38,15 @@ const ProposalPage: React.FC = () => {
         handleCreateProposal,
         handleVote,
         handlePublish,
-        handleAddComment,
-        handleRegisterDAO
+        handleAddComment: originalHandleAddComment,
+        // handleRegisterDAO
     } = useProposals(daoId || null)
+
+    // Wrapper to ensure return type matches expected Promise<string>
+    const handleAddComment = async (proposalId: string, content: string): Promise<string> => {
+        const result = await originalHandleAddComment(proposalId, content)
+        return result || ''
+    }
 
     // Auto-check registration on mount
     useEffect(() => {

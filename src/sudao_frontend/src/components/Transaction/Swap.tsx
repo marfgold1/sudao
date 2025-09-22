@@ -104,7 +104,7 @@ export default function Swap() {
 
       const outputAmount = getVariant(quote, "ok")
       if (outputAmount !== null) {
-        setAmountOut(outputAmount);
+        setAmountOut(outputAmount || 0n);
         addDebugLog("Quote calculated: " + outputAmount);
       } else {
         throw new Error("Quote calculation failed: " + JSON.stringify(quote));
@@ -153,7 +153,7 @@ export default function Swap() {
       };
 
       console.log("Approval args: " + approveArgs);
-      const result = await agents.icpLedger.icrc2_approve(approveArgs);
+      const result = await agents.icpLedgerAuth.icrc2_approve(approveArgs);
       console.log("Approval result: " + result);
 
       setStatus({

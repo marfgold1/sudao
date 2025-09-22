@@ -8,9 +8,23 @@ export interface Proposal {
     description: string;
     status: Status;
     publishedDate: string;
-    deadline: string;
-    votes: number;
-    fundingAmount: number;
+    deadline?: string;
+    votes?: number;
+    fundingAmount?: number;
+    creator: string;
+    createdAt: bigint;
+    votingEndsAt: bigint;
+    yesVotes: number;
+    noVotes: number;
+    totalVotingPower: number;
+    comments: Comment[];
+}
+
+export interface Comment {
+    id: string;
+    author: string;
+    content: string;
+    timestamp: string;
 }
 
 // Trnsaction Page

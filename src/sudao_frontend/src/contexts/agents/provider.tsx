@@ -32,25 +32,35 @@ export const AgentsProvider = ({ children }: { children: React.ReactNode }) => {
       return createProposalActor(proposalId, { agent: anonymousAgent });
     }, [anonymousAgent]);
 
+    // Read-only operations use anonymous agent
     const daoAmm = useMemo(() => {
       const canId = canisterContext?.canisterIds?.daoAmm;
       return canId ? createDaoAmmActor(canId, { agent: anonymousAgent }) : null;
     }, [canisterContext?.canisterIds?.daoAmm, anonymousAgent]);
 
-    // Write operations need authenticated agent
     const daoLedger = useMemo(() => {
+      const canId = canisterContext?.canisterIds?.daoLedger;
+      return canId ? createDaoLedgerActor(canId, { agent: anonymousAgent }) : null;
+    }, [canisterContext?.canisterIds?.daoLedger, anonymousAgent]);
+
+    const icpLedger = useMemo(() => {
+      return createICPActor(icpLedgerId, { agent: anonymousAgent });
+    }, [anonymousAgent]);
+  
+    // Write operations use authenticated agent
+    const daoLedgerAuth = useMemo(() => {
       const canId = canisterContext?.canisterIds?.daoLedger;
       return canId ? createDaoLedgerActor(canId, { agent }) : null;
     }, [canisterContext?.canisterIds?.daoLedger, agent]);
+
+    const icpLedgerAuth = useMemo(() => {
+      return createICPActor(icpLedgerId, { agent });
+    }, [agent]);
   
     const daoAmmAuth = useMemo(() => {
       const canId = canisterContext?.canisterIds?.daoAmm;
       return canId ? createDaoAmmActor(canId, { agent }) : null;
     }, [canisterContext?.canisterIds?.daoAmm, agent]);
-
-    const icpLedger = useMemo(() => {
-      return createICPActor(icpLedgerId, { agent });
-    }, [agent]);
 
     const proposalAuth = useMemo(() => {
       return createProposalActor(proposalId, { agent });
@@ -62,9 +72,11 @@ export const AgentsProvider = ({ children }: { children: React.ReactNode }) => {
           explorerDao,
           daoBe,
           daoLedger,
+          daoLedgerAuth,
           daoAmm,
           daoAmmAuth,
           icpLedger,
+          icpLedgerAuth,
           proposal,
           proposalAuth,
         }

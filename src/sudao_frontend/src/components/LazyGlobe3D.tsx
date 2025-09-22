@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react';
-import { motion } from 'framer-motion';
+// import { motion } from 'framer-motion';
 
 // Lazy load the heavy 3D components
 const Canvas = lazy(() => import('@react-three/fiber').then(module => ({ default: module.Canvas })));

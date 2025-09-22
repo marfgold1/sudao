@@ -14,7 +14,9 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { useDAO } from "@/hooks/useDAO";
-import { useAgents } from "@/hooks/useAgents";
+// import { useAgents } from "@/hooks/useAgents";
+import { useInitialInvestment } from "@/hooks/useInitialInvestment";
+import { useCanisters } from "@/contexts/canisters/context";
 import {
   isVariant,
   matchVariant,
@@ -174,10 +176,12 @@ const DetailedInfoSection: React.FC<{
                     iterLinkList(deploymentInfo.canisterIds)
                   )
                     .map(
-                      ([codeType, canisterId]: [any, any]) =>
-                        `${normalizeCanisterTypeName(
+                      (entry: unknown) => {
+                        const [codeType, canisterId] = entry as [any, any];
+                        return `${normalizeCanisterTypeName(
                           String(keyVariant(codeType))
-                        )}: ${canisterId.toString()}`
+                        )}: ${canisterId.toString()}`;
+                      }
                     )
                     .join(", "),
                 }).map(([key, value]) => (
@@ -241,7 +245,9 @@ const BuildDAO: React.FC = () => {
   const { daoId } = useParams<{ daoId: string }>();
   const navigate = useNavigate();
   const { daoInfo, deploymentInfo, refetch } = useDAO();
-  const { agents } = useAgents();
+  // const { agents } = useAgents();
+  const { canisterIds } = useCanisters();
+  const { processInvestment, loading: investmentLoading } = useInitialInvestment();
 
   const [currentStep, setCurrentStep] = useState(0);
   const [completedItems, setCompletedItems] = useState<number[]>([]);
@@ -556,7 +562,7 @@ const BuildDAO: React.FC = () => {
   }, [currentStep, dynamicSteps.length, navigate, daoId]);
 
   useEffect(() => {
-    let isCancelled = false;
+    // let isCancelled = false;
 
     const runSteps = async () => {
       // Don't run step animations if deployment failed
@@ -576,28 +582,49 @@ const BuildDAO: React.FC = () => {
     runSteps();
 
     return () => {
-      isCancelled = true;
+      // isCancelled = true;
     };
   }, [currentStep, deploymentInfo, dynamicSteps.length]);
 
   const handleProceed = async () => {
-    // Mark initial investment as completed before navigating
-    if (daoId) {
-      try {
-        await agents.explorerDao.markInitialInvestmentCompleted(daoId);
-        console.log("✅ Initial investment marked as completed");
-      } catch (error) {
-        console.error(
-          "❌ Failed to mark initial investment as completed:",
-          error
-        );
-        // Continue anyway - user can still proceed to make investment
-      }
-
-      // Navigate to DAO home page with ICP amount
-      navigate(`/dao/${daoId}/home`, {
-        state: { initialIcpAmount: icpAmount },
+    console.log('[BuildDAO] Investment button clicked');
+    console.log('[BuildDAO] DAO ID:', daoId);
+    console.log('[BuildDAO] ICP Amount:', icpAmount);
+    console.log('[BuildDAO] DAO Backend Canister ID:', canisterIds.daoBe);
+    console.log('[BuildDAO] All Canister IDs:', canisterIds);
+    
+    if (!daoId || !icpAmount || !canisterIds.daoBe) {
+      console.error('[BuildDAO] Missing required data:', {
+        daoId: !!daoId,
+        icpAmount: !!icpAmount,
+        daoBeCanisterId: !!canisterIds.daoBe
       });
+      return;
+    }
+
+    const amount = parseFloat(icpAmount);
+    if (isNaN(amount) || amount <= 0) {
+      console.error('[BuildDAO] Invalid amount:', amount);
+      return;
+    }
+
+    console.log('[BuildDAO] Starting investment process with amount:', amount);
+    
+    try {
+      const blockIndex = await processInvestment(amount, daoId, canisterIds.daoBe);
+      console.log('[BuildDAO] Investment completed successfully, block index:', blockIndex);
+      
+      // Force refresh DAO data to update initialInvestmentCompleted flag
+      console.log('[BuildDAO] Refreshing DAO data after investment...');
+      await refetch();
+      
+      // Navigate to DAO home page with success state
+      navigate(`/dao/${daoId}/home`, {
+        state: { investmentSuccess: true, amount },
+      });
+    } catch (error) {
+      // Error handling is done in the hook
+      console.error('[BuildDAO] Investment failed:', error);
     }
   };
 
@@ -939,11 +966,17 @@ const BuildDAO: React.FC = () => {
                         <Input
                           type="number"
                           step="0.001"
+                          min="0.001"
                           value={icpAmount}
                           onChange={(e) => setIcpAmount(e.target.value)}
                           className="border-slate-500/50 placeholder:text-gray-400 focus:border-blue-400 focus:ring-blue-400"
                           placeholder="0.001"
                         />
+                        {icpAmount && parseFloat(icpAmount) < 0.001 && (
+                          <p className="text-red-600 text-xs mt-1">
+                            Minimum investment is 0.001 ICP
+                          </p>
+                        )}
                         <p className="text-blue-700 text-xs mt-2 leading-relaxed">
                           Choose how much ICP to kickstart your DAO. The amount
                           you enter will be locked in as your DAO's first
@@ -953,9 +986,17 @@ const BuildDAO: React.FC = () => {
 
                       <Button
                         onClick={handleProceed}
-                        className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 transition-colors"
+                        disabled={investmentLoading || !icpAmount || parseFloat(icpAmount) < 0.001}
+                        className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 transition-colors disabled:opacity-50"
                       >
-                        Proceed
+                        {investmentLoading ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            Processing Investment...
+                          </>
+                        ) : (
+                          'Invest & Proceed'
+                        )}
                       </Button>
                     </div>
                   </div>

@@ -48,8 +48,8 @@ class ProposalService {
       title,
       description,
       proposalType,
-      beneficiaryAddress,
-      requestedAmount,
+      beneficiaryAddress && Array.isArray(beneficiaryAddress) && beneficiaryAddress.length === 1 ? [beneficiaryAddress[0]] : [],
+      requestedAmount && Array.isArray(requestedAmount) && requestedAmount.length === 1 ? [requestedAmount[0]] : [],
       votingDuration,
       minimumParticipation,
       minimumApproval

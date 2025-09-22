@@ -117,7 +117,7 @@ export const makeContribution = async (
     try {
       // Small delay to ensure balance updates are reflected
       await new Promise(resolve => setTimeout(resolve, 1000));
-      balancesAfterSwap = await checkUserBalances(agent, userPrincipal);
+      balancesAfterSwap = await checkUserBalances(userPrincipal);
       console.log('[CONTRIBUTION] Balances after swap:', balancesAfterSwap);
     } catch (balanceError) {
       console.warn('[CONTRIBUTION] Failed to check balances after swap:', balanceError);
@@ -141,21 +141,21 @@ export const makeContribution = async (
 
 // Standalone function to check balances after any swap operation
 export const getBalancesAfterSwap = async (
-  agent: HttpAgent,
+  _agent: HttpAgent,
   userPrincipal: string
 ): Promise<UserBalances> => {
-  return await checkUserBalances(agent, userPrincipal);
+  return await checkUserBalances(userPrincipal);
 };
 
 export const checkUserBalance = async (
-  agent: HttpAgent,
+  _agent: HttpAgent,
   userPrincipal: string
 ): Promise<{ icp: number; governance?: number; error?: string }> => {
   try {
-    const balances = await checkUserBalances(agent, userPrincipal);
+    const balances = await checkUserBalances(userPrincipal);
     return { 
-      icp: balances.icp, 
-      governance: balances.governance 
+      icp: Number(balances.icp), 
+      governance: Number(balances.governance) 
     };
   } catch (error) {
     return {

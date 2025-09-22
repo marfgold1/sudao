@@ -8,8 +8,12 @@ import { useState } from "react"
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip } from "recharts"
 import { Link, useParams, useLocation } from "react-router-dom"
 import { useDAO } from "@/hooks/useDAO"
-import { isVariant } from "@/utils/converter"
+import { useTreasury } from "@/hooks/useTreasury"
+import { useAgents } from "@/hooks/useAgents"
+// import { isVariant } from "@/utils/converter"
 import BuildDAO from "@/pages/BuildDAO"
+import { toast } from "react-toastify"
+import { useEffect } from "react"
 
 const chartData = [
     { month: "Mar 2025", value: 50, date: "Mar 15, 2025", amount: "50 ICP", change: "+5 ICP" },
@@ -83,12 +87,12 @@ const fadeInUp = {
 }
 
 // Utility function to trim long addresses
-const trimAddress = (address: string, startLength = 6, endLength = 4) => {
-    if (!address || address.length <= startLength + endLength + 3) {
-        return address;
-    }
-    return `${address.slice(0, startLength)}...${address.slice(-endLength)}`;
-};
+// const trimAddress = (address: string, startLength = 6, endLength = 4) => {
+//     if (!address || address.length <= startLength + endLength + 3) {
+//         return address;
+//     }
+//     return `${address.slice(0, startLength)}...${address.slice(-endLength)}`;
+// };
 
 export default function HomeDAO() {
     const { daoId } = useParams<{ daoId: string }>();
@@ -97,6 +101,8 @@ export default function HomeDAO() {
     const [copied, setCopied] = useState(false);
     
     const { daoInfo, isLoading, error, deploymentInfo } = useDAO();
+    const { canisterIds } = useAgents();
+    const { balance: treasuryBalance, loading: treasuryLoading } = useTreasury(canisterIds.daoBe);
     
     // Check if user has dismissed the BuildDAO component
     const hasUserDismissedBuildDAO = location.state?.initialIcpAmount !== undefined;
@@ -104,14 +110,46 @@ export default function HomeDAO() {
     // Check if initial investment has been completed
     const hasInitialInvestmentCompleted = deploymentInfo?.initialInvestmentCompleted || false;
     
+    console.log('[HomeDAO] Deployment info:', deploymentInfo);
+    console.log('[HomeDAO] Initial investment completed:', hasInitialInvestmentCompleted);
+    console.log('[HomeDAO] User dismissed BuildDAO:', hasUserDismissedBuildDAO);
+    console.log('[HomeDAO] Should show BuildDAO:', deploymentInfo && !hasInitialInvestmentCompleted && !hasUserDismissedBuildDAO);
+    
+    // Show success message if investment was just completed
+    useEffect(() => {
+        if (location.state?.investmentSuccess && location.state?.amount) {
+            toast.success(`🎉 Successfully invested ${location.state.amount} ICP in your DAO!`);
+            // Clear the state to prevent showing the message again
+            window.history.replaceState({}, document.title);
+        }
+    }, [location.state]);
+    
     // Show BuildDAO for incomplete deployments or if initial investment not completed
     if (deploymentInfo && !hasInitialInvestmentCompleted && !hasUserDismissedBuildDAO) {
+        console.log('[HomeDAO] Showing BuildDAO component');
         return <BuildDAO />;
     }
     
-    // Realistic DAO address (fetched from API later)
-    const fullDaoAddress = "0x742d35Cc6634C0532925a3b8f5c62B0F1A38C9Da";
-    const displayAddress = trimAddress(fullDaoAddress);
+    console.log('[HomeDAO] Showing main DAO home page');
+    
+    // Real DAO address from canister IDs
+    const fullDaoAddress = canisterIds.daoBe || "Not deployed";
+    const displayAddress = fullDaoAddress; // Show full address instead of trimmed
+    
+    // Real launch date from deployment info
+    const launchDate = deploymentInfo?.createdAt ? 
+        new Date(Number(deploymentInfo.createdAt) / 1000000).toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'long', 
+            day: 'numeric'
+        }) : "Not deployed";
+    
+    // Real treasury balance
+    const treasuryAmount = treasuryLoading ? "Loading..." : 
+        treasuryBalance ? `${treasuryBalance.icp.toFixed(2)} ICP` : "0.00 ICP";
+    
+    console.log('[HomeDAO] Treasury balance object:', treasuryBalance);
+    console.log('[HomeDAO] Treasury amount display:', treasuryAmount);
     
     // Fallback data
     const daoTitle = daoInfo?.name || "Community Collective";
@@ -119,10 +157,11 @@ export default function HomeDAO() {
     
     const handleCopy = async () => {
         try {
-            // Copy the full address, not the trimmed version
-            await navigator.clipboard.writeText(fullDaoAddress);
-            setCopied(true);
-            setTimeout(() => setCopied(false), 2000);
+            if (fullDaoAddress !== "Not deployed") {
+                await navigator.clipboard.writeText(fullDaoAddress);
+                setCopied(true);
+                setTimeout(() => setCopied(false), 2000);
+            }
         } catch (err) {
             console.error('Failed to copy:', err);
         }
@@ -273,7 +312,7 @@ export default function HomeDAO() {
                                             <div className="flex items-center gap-2 text-base text-white">
                                                 Launched
                                             </div>
-                                            <p className="text-sm text-blue-200">September 14th, 2025</p>
+                                            <p className="text-sm text-blue-200">{launchDate}</p>
                                         </div>
                                     </div>
 
@@ -331,7 +370,7 @@ export default function HomeDAO() {
                                             )}
                                         </div>
                                     </CardTitle>
-                                    <div className="text-3xl font-bold">200 ICP</div>
+                                    <div className="text-3xl font-bold">{treasuryAmount}</div>
                                 </CardHeader>
                                 <CardContent>
                                     <div className="h-64 w-full bg-blue-900 rounded-lg p-4">

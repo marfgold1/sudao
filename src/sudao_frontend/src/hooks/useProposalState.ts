@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAgents } from './useAgents';
-import { handleCertificateError } from '../utils/errorHandler';
+// import { handleCertificateError } from '../utils/errorHandler';
 
 export interface ProposalState {
   isRegistered: boolean;
@@ -17,7 +17,7 @@ export const useProposalState = (daoId: string | null) => {
   const [proposalState, setProposalState] = useState<ProposalState | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const fetchProposalState = async (forceRefresh = false) => {
+  const fetchProposalState = async (_forceRefresh = false) => {
     if (!daoId || !agents.proposal) return;
     
     setLoading(true);

@@ -21,10 +21,10 @@ export const SwapWidget: React.FC = () => {
     setIsGettingQuote(true);
     try {
       const tokenInId = tokenInIsICP ? tokenInfo.token0! : tokenInfo.token1!;
-      const quote = await handleGetQuote(tokenInId, Number(amountIn));
+      const quote = await handleGetQuote(tokenInId.toString(), BigInt(amountIn));
       
       if (quote) {
-        setAmountOut(quote.amountOut.toString());
+        setAmountOut(quote && 'ok' in quote ? quote.ok.toString() : '0');
       }
     } catch (error) {
       // Error handled in hook
@@ -41,7 +41,7 @@ export const SwapWidget: React.FC = () => {
       const tokenInId = tokenInIsICP ? tokenInfo.token0! : tokenInfo.token1!;
       const minAmountOut = Math.floor(Number(amountOut) * 0.99); // 1% slippage
       
-      const result = await handleSwap(tokenInId, Number(amountIn), minAmountOut);
+      const result = await handleSwap(tokenInId.toString(), BigInt(amountIn), BigInt(minAmountOut));
       
       if (result) {
         setAmountIn('');
@@ -122,7 +122,7 @@ export const SwapWidget: React.FC = () => {
         {/* Pool Info */}
         <div className="text-xs text-gray-500 space-y-1">
           <div>Pool: {liquidityInfo.reserve0.toLocaleString()} ICP / {liquidityInfo.reserve1.toLocaleString()} Governance</div>
-          <div>Fee: {tokenInfo.feeRate / 10}%</div>
+          <div>Fee: {Number(tokenInfo.fee_rate) / 10}%</div>
         </div>
 
         {/* Action Buttons */}

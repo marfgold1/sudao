@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { toast } from "react-toastify";
 import type { _SERVICE as AMM } from "declarations/sudao_amm/sudao_amm.did";
 import { useAgents } from "@/hooks/useAgents";

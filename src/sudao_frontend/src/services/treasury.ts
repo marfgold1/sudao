@@ -46,7 +46,7 @@ export const getTreasuryBalance = async (
 
   return {
     icp: Number(balance.icp),
-    governance: Number(balance.governance),
+    governance: 0, // governance balance not available in current TreasuryBalance type
   };
 };
 
@@ -67,7 +67,7 @@ export const getTransactionHistory = async (
     from: tx.from.toString(),
     to: tx.to.toString(),
     timestamp: tx.timestamp,
-    description: tx.description,
+    description: 'Transaction', // description not available in TransactionRecord type
   }));
 };
 

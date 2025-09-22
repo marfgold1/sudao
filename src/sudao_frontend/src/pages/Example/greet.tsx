@@ -21,7 +21,7 @@ const Greet: React.FC = () => {
 
     setIsLoading(true);
     try {
-      const greeting = await daoBe!.greet(name);
+      const greeting = 'Hello ' + name; // greet method not available
       alert(greeting);
     } catch (error) {
       console.error("Error calling greet:", error);

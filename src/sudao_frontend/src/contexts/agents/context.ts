@@ -9,10 +9,14 @@ import type { _SERVICE as Proposal } from "declarations/sudao_proposal/sudao_pro
 type Agents = {
   daoBe: DaoBe | null;
   daoLedger: DaoLedger | null;
+  daoLedgerAuth: DaoLedger | null;
   daoAmm: DaoAmm | null;
+  daoAmmAuth: DaoAmm | null;
   explorerDao: ExplorerDao;
   icpLedger: ICPLedger;
+  icpLedgerAuth: ICPLedger;
   proposal: Proposal;
+  proposalAuth: Proposal;
 };
 
 type AgentsContextType = {

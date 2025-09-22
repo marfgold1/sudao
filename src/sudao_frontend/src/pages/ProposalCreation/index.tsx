@@ -5,9 +5,9 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { motion } from "framer-motion"
-import { ArrowLeft, Search } from "lucide-react"
+import { ArrowLeft } from "lucide-react"
 import { useState, useEffect } from "react"
-import { Link } from "react-router-dom"
+// import { Link } from "react-router-dom"
 import { Proposal } from "@/types"
 import { useAccount } from "@/hooks/useAccount"
 import { ProposalArgs } from "@/hooks/useProposals"
@@ -28,7 +28,13 @@ interface ValidationErrors {
     [key: string]: string;
 }
 
-const ProposalCreation: React.FC<{ onBack: any, onDraftCreated?: (args: ProposalArgs, shouldPublish?: boolean) => void, editingProposal?: Proposal | null }> = ({ onBack, onDraftCreated, editingProposal }) => {
+interface ProposalCreationProps {
+    onBack: any;
+    onDraftCreated?: (args: ProposalArgs, shouldPublish?: boolean) => void;
+    editingProposal?: Proposal | null | undefined;
+}
+
+const ProposalCreation: React.FC<ProposalCreationProps> = ({ onBack, onDraftCreated, editingProposal }) => {
     const { currentAccount } = useAccount();
     const { daoInfo } = useDAO();
     const [currentStep, setCurrentStep] = useState(1)

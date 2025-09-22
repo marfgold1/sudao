@@ -6,7 +6,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { X } from 'lucide-react';
-import { type CreateDAORequest } from '../services/explorer';
+// import { type CreateDAORequest } from '../services/explorer';
+type CreateDAORequest = { name: string; description: string; tags: string[]; };
 
 interface DAOCreationModalProps {
   isOpen: boolean;

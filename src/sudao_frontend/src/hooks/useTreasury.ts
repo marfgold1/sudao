@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { toast } from 'react-toastify';
 import { useAgents } from './useAgents';
 import { useTransactions } from './useTransactions';
-import { mockTransactions } from '../mocks';
+// import { mockTransactions } from '../mocks';
 import type { Transaction } from '../types';
 import { Principal } from '@dfinity/principal';
 import { handleCertificateError } from '../utils/errorHandler';
@@ -15,7 +15,7 @@ export type TreasuryBalance = {
 };
 
 export const useTreasury = (daoCanisterId: string | null) => {
-  const { agents, canisterIds } = useAgents();
+  const { agents } = useAgents();
   const { fetchTransactions } = useTransactions();
   const [balance, setBalance] = useState<TreasuryBalance>({ icp: 0, governance: 0 });
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -43,18 +43,28 @@ export const useTreasury = (daoCanisterId: string | null) => {
     
     try {
       const daoPrincipal = Principal.fromText(daoCanisterId);
+      console.log('[useTreasury] Fetching balance for DAO principal:', daoPrincipal.toString());
+      console.log('[useTreasury] DAO canister ID:', daoCanisterId);
       
       // Fetch balances and transactions from ledgers
-      const [icpBalance, govBalance, ledgerTransactions] = await Promise.all([
-        agents.icpLedger.icrc1_balance_of({ owner: daoPrincipal, subaccount: [] }),
-        agents.daoLedger.icrc1_balance_of({ owner: daoPrincipal, subaccount: [] }),
-        fetchTransactions(daoCanisterId)
-      ]);
+      console.log('[useTreasury] Calling icrc1_balance_of on ICP ledger...');
+      const icpBalance = await agents.icpLedger.icrc1_balance_of({ owner: daoPrincipal, subaccount: [] });
+      console.log('[useTreasury] ICP balance (raw e8s):', icpBalance.toString());
+      console.log('[useTreasury] ICP balance (converted):', Number(icpBalance) / 100000000);
+      
+      console.log('[useTreasury] Calling icrc1_balance_of on DAO ledger...');
+      const govBalance = await agents.daoLedger.icrc1_balance_of({ owner: daoPrincipal, subaccount: [] });
+      console.log('[useTreasury] Gov balance (raw e8s):', govBalance.toString());
+      console.log('[useTreasury] Gov balance (converted):', Number(govBalance) / 100000000);
+      
+      const ledgerTransactions = await fetchTransactions(daoCanisterId);
       
       const treasuryBalance: TreasuryBalance = {
         icp: Number(icpBalance) / 100000000, // Convert from e8s
         governance: Number(govBalance) / 100000000 // Convert from e8s
       };
+      
+      console.log('[useTreasury] Final treasury balance:', treasuryBalance);
       
       // Use only real transactions from ledger
       const convertedTransactions: Transaction[] = ledgerTransactions;

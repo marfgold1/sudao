@@ -47,7 +47,8 @@ import { useAccount, UserBalances } from "@/hooks/useAccount";
 import { useAMM } from "@/hooks/useAMM";
 import { useAgents } from "@/hooks/useAgents";
 import { useDAO } from "@/hooks/useDAO";
-import { useTreasury } from "@/hooks/useTreasury";
+// import { useTreasury } from "@/hooks/useTreasury";
+import { useTransactions } from "@/hooks/useTransactions";
 import { ApproveArgs } from "declarations/icp_ledger_canister/icp_ledger_canister.did";
 import {
   MakeOpt,
@@ -64,32 +65,26 @@ const TransactionContent: React.FC = () => {
   const { daoInfo, deploymentInfo } = useDAO();
   const { currentAccount, getUserBalances } = useAccount();
   const { agents, canisterIds } = useAgents();
+  const { fetchTransactions, loading: transactionsLoading } = useTransactions();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
 
-  // Fetch transactions from AMM
+  // Fetch real ICP ledger transactions for the DAO
   React.useEffect(() => {
-    const fetchAMMTransactions = async () => {
-      if (!agents.daoAmm) return;
+    const loadTransactions = async () => {
+      if (!canisterIds.daoBe) return;
       
       try {
-        const ammTransactions = await agents.daoAmm.get_transaction_history();
-        const formattedTransactions: Transaction[] = ammTransactions.map(tx => ({
-          id: tx.id.toString(),
-          account: tx.user.toString().slice(0, 8) + '...' + tx.user.toString().slice(-6),
-          amount: BigInt(tx.amount_in),
-          type: 'In' as const,
-          beneficiary: tx.transaction_type === 'swap' ? 'Token Swap' : 'Add Liquidity',
-          address: tx.token_in.toString().slice(0, 8) + '...' + tx.token_in.toString().slice(-6),
-          date: new Date(Number(tx.timestamp) / 1000000).toISOString().split('T')[0]
-        }));
-        setTransactions(formattedTransactions);
+        console.log('[TransactionPage] Fetching ICP ledger transactions for DAO:', canisterIds.daoBe);
+        const icpTransactions = await fetchTransactions(canisterIds.daoBe);
+        setTransactions(icpTransactions);
+        console.log('[TransactionPage] Loaded', icpTransactions.length, 'transactions');
       } catch (error) {
-        console.error('Failed to fetch AMM transactions:', error);
+        console.error('[TransactionPage] Failed to fetch transactions:', error);
       }
     };
     
-    fetchAMMTransactions();
-  }, [agents.daoAmm]);
+    loadTransactions();
+  }, [canisterIds.daoBe, fetchTransactions]);
   const { handleGetQuote, handleSwap, tokenInfo, reserves, fetchAMMData } =
     useAMM();
 
@@ -130,6 +125,7 @@ const TransactionContent: React.FC = () => {
   }>({});
   const [debugInfo, setDebugInfo] = useState<string[]>([]);
   const [contributionCompleted, setContributionCompleted] = useState(false);
+  const [userBalance, setUserBalance] = useState<UserBalances | null>(null);
 
   // Helper functions
   const addDebugLog = useCallback((message: string) => {
@@ -143,8 +139,8 @@ const TransactionContent: React.FC = () => {
     const errors = { amount: "", contributorName: "" };
     let isValid = true;
 
-    if (!contributionData.amount || Number(contributionData.amount) < 10000) {
-      errors.amount = "Minimum amount is 10,000 ICP";
+    if (!contributionData.amount || Number(contributionData.amount) < 0.001) {
+      errors.amount = "Minimum amount is 0.001 ICP";
       isValid = false;
     }
 
@@ -220,7 +216,7 @@ const TransactionContent: React.FC = () => {
               },
             };
 
-            const result = await agents.icpLedger.icrc2_approve(approveArgs);
+            const result = await agents.icpLedgerAuth.icrc2_approve(approveArgs);
             addDebugLog(`Approve result: ${JSON.stringify(result)}`);
             setStepResults((prev) => ({ ...prev, approve: result }));
             break;
@@ -292,22 +288,13 @@ const TransactionContent: React.FC = () => {
             }));
             setContributionCompleted(true);
             toast.success("Contribution completed successfully!");
-            // Refresh AMM transactions after contribution
-            if (agents.daoAmm) {
+            // Refresh ICP ledger transactions after contribution
+            if (canisterIds.daoBe) {
               try {
-                const ammTransactions = await agents.daoAmm.get_transaction_history();
-                const formattedTransactions: Transaction[] = ammTransactions.map(tx => ({
-                  id: tx.id.toString(),
-                  account: tx.user.toString().slice(0, 8) + '...' + tx.user.toString().slice(-6),
-                  amount: BigInt(tx.amount_in),
-                  type: 'In' as const,
-                  beneficiary: tx.transaction_type === 'swap' ? 'Token Swap' : 'Add Liquidity',
-                  address: tx.token_in.toString().slice(0, 8) + '...' + tx.token_in.toString().slice(-6),
-                  date: new Date(Number(tx.timestamp) / 1000000).toISOString().split('T')[0]
-                }));
-                setTransactions(formattedTransactions);
+                const icpTransactions = await fetchTransactions(canisterIds.daoBe);
+                setTransactions(icpTransactions);
               } catch (error) {
-                console.error('Failed to refresh AMM transactions:', error);
+                console.error('Failed to refresh ICP transactions:', error);
               }
             }
             break;
@@ -461,8 +448,9 @@ const TransactionContent: React.FC = () => {
                   return;
                 }
                 setShowContributionModal(true);
-                // Fetch AMM data only when opening contribution modal
+                // Fetch AMM data and user balance when opening contribution modal
                 fetchAMMData();
+                getUserBalances().then(setUserBalance);
               }}
               className="bg-blue-600 hover:bg-blue-700"
             >
@@ -490,6 +478,24 @@ const TransactionContent: React.FC = () => {
                 />
               </div>
               <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={async () => {
+                    if (!canisterIds.daoBe) return;
+                    try {
+                      const icpTransactions = await fetchTransactions(canisterIds.daoBe);
+                      setTransactions(icpTransactions);
+                      toast.success('Transactions refreshed');
+                    } catch (error) {
+                      toast.error('Failed to refresh transactions');
+                    }
+                  }}
+                  disabled={transactionsLoading}
+                >
+                  <RefreshCw className={`w-4 h-4 mr-2 ${transactionsLoading ? 'animate-spin' : ''}`} />
+                  Refresh
+                </Button>
                 <Button
                   variant="outline"
                   size="sm"
@@ -651,7 +657,7 @@ const TransactionContent: React.FC = () => {
               </TableHeader>
               <TableBody>
                 <AnimatePresence>
-                  {false ? (
+                  {transactionsLoading ? (
                     <motion.tr
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
@@ -840,7 +846,7 @@ const TransactionContent: React.FC = () => {
                           }));
                         }
                       }}
-                      placeholder="10000"
+                      placeholder="0.1"
                       className={
                         validationErrors.amount
                           ? "border-red-500 focus:border-red-500"
@@ -852,10 +858,17 @@ const TransactionContent: React.FC = () => {
                         {validationErrors.amount}
                       </p>
                     )}
-                    <p className="text-xs text-gray-500 mt-1">
-                      Minimum 10,000 ICP. You will receive governance tokens
-                      through AMM swap.
-                    </p>
+                    <div className="flex justify-between items-center mt-1">
+                      <p className="text-xs text-gray-500">
+                        Minimum 0.001 ICP. You will receive governance tokens
+                        through AMM swap.
+                      </p>
+                      {userBalance && (
+                        <p className="text-xs text-blue-600 font-medium">
+                          Balance: {(Number(userBalance.icp) / 100000000).toFixed(4)} ICP
+                        </p>
+                      )}
+                    </div>
                   </div>
                   <div>
                     <label className="text-sm font-medium text-gray-700 mb-2 block">
@@ -1064,12 +1077,12 @@ const TransactionContent: React.FC = () => {
                     </details>
 
                     {/* Step Results */}
-                    {stepResults.approve && (
+                    {stepResults.approve !== undefined ? (
                       <div className="p-2 bg-green-50 rounded text-xs">
                         <strong>Approve:</strong> ✅ Success
                       </div>
-                    )}
-                    {stepResults.ammInfo && (
+                    ) : null}
+                    {stepResults.ammInfo ? (
                       <div className="p-2 bg-blue-50 rounded text-xs">
                         <strong>AMM:</strong> Initialized:{" "}
                         {stepResults.ammInfo.is_initialized ? "Yes" : "No"}
@@ -1082,15 +1095,15 @@ const TransactionContent: React.FC = () => {
                             </span>
                           )}
                       </div>
-                    )}
-                    {stepResults.quote && (
+                    ) : null}
+                    {stepResults.quote ? (
                       <div className="p-2 bg-yellow-50 rounded text-xs">
                         <strong>Quote:</strong> {contributionData.amount} ICP →{" "}
                         {Number(stepResults.quote).toLocaleString()} Governance
                         tokens
                       </div>
-                    )}
-                    {stepResults.swap && (
+                    ) : null}
+                    {stepResults.swap ? (
                       <div className="p-2 bg-purple-50 rounded text-xs">
                         <strong>Swap:</strong> ✅ Received{" "}
                         {typeof stepResults.swap === "object" &&
@@ -1099,8 +1112,8 @@ const TransactionContent: React.FC = () => {
                           : "Unknown amount"}{" "}
                         governance tokens
                       </div>
-                    )}
-                    {stepResults.balances && (
+                    ) : null}
+                    {stepResults.balances ? (
                       <div className="p-2 bg-gray-50 rounded text-xs">
                         <strong>Balances:</strong>{" "}
                         {Number(stepResults.balances.icp).toLocaleString()} ICP,{" "}
@@ -1109,7 +1122,7 @@ const TransactionContent: React.FC = () => {
                         ).toLocaleString()}{" "}
                         Governance
                       </div>
-                    )}
+                    ) : null}
                   </div>
 
                   {/* Debug Log */}
