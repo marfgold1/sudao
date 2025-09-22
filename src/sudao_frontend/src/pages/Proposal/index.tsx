@@ -24,7 +24,7 @@ const ProposalPage: React.FC = () => {
 
     const { registerDAO, registering } = useDAORegistration()
     const { checkPluginRegistration, updatePluginRegistration, registrationMemo } = usePluginRegistry()
-    const { proposalState, loading: stateLoading } = useProposalState(daoId || null)
+    const { proposalState, loading: stateLoading, refreshProposalState } = useProposalState(daoId || null)
     const [isRegistered, setIsRegistered] = useState<boolean | null>(null)
     const [checkingRegistration, setCheckingRegistration] = useState(true)
 
@@ -116,6 +116,8 @@ const ProposalPage: React.FC = () => {
             }
             if (proposalId) {
                 await fetchProposals()
+                // Refresh proposal state after creating new proposal
+                await refreshProposalState()
                 setCurrentView("list")
             }
         } catch (err) {
@@ -139,6 +141,8 @@ const ProposalPage: React.FC = () => {
             try {
                 await handlePublish(selectedProposal.id)
                 await fetchProposals()
+                // Refresh proposal state after publishing
+                await refreshProposalState()
                 const updatedProposal = proposals.find(p => p.id === selectedProposal.id)
                 if (updatedProposal) {
                     setSelectedProposal(updatedProposal)

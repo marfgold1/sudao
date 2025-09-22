@@ -1,4 +1,4 @@
-import { Outlet, createBrowserRouter, RouteObject } from "react-router-dom";
+import { createBrowserRouter, RouteObject } from "react-router-dom";
 import {
   Home,
   Example,
@@ -8,27 +8,21 @@ import {
   Profile,
 } from "@/pages";
 import BuildDAO from "@/pages/BuildDAO";
-import NotFound, CreatorDashboard, InstalledPluginsPage, PluginMarketplacePage, InstalledPluginsPublicPage, Marketplace, HomeDAO from "@/pages/NotFound";
-import { NavbarDAO, NavbarSUDAO, FooterSUDAO, FooterDAO, PluginRouteHandler } from "@/components";
+import {
+  NotFound,
+  CreatorDashboard,
+  InstalledPluginsPage,
+  PluginMarketplacePage,
+  InstalledPluginsPublicPage,
+  Marketplace,
+  HomeDAO,
+} from "@/pages";
+import {
+  PluginRouteHandler,
+} from "@/components";
 import { CreatorDashboardLayout } from "@/layouts";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
-
-// Layouts
-const SUDAOLayout = () => (
-  <>
-    <NavbarSUDAO />
-    <Outlet />
-    <FooterSUDAO />
-  </>
-);
-
-const DAOLayout = () => (
-  <>
-    <NavbarDAO />
-    <Outlet />
-    <FooterDAO />
-  </>
-);
+import { SUDAOLayout, DAOLayout } from "@/routes/layouts";
 
 const routes: RouteObject[] = [
   {
@@ -52,10 +46,10 @@ const routes: RouteObject[] = [
         path: "example",
         element: <Example />,
       },
-            {
-                path: "plugins",
-                element: <Marketplace />,
-            },
+      {
+        path: "plugins",
+        element: <Marketplace />,
+      },
       {
         path: "*",
         element: <NotFound />,
@@ -69,10 +63,10 @@ const routes: RouteObject[] = [
     children: [
       {
         path: ":daoId/home",
-                element: <HomeDAO />,
-            },
-            {
-                path: ":daoId/transaction",
+        element: <HomeDAO />,
+      },
+      {
+        path: ":daoId/transaction",
         element: <Transaction />,
       },
       {
@@ -83,45 +77,45 @@ const routes: RouteObject[] = [
         path: ":daoId/profile",
         element: <Profile />,
       },
-            {
-                path: ":daoId/plugins",
-                element: <InstalledPluginsPublicPage />,
-            },
-            {
-                path: ":daoId/:pluginId",
-                element: <PluginRouteHandler />,
-            },
-            {
-                path: ":daoId/creator-dashboard",
-                element: <CreatorDashboardLayout />,
-                children: [
-                    {
-                        index: true,
-                        element: <CreatorDashboard />,
-                    },
-                    {
-                        path: "transaction",
-                        element: <Transaction />,
-                    },
-                    {
-                        path: "plugins",
-                        children: [
-                            {
-                                path: "installed",
-                                element: <InstalledPluginsPage />,
-                            },
-                            {
-                                path: "marketplace",
-                                element: <PluginMarketplacePage />,
-                            },
-                        ],
-                    },
-                    {
-                        path: ":pluginId",
-                        element: <PluginRouteHandler />,
-                    },
-                ],
-            },
+      {
+        path: ":daoId/plugins",
+        element: <InstalledPluginsPublicPage />,
+      },
+      {
+        path: ":daoId/:pluginId",
+        element: <PluginRouteHandler />,
+      },
+      {
+        path: ":daoId/creator-dashboard",
+        element: <CreatorDashboardLayout />,
+        children: [
+          {
+            index: true,
+            element: <CreatorDashboard />,
+          },
+          {
+            path: "transaction",
+            element: <Transaction />,
+          },
+          {
+            path: "plugins",
+            children: [
+              {
+                path: "installed",
+                element: <InstalledPluginsPage />,
+              },
+              {
+                path: "marketplace",
+                element: <PluginMarketplacePage />,
+              },
+            ],
+          },
+          {
+            path: ":pluginId",
+            element: <PluginRouteHandler />,
+          },
+        ],
+      },
       {
         path: "404",
         element: <NotFound />,

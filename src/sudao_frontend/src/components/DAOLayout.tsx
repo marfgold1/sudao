@@ -1,10 +1,9 @@
 import React, { useEffect } from "react";
-import { useParams, useLocation } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { useDAO } from "../hooks/useDAO";
 import { DAOProvider } from "@/contexts/dao/provider";
 import { isVariant } from "@/utils/converter";
-import BuildDAO from "@/pages/BuildDAO";
 
 export const DAOLayout = ({ children }: { children: React.ReactNode }) => {
   const { daoId } = useParams<{ daoId: string }>();
@@ -18,7 +17,6 @@ export const DAOLayout = ({ children }: { children: React.ReactNode }) => {
 
 const DAOLayoutContent = ({ children }: { children: React.ReactNode }) => {
   const { daoInfo, isLoading, error, deploymentInfo, refetch } = useDAO();
-  const location = useLocation();
 
   useEffect(() => {
     let timeout: NodeJS.Timeout | undefined;
@@ -59,27 +57,6 @@ const DAOLayoutContent = ({ children }: { children: React.ReactNode }) => {
         </div>
       </div>
     );
-  }
-
-  // Check if user has dismissed the BuildDAO component
-  const hasUserDismissedBuildDAO =
-    location.state?.initialIcpAmount !== undefined;
-
-  // Check if initial investment has been completed
-  const hasInitialInvestmentCompleted =
-    deploymentInfo?.initialInvestmentCompleted || false;
-
-  // Check if it's a deployment status - show BuildDAO component
-  // Show BuildDAO for:
-  // 1. Incomplete deployments (queued, deploying, failed)
-  // 2. Completed deployments that haven't had initial investment completed
-  // 3. Unless user has explicitly dismissed via the Proceed button
-  if (
-    deploymentInfo &&
-    !hasInitialInvestmentCompleted &&
-    !hasUserDismissedBuildDAO
-  ) {
-    return <BuildDAO />;
   }
 
   if (!daoInfo) {

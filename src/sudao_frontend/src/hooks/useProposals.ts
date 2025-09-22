@@ -160,7 +160,11 @@ export const useProposals = (daoId: string | null) => {
       );
       
       toast.success(`Proposal "${args.title}" created successfully!`);
+      
+      // Clear cache to force fresh data on next fetch
+      cacheRef.current = null;
       await fetchProposals(true); // Force refresh
+      
       return proposalId;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to create proposal';
@@ -197,6 +201,9 @@ export const useProposals = (daoId: string | null) => {
     try {
       await proposalService.publishProposal(daoId, proposalId);
       toast.success('Proposal published successfully!');
+      
+      // Clear cache to force fresh data on next fetch
+      cacheRef.current = null;
       await fetchProposals(true); // Force refresh
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to publish proposal';

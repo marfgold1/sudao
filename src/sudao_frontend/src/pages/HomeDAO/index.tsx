@@ -6,8 +6,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Copy, Info } from "lucide-react"
 import { useState } from "react"
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip } from "recharts"
-import { Link, useParams } from "react-router-dom"
+import { Link, useParams, useLocation } from "react-router-dom"
 import { useDAO } from "@/hooks/useDAO"
+import { isVariant } from "@/utils/converter"
+import BuildDAO from "@/pages/BuildDAO"
 
 const chartData = [
     { month: "Mar 2025", value: 50, date: "Mar 15, 2025", amount: "50 ICP", change: "+5 ICP" },
@@ -90,18 +92,30 @@ const trimAddress = (address: string, startLength = 6, endLength = 4) => {
 
 export default function HomeDAO() {
     const { daoId } = useParams<{ daoId: string }>();
+    const location = useLocation();
     const [showTreasuryTooltip, setShowTreasuryTooltip] = useState(false);
     const [copied, setCopied] = useState(false);
     
-    const { dao, loading, error } = useDAO(daoId || '');
+    const { daoInfo, isLoading, error, deploymentInfo } = useDAO();
+    
+    // Check if user has dismissed the BuildDAO component
+    const hasUserDismissedBuildDAO = location.state?.initialIcpAmount !== undefined;
+    
+    // Check if initial investment has been completed
+    const hasInitialInvestmentCompleted = deploymentInfo?.initialInvestmentCompleted || false;
+    
+    // Show BuildDAO for incomplete deployments or if initial investment not completed
+    if (deploymentInfo && !hasInitialInvestmentCompleted && !hasUserDismissedBuildDAO) {
+        return <BuildDAO />;
+    }
     
     // Realistic DAO address (fetched from API later)
     const fullDaoAddress = "0x742d35Cc6634C0532925a3b8f5c62B0F1A38C9Da";
     const displayAddress = trimAddress(fullDaoAddress);
     
     // Fallback data
-    const daoTitle = dao?.name || "Community Collective";
-    const daoDescription = dao?.description || "A decentralized autonomous organization empowering communities through collaborative decision-making, transparent governance, and shared resource management.";
+    const daoTitle = daoInfo?.name || "Community Collective";
+    const daoDescription = daoInfo?.description || "A decentralized autonomous organization empowering communities through collaborative decision-making, transparent governance, and shared resource management.";
     
     const handleCopy = async () => {
         try {
@@ -145,7 +159,7 @@ export default function HomeDAO() {
                     transition={{ duration: 0.8, delay: 0.2 }}
                     className="text-4xl md:text-5xl font-bold text-white mb-6 text-balance"
                 >
-                    {loading ? (
+                    {isLoading ? (
                         <div className="flex items-center justify-center">
                             <div className="animate-pulse bg-blue-300/30 h-12 w-96 rounded"></div>
                         </div>
@@ -165,7 +179,7 @@ export default function HomeDAO() {
                     transition={{ duration: 0.6, delay: 0.4 }}
                     className="text-blue-200 text-lg max-w-3xl mx-auto mb-10 leading-relaxed"
                 >
-                    {loading ? (
+                    {isLoading ? (
                         <div className="space-y-2">
                             <div className="animate-pulse bg-blue-300/30 h-4 w-full rounded"></div>
                             <div className="animate-pulse bg-blue-300/30 h-4 w-3/4 mx-auto rounded"></div>

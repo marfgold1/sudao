@@ -8,11 +8,11 @@ const FooterDAO: React.FC = () => {
     const { daoId } = useParams<{ daoId: string }>();
     
     // Fetch DAO data with fallback handling
-    const { dao, loading, error } = useDAO(daoId || '');
+    const { daoInfo, isLoading, error } = useDAO();
     
     // Fallback values if data fetch fails or is loading
-    const daoName = dao?.name || 'My DAO';
-    const daoDescription = dao?.description || 'A community-driven organization built with SUDAO platform.';
+    const daoName = daoInfo?.name || 'My DAO';
+    const daoDescription = daoInfo?.description || 'A community-driven organization built with SUDAO platform.';
 
     const handleLinkClick = () => {
         // Smooth scroll to top when navigating
@@ -30,7 +30,7 @@ const FooterDAO: React.FC = () => {
                     <div className="space-y-6">
                         <div>
                             <h3 className="text-xl font-semibold mb-4">
-                                {loading ? (
+                                {isLoading ? (
                                     <span className="animate-pulse bg-gray-600 rounded h-6 w-32 inline-block"></span>
                                 ) : error ? (
                                     <span className="text-red-400">Failed to load DAO</span>
@@ -39,7 +39,7 @@ const FooterDAO: React.FC = () => {
                                 )}
                             </h3>
                             <p className="text-gray-300 leading-relaxed max-w-md">
-                                {loading ? (
+                                {isLoading ? (
                                     <>
                                         <span className="animate-pulse bg-gray-600 rounded h-4 w-full inline-block mb-2"></span>
                                         <span className="animate-pulse bg-gray-600 rounded h-4 w-3/4 inline-block"></span>

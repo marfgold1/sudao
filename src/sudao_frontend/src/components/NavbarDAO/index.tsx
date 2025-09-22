@@ -29,7 +29,7 @@ const NavbarDAO: React.FC = () => {
   const location = useLocation();
 
   // Fetch DAO data with fallback handling
-  const { dao, loading } = useDAO(daoId || "");
+  const { daoInfo, isLoading } = useDAO();
 
   // Get installed plugins using the new store method with proper reactivity
   const { getOrderedNavPlugins, navbarPreferences } = usePluginStore();
@@ -101,9 +101,8 @@ const NavbarDAO: React.FC = () => {
   }, [navPlugins, navbarPreferences.visiblePluginIds, visiblePluginCount]);
 
   // Fallback values if data fetch fails or is loading
-  const daoName =
-    dao?.name || "Yayasan Anak Muda Indonesia Coral Restoration Foundation";
-  const daoDescription = dao?.description || "A community-driven organization";
+  const daoName = daoInfo?.name || "Community Collective";
+  const daoDescription = daoInfo?.description || "A community-driven organization";
 
   const isActive = (path: string) => {
     // Check if req exists and if the path is not 'creator-dashboard'
@@ -143,12 +142,12 @@ const NavbarDAO: React.FC = () => {
                     : "text-slate-400 hover:text-blue-200"
                 }`}
                 title={
-                  loading
+                  isLoading
                     ? "Loading DAO information..."
                     : `${daoName} - ${daoDescription}`
                 }
               >
-                {loading ? (
+                {isLoading ? (
                   <div className="animate-pulse bg-slate-600 h-4 w-24 rounded"></div>
                 ) : (
                   truncateDAOName(daoName)

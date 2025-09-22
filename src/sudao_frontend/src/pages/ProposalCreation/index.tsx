@@ -11,6 +11,7 @@ import { Link } from "react-router-dom"
 import { Proposal } from "@/types"
 import { useAccount } from "@/hooks/useAccount"
 import { ProposalArgs } from "@/hooks/useProposals"
+import { useDAO } from "@/hooks/useDAO"
 
 interface FormData {
     title: string;
@@ -29,6 +30,7 @@ interface ValidationErrors {
 
 const ProposalCreation: React.FC<{ onBack: any, onDraftCreated?: (args: ProposalArgs, shouldPublish?: boolean) => void, editingProposal?: Proposal | null }> = ({ onBack, onDraftCreated, editingProposal }) => {
     const { currentAccount } = useAccount();
+    const { daoInfo } = useDAO();
     const [currentStep, setCurrentStep] = useState(1)
     const [formData, setFormData] = useState<FormData>({
         title: editingProposal?.title || "",
@@ -172,7 +174,7 @@ const ProposalCreation: React.FC<{ onBack: any, onDraftCreated?: (args: Proposal
                 <CardContent className="p-8">
                     <div className="text-center mb-8">
                         <h1 className="text-2xl font-bold mb-2">MAKE A NEW PROPOSAL</h1>
-                        <p className="text-gray-600">Create a new proposal for Yayasan Anak Muda Indonesia</p>
+                        <p className="text-gray-600">Create a new proposal for {daoInfo?.name || 'this DAO'}</p>
                     </div>
 
                     {/* Progress Steps */}
