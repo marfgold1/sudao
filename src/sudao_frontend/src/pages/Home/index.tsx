@@ -200,37 +200,51 @@ const Home: React.FC = () => {
 
                                         </div>
 
-                                        <motion.div
+                                        {/* DAO Landing Page Showcase with Stacked Cards */}
+                                        <motion.div 
+                                            className="relative group"
                                             initial={{ opacity: 0, x: 50 }}
                                             whileInView={{ opacity: 1, x: 0 }}
                                             transition={{ duration: 0.8, delay: 0.3 }}
                                             viewport={{ once: true }}
-                                            className="bg-white rounded-2xl p-8 pb-20 shadow-xl border border-slate-200"
                                         >
-                                            <div className="flex items-center justify-between mb-6">
-                                                <h3 className="text-lg font-semibold text-slate-800">Your Incredible Movement</h3>
-                                                <div className="flex space-x-1">
-                                                    <div className="w-3 h-3 bg-red-400 rounded-full"></div>
-                                                    <div className="w-3 h-3 bg-yellow-400 rounded-full"></div>
-                                                    <div className="w-3 h-3 bg-green-400 rounded-full"></div>
+                                            {/* Background stacked cards */}
+                                            <div className="absolute inset-0 bg-white rounded-2xl shadow-lg border border-slate-100 transform rotate-2 scale-95 transition-opacity duration-300 opacity-0 group-hover:opacity-60" />
+                                            <div className="absolute inset-0 bg-white rounded-2xl shadow-md border border-slate-50 transform -rotate-1 scale-97 transition-opacity duration-300 delay-75 opacity-0 group-hover:opacity-40" />
+                                            
+                                            {/* Main card */}
+                                            <div className="relative bg-white rounded-2xl shadow-xl border border-slate-200 max-w-lg overflow-hidden transform transition-transform duration-300 group-hover:rotate-1"
+                                            >
+                                                {/* Title and Description */}
+                                                <div className="space-y-2 mb-4 px-6 pt-6">
+                                                    <h2 className="font-bold text-xl text-slate-800">
+                                                        DAO as your Landing Page
+                                                    </h2>
+                                                    <p className="text-base text-slate-600 leading-relaxed">
+                                                        Your DAO isn't just a tool for your community. It's your 
+                                                        identity and platform for people to discover your mission.
+                                                    </p>
                                                 </div>
-                                            </div>
-                                            <div className="space-y-4">
-                                                <div className="h-52 bg-gradient-to-br from-slate-100 to-slate-200 rounded-lg flex items-center justify-center shadow-inner">
-                                                    <span className="text-slate-500 text-sm">Preview Area</span>
-                                                </div>
-                                                <div className="space-y-2">
-                                                    {[1, 2, 3].map((i) => (
-                                                        <motion.div
-                                                            key={i}
-                                                            initial={{ width: 0 }}
-                                                            whileInView={{ width: `${100 - i * 15}%` }}
-                                                            transition={{ delay: 0.5 + i * 0.1, duration: 0.6 }}
-                                                            viewport={{ once: true }}
-                                                            className="h-3 bg-slate-200 rounded animate-pulse"
-                                                        />
-                                                    ))}
-                                                </div>
+
+                                                {/* DAO Image - Full Width, touching bottom */}
+                                                <motion.div
+                                                    initial={{ opacity: 0, y: 20 }}
+                                                    whileInView={{ opacity: 1, y: 0 }}
+                                                    transition={{ duration: 0.6, delay: 0.4 }}
+                                                    viewport={{ once: true }}
+                                                    className="block"
+                                                >
+                                                    <motion.img
+                                                        src="/src/assets/images/h_1.png"
+                                                        alt="DAO Landing Page Preview"
+                                                        className="w-full h-auto block rounded-b-2xl"
+                                                        draggable="false"
+                                                        initial={{ opacity: 0 }}
+                                                        whileInView={{ opacity: 1 }}
+                                                        whileHover={{ scale: 1.02 }}
+                                                        transition={{ duration: 0.3 }}
+                                                    />
+                                                </motion.div>
                                             </div>
                                         </motion.div>
                                     </div>

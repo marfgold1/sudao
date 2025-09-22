@@ -32,11 +32,12 @@ export function InternetComputerSection() {
                         security.
                     </p>
 
-                    <Button 
-                        onClick={() => window.open("https://internetcomputer.org", "_blank")}
-                        className="bg-slate-800 hover:bg-slate-700 text-white px-8 py-4 rounded-lg">
-                        Learn More About ICP
-                    </Button>
+                    <a href="https://internetcomputer.org" target="_blank">
+                        <Button 
+                            className="bg-slate-800 hover:bg-slate-700 text-white px-8 py-4 rounded-lg">
+                            Learn More About ICP
+                        </Button>
+                    </a>
                 </motion.div>
             </div>
         </section>
