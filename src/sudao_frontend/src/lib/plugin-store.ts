@@ -1,0 +1,227 @@
+import { create } from "zustand"
+
+import PluginLatestNews from '@/assets/images/plugin_latest_news.png';
+import PluginProposal from '@/assets/images/plugin_proposal.png';
+import PluginTopContributor from '@/assets/images/plugin_top_contributor.png';
+import PluginDAOAnalytics from '@/assets/images/plugin_dao_analytics.png';
+import PluginEngagementDashboard from '@/assets/images/plugin_engagement_dashboard.png';
+
+export interface Plugin {
+    id: string
+    name: string
+    description: string
+    developer: string
+    icon?: string
+    installed: boolean
+    enabled: boolean
+    installCount?: string
+    pricing?: string
+    isPaid?: boolean
+    isCore?: boolean
+    features?: string[]
+    dependencies?: string[]
+    longDescription?: string
+    showInMyPages?: boolean
+    // Dynamic component metadata
+    componentUrl?: string // URL to load component from (for user-uploaded plugins)
+    componentType?: 'builtin' | 'remote' | 'iframe' // How to load the plugin
+    manifestUrl?: string // URL to plugin manifest (for remote plugins)
+}
+
+interface NavbarPreferences {
+    visiblePluginIds: string[] // First 2 plugins to show in navbar
+    pluginOrder: string[]      // Full order of all plugins
+}
+
+interface PluginStore {
+    plugins: Plugin[]
+    loadingPlugins: Set<string>
+    navbarPreferences: NavbarPreferences
+    installPlugin: (id: string) => Promise<void>
+    uninstallPlugin: (id: string) => Promise<void>
+    togglePlugin: (id: string, enabled: boolean) => void
+    updateNavbarPreferences: (preferences: NavbarPreferences) => void
+    getOrderedNavPlugins: () => Plugin[]
+}
+
+const initialPlugins: Plugin[] = [
+    {
+        id: "latest-news",
+        name: "Latest News",
+        description:
+            "Keep your members in the loop with the latest updates, stories, and announcements from your collective. Perfect for homepages or proposal pages.",
+        developer: "Amar Fadil",
+        icon: PluginLatestNews,
+        installed: true,
+        enabled: false,
+        installCount: "128 collectives",
+        showInMyPages: false,
+        features: ["Real-time news updates", "Customizable news feed", "Member notifications", "Rich media support"],
+        componentType: 'builtin',
+    },
+    {
+        id: "proposal",
+        name: "Proposal",
+        description:
+            "The Proposal Plugin lets members create, discuss, and vote on initiatives directly on-chain. From budget approvals to community rules, every decision is transparent, verifiable, and powered by ICP.",
+        developer: "SUDAO Core Team",
+        icon: PluginProposal,
+        installed: true,
+        enabled: true,
+        isCore: true,
+        installCount: "128 collectives",
+        isPaid: true,
+        pricing: "10 ICP",
+        showInMyPages: true,
+        features: [
+            "Members can draft and submit new proposals",
+            "Built-in commenting enables open discussion",
+            "Voting happens securely on-chain via ICP",
+            "Rules like quorum and deadlines are customizable",
+            "Members receive real-time proposal notifications",
+            "Results are transparent and verifiable instantly",
+            "Proposals can be tracked from draft to execution",
+        ],
+        dependencies: [],
+        longDescription:
+            "The Proposal Plugin lets members create, discuss, and vote on initiatives directly on-chain. From budget approvals to community rules, every decision is transparent, verifiable, and powered by ICP.",
+        componentType: 'builtin',
+    },
+    {
+        id: "top-contributor",
+        name: "Top Contributor",
+        description:
+            "Showcase the most active or generous members in your community — based on contributions, voting activity, or proposal submissions.",
+        developer: "SUDAO Core Team",
+        icon: PluginTopContributor,
+        installed: false,
+        enabled: false,
+        installCount: "94 collectives",
+        isPaid: true,
+        pricing: "10 ICP",
+        showInMyPages: false,
+        features: ["Activity tracking", "Contribution metrics", "Member rankings", "Customizable criteria"],
+        componentType: 'builtin',
+    },
+    // Example user-uploaded plugins to demonstrate dynamic loading
+    {
+        id: "custom-dashboard",
+        name: "Custom Dashboard",
+        description: "A user-uploaded custom dashboard plugin that loads remotely from a CDN.",
+        developer: "Community Developer",
+        icon: PluginDAOAnalytics,
+        installed: false,
+        enabled: false,
+        installCount: "12 collectives",
+        showInMyPages: false,
+        features: ["Custom widgets", "Real-time data", "Personalized views"],
+        componentType: 'remote',
+        componentUrl: 'https://cdn.jsdelivr.net/npm/dayjs@1.11.9/dayjs.min.js', // Date library
+        manifestUrl: 'https://unpkg.com/react@18.2.0/package.json'
+    },
+    {
+        id: "external-tool",
+        name: "External Tool",  
+        description: "Integration with external tools via iframe for secure sandboxing.",
+        developer: "Third Party Inc",
+        icon: PluginEngagementDashboard,
+        installed: false,
+        enabled: false,
+        installCount: "45 collectives",
+        showInMyPages: false,
+        features: ["External integration", "Secure iframe", "Cross-origin support"],
+        componentType: 'iframe',
+        componentUrl: 'https://www.example.com' // Valid iframe URL for testing
+    },
+]
+
+export const usePluginStore = create<PluginStore>((set, get) => ({
+    plugins: initialPlugins,
+    loadingPlugins: new Set(),
+    navbarPreferences: {
+        visiblePluginIds: [], // Will be populated with first 3 enabled plugins
+        pluginOrder: []       // Will be populated with all plugin IDs
+    },
+    installPlugin: async (id) => {
+        set((state) => ({
+            loadingPlugins: new Set(state.loadingPlugins).add(id)
+        }));
+        
+        // Simulate async operation
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        
+        set((state) => {
+            const newLoadingPlugins = new Set(state.loadingPlugins);
+            newLoadingPlugins.delete(id);
+            return {
+                loadingPlugins: newLoadingPlugins,
+                plugins: state.plugins.map((plugin) =>
+                    plugin.id === id ? { 
+                        ...plugin, 
+                        installed: true, 
+                        enabled: false,
+                        showInMyPages: false
+                    } : plugin,
+                ),
+            };
+        });
+    },
+    uninstallPlugin: async (id) => {
+        set((state) => ({
+            loadingPlugins: new Set(state.loadingPlugins).add(id)
+        }));
+        
+        // Simulate async operation
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        
+        set((state) => {
+            const newLoadingPlugins = new Set(state.loadingPlugins);
+            newLoadingPlugins.delete(id);
+            return {
+                loadingPlugins: newLoadingPlugins,
+                plugins: state.plugins.map((plugin) =>
+                    plugin.id === id ? { ...plugin, installed: false, enabled: false, showInMyPages: false } : plugin,
+                ),
+            };
+        });
+    },
+    togglePlugin: (id, enabled) =>
+        set((state) => ({
+            plugins: state.plugins.map((plugin) =>
+                plugin.id === id ? { ...plugin, enabled, showInMyPages: enabled && plugin.installed } : plugin,
+            ),
+        })),
+    
+    updateNavbarPreferences: (preferences) =>
+        set(() => ({
+            navbarPreferences: preferences
+        })),
+
+    getOrderedNavPlugins: () => {
+        const { plugins, navbarPreferences } = get();
+        const navPlugins = plugins.filter(plugin => plugin.showInMyPages);
+        
+        if (navbarPreferences.pluginOrder.length === 0) {
+            // Default order: alphabetical
+            return navPlugins.sort((a, b) => a.name.localeCompare(b.name));
+        }
+        
+        // Apply user's custom order
+        const orderedPlugins: Plugin[] = [];
+        const pluginMap = new Map(navPlugins.map(plugin => [plugin.id, plugin]));
+        
+        // First, add plugins in the user's specified order
+        for (const pluginId of navbarPreferences.pluginOrder) {
+            const plugin = pluginMap.get(pluginId);
+            if (plugin) {
+                orderedPlugins.push(plugin);
+                pluginMap.delete(pluginId);
+            }
+        }
+        
+        // Then add any remaining plugins (newly installed ones)
+        orderedPlugins.push(...Array.from(pluginMap.values()).sort((a, b) => a.name.localeCompare(b.name)));
+        
+        return orderedPlugins;
+    },
+}))
