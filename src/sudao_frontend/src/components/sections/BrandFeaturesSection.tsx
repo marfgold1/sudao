@@ -1,4 +1,7 @@
 import { motion } from "framer-motion";
+import b_1 from "@/assets/images/b_1.png";
+import b_2 from "@/assets/images/b_2.png";
+import b_3 from "@/assets/images/b_3.png";
 
 export function BrandFeaturesSection() {
     const fadeInUp = {
@@ -34,7 +37,7 @@ export function BrandFeaturesSection() {
                     >
                         <div className="w-full mx-auto mb-[-1rem] flex items-center justify-center">
                             <img
-                                src="/src/assets/images/b_1.png"
+                                src={b_1}
                                 alt="Icon"
                                 className="w-60"
                             />
@@ -49,7 +52,7 @@ export function BrandFeaturesSection() {
                     >
                         <div className="w-full mx-auto mb-[-2rem] flex items-center justify-center">
                             <img
-                                src="/src/assets/images/b_2.png"
+                                src={b_2}
                                 alt="Icon"
                                 className="w-72"
                             />
@@ -64,7 +67,7 @@ export function BrandFeaturesSection() {
                     >
                         <div className="w-full mx-auto mb-5 flex items-center justify-center">
                             <img
-                                src="/src/assets/images/b_3.png"
+                                src={b_3}
                                 alt="Icon"
                                 className="w-60"
                             />

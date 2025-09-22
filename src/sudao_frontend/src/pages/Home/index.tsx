@@ -4,6 +4,7 @@ import React, { useRef, useState, useEffect, lazy, Suspense } from "react"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Sprout } from "lucide-react";
 import { Link } from "react-router-dom";
+import h_1 from "@/assets/images/h_1.png";
 
 // Lazy load heavy components
 const LazyGlobe3D = lazy(() => import("@/components/LazyGlobe3D"));
@@ -83,15 +84,15 @@ const Home: React.FC = () => {
             <motion.section style={{ y: heroY, opacity: heroOpacity }} className="pt-32 pb-20 px-6">
                 <div className="max-w-7xl mx-auto">
                     <div className="flex items-center">
-                        <motion.div 
-                            {...fadeInUp} 
+                        <motion.div
+                            {...fadeInUp}
                             style={{
                                 opacity: heroOpacityRem,
                             }}
                             className="max-w-5xl relative z-10 pt-20"
                         >
                             <h1 className="text-5xl md:text-7xl font-bold text-white leading-tight mb-6 tracking-tight">
-                                Build 
+                                Build
                                 <br />
                                 Your Community
                                 <br />
@@ -108,9 +109,9 @@ const Home: React.FC = () => {
                                 </Button>
                             </Link>
                         </motion.div>
-                        
+
                         {/* 3D Globe Decoration - Lazy Loaded */}
-                        <motion.div 
+                        <motion.div
                             initial={{ opacity: 0, x: -50 }}
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ duration: 1, delay: 0.5, ease: "easeOut" }}
@@ -157,98 +158,98 @@ const Home: React.FC = () => {
                                 }}
                                 className="absolute -inset-1 rounded-[2rem] blur-lg"
                             />
-                                <div className="relative bg-white/80 rounded-3xl p-8 md:p-12 shadow-2xl border border-white/20">
-                                    <div className="grid md:grid-cols-2 gap-12 items-start">
-                                        <div>
-                                            <motion.div
-                                                initial={{ opacity: 0, x: -50 }}
-                                                whileInView={{ opacity: 1, x: 0 }}
-                                                transition={{ duration: 0.8, delay: 0.2 }}
-                                                viewport={{ once: true }}
-                                                className="flex items-start space-x-3 mb-8"
-                                            >
-                                                <div className="w-12 h-12 bg-blue-800 rounded-xl flex items-center justify-center shadow-lg">
-                                                    <Sprout className="text-white"/>
-                                                </div>
-                                                <h2 className="text-2xl font-bold text-blue-800 leading-tight">
-                                                    WHERE MOVEMENT ARE
-                                                    <br />
-                                                    OWNED TOGETHER
-                                                </h2>
-                                            </motion.div>
-
-                                            <Accordion type="single" collapsible defaultValue="item-0" className="space-y-1 h-64">
-                                                {faqs.map((faq, index) => (
-                                                    <motion.div
-                                                        key={index}
-                                                        initial={{ opacity: 0, x: -30 }}
-                                                        whileInView={{ opacity: 1, x: 0 }}
-                                                        transition={{ delay: 0.4 + index * 0.1, duration: 0.6 }}
-                                                        viewport={{ once: true }}
-                                                    >
-                                                        <AccordionItem value={`item-${index}`} className="border-b border-slate-300 last:border-b-0">
-                                                            <AccordionTrigger className="flex items-center justify-between w-full text-left py-4 hover:bg-white/50 px-2 rounded transition-all duration-300 hover:shadow-sm font-medium text-slate-800 text-sm [&[data-state=open]>svg]:rotate-180">
-                                                                {faq.question}
-                                                            </AccordionTrigger>
-                                                            <AccordionContent className="pb-4 px-2 text-slate-600 text-sm leading-relaxed data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up">
-                                                                {faq.answer}
-                                                            </AccordionContent>
-                                                        </AccordionItem>
-                                                    </motion.div>
-                                                ))}
-                                            </Accordion>
-
-                                        </div>
-
-                                        {/* DAO Landing Page Showcase with Stacked Cards */}
-                                        <motion.div 
-                                            className="relative group"
-                                            initial={{ opacity: 0, x: 50 }}
+                            <div className="relative bg-white/80 rounded-3xl p-8 md:p-12 shadow-2xl border border-white/20">
+                                <div className="grid md:grid-cols-2 gap-12 items-start">
+                                    <div>
+                                        <motion.div
+                                            initial={{ opacity: 0, x: -50 }}
                                             whileInView={{ opacity: 1, x: 0 }}
-                                            transition={{ duration: 0.8, delay: 0.3 }}
+                                            transition={{ duration: 0.8, delay: 0.2 }}
                                             viewport={{ once: true }}
+                                            className="flex items-start space-x-3 mb-8"
                                         >
-                                            {/* Background stacked cards */}
-                                            <div className="absolute inset-0 bg-white rounded-2xl shadow-lg border border-slate-100 transform rotate-2 scale-95 transition-opacity duration-300 opacity-0 group-hover:opacity-60" />
-                                            <div className="absolute inset-0 bg-white rounded-2xl shadow-md border border-slate-50 transform -rotate-1 scale-97 transition-opacity duration-300 delay-75 opacity-0 group-hover:opacity-40" />
-                                            
-                                            {/* Main card */}
-                                            <div className="relative bg-white rounded-2xl shadow-xl border border-slate-200 max-w-lg overflow-hidden transform transition-transform duration-300 group-hover:rotate-1"
-                                            >
-                                                {/* Title and Description */}
-                                                <div className="space-y-2 mb-4 px-6 pt-6">
-                                                    <h2 className="font-bold text-xl text-slate-800">
-                                                        DAO as your Landing Page
-                                                    </h2>
-                                                    <p className="text-base text-slate-600 leading-relaxed">
-                                                        Your DAO isn't just a tool for your community. It's your 
-                                                        identity and platform for people to discover your mission.
-                                                    </p>
-                                                </div>
-
-                                                {/* DAO Image - Full Width, touching bottom */}
-                                                <motion.div
-                                                    initial={{ opacity: 0, y: 20 }}
-                                                    whileInView={{ opacity: 1, y: 0 }}
-                                                    transition={{ duration: 0.6, delay: 0.4 }}
-                                                    viewport={{ once: true }}
-                                                    className="block"
-                                                >
-                                                    <motion.img
-                                                        src="/src/assets/images/h_1.png"
-                                                        alt="DAO Landing Page Preview"
-                                                        className="w-full h-auto block rounded-b-2xl"
-                                                        draggable="false"
-                                                        initial={{ opacity: 0 }}
-                                                        whileInView={{ opacity: 1 }}
-                                                        whileHover={{ scale: 1.02 }}
-                                                        transition={{ duration: 0.3 }}
-                                                    />
-                                                </motion.div>
+                                            <div className="w-12 h-12 bg-blue-800 rounded-xl flex items-center justify-center shadow-lg">
+                                                <Sprout className="text-white" />
                                             </div>
+                                            <h2 className="text-2xl font-bold text-blue-800 leading-tight">
+                                                WHERE MOVEMENT ARE
+                                                <br />
+                                                OWNED TOGETHER
+                                            </h2>
                                         </motion.div>
+
+                                        <Accordion type="single" collapsible defaultValue="item-0" className="space-y-1 h-64">
+                                            {faqs.map((faq, index) => (
+                                                <motion.div
+                                                    key={index}
+                                                    initial={{ opacity: 0, x: -30 }}
+                                                    whileInView={{ opacity: 1, x: 0 }}
+                                                    transition={{ delay: 0.4 + index * 0.1, duration: 0.6 }}
+                                                    viewport={{ once: true }}
+                                                >
+                                                    <AccordionItem value={`item-${index}`} className="border-b border-slate-300 last:border-b-0">
+                                                        <AccordionTrigger className="flex items-center justify-between w-full text-left py-4 hover:bg-white/50 px-2 rounded transition-all duration-300 hover:shadow-sm font-medium text-slate-800 text-sm [&[data-state=open]>svg]:rotate-180">
+                                                            {faq.question}
+                                                        </AccordionTrigger>
+                                                        <AccordionContent className="pb-4 px-2 text-slate-600 text-sm leading-relaxed data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up">
+                                                            {faq.answer}
+                                                        </AccordionContent>
+                                                    </AccordionItem>
+                                                </motion.div>
+                                            ))}
+                                        </Accordion>
+
                                     </div>
+
+                                    {/* DAO Landing Page Showcase with Stacked Cards */}
+                                    <motion.div
+                                        className="relative group"
+                                        initial={{ opacity: 0, x: 50 }}
+                                        whileInView={{ opacity: 1, x: 0 }}
+                                        transition={{ duration: 0.8, delay: 0.3 }}
+                                        viewport={{ once: true }}
+                                    >
+                                        {/* Background stacked cards */}
+                                        <div className="absolute inset-0 bg-white rounded-2xl shadow-lg border border-slate-100 transform rotate-2 scale-95 transition-opacity duration-300 opacity-0 group-hover:opacity-60" />
+                                        <div className="absolute inset-0 bg-white rounded-2xl shadow-md border border-slate-50 transform -rotate-1 scale-97 transition-opacity duration-300 delay-75 opacity-0 group-hover:opacity-40" />
+
+                                        {/* Main card */}
+                                        <div className="relative bg-white rounded-2xl shadow-xl border border-slate-200 max-w-lg overflow-hidden transform transition-transform duration-300 group-hover:rotate-1"
+                                        >
+                                            {/* Title and Description */}
+                                            <div className="space-y-2 mb-4 px-6 pt-6">
+                                                <h2 className="font-bold text-xl text-slate-800">
+                                                    DAO as your Landing Page
+                                                </h2>
+                                                <p className="text-base text-slate-600 leading-relaxed">
+                                                    Your DAO isn't just a tool for your community. It's your
+                                                    identity and platform for people to discover your mission.
+                                                </p>
+                                            </div>
+
+                                            {/* DAO Image - Full Width, touching bottom */}
+                                            <motion.div
+                                                initial={{ opacity: 0, y: 20 }}
+                                                whileInView={{ opacity: 1, y: 0 }}
+                                                transition={{ duration: 0.6, delay: 0.4 }}
+                                                viewport={{ once: true }}
+                                                className="block"
+                                            >
+                                                <motion.img
+                                                    src={h_1}
+                                                    alt="DAO Landing Page Preview"
+                                                    className="w-full h-auto block rounded-b-2xl"
+                                                    draggable="false"
+                                                    initial={{ opacity: 0 }}
+                                                    whileInView={{ opacity: 1 }}
+                                                    whileHover={{ scale: 1.02 }}
+                                                    transition={{ duration: 0.3 }}
+                                                />
+                                            </motion.div>
+                                        </div>
+                                    </motion.div>
                                 </div>
+                            </div>
                         </motion.div>
                     </motion.div>
                 </div>
@@ -282,7 +283,7 @@ const Home: React.FC = () => {
                 </Suspense>
             )}
 
-            
+
         </div>
     )
 };

@@ -1,11 +1,15 @@
 import { Button } from "@/components/ui/button"
 import { motion } from "framer-motion"
+import p_1 from "@/assets/images/p_1.png";
+import p_2 from "@/assets/images/p_2.png";
+import p_3 from "@/assets/images/p_3.png";
+import p_4 from "@/assets/images/p_4.png";
 
 export function HeroSection() {
     const scrollToMarketplace = () => {
         const marketplaceSection = document.getElementById('marketplace-section');
         if (marketplaceSection) {
-            marketplaceSection.scrollIntoView({ 
+            marketplaceSection.scrollIntoView({
                 behavior: 'smooth',
                 block: 'start'
             });
@@ -104,7 +108,7 @@ export function HeroSection() {
                                 initial={{ x: -100, y: 100, opacity: 0 }}
                                 animate={{ x: 0, y: 0, opacity: 1 }}
                                 transition={{ duration: 1.2, delay: 0.5, ease: "easeOut" }}
-                                src="/src/assets/images/p_2.png"
+                                src={p_2}
                                 alt="Puzzle piece"
                                 draggable="false"
                                 className="absolute bottom-[-2rem] left-[-2rem] filter drop-shadow-lg"
@@ -115,7 +119,7 @@ export function HeroSection() {
                                 initial={{ x: 100, y: 100, opacity: 0 }}
                                 animate={{ x: 0, y: 0, opacity: 1 }}
                                 transition={{ duration: 1.2, delay: 0.7, ease: "easeOut" }}
-                                src="/src/assets/images/p_3.png"
+                                src={p_3}
                                 alt="Puzzle piece"
                                 draggable="false"
                                 className="absolute bottom-[-3rem] right-[-2rem] h-32 filter drop-shadow-lg"
@@ -126,7 +130,7 @@ export function HeroSection() {
                                 initial={{ x: -100, y: -100, opacity: 0 }}
                                 animate={{ x: 0, y: 0, opacity: 1 }}
                                 transition={{ duration: 1.2, delay: 0.9, ease: "easeOut" }}
-                                src="/src/assets/images/p_1.png"
+                                src={p_1}
                                 alt="Puzzle piece"
                                 draggable="false"
                                 className="absolute top-[-1rem] left-[-2rem] filter drop-shadow-lg"
@@ -157,7 +161,7 @@ export function HeroSection() {
                                         delay: 2.3,
                                     },
                                 }}
-                                src="/src/assets/images/p_4.png"
+                                src={p_4}
                                 alt="Puzzle piece"
                                 draggable="false"
                                 className="absolute top-[-2rem] right-[-4.5rem] filter drop-shadow-lg"
@@ -173,10 +177,10 @@ export function HeroSection() {
                         className="mb-12"
                     >
                         <h1 className="tracking-tight text-4xl md:text-5xl font-light text-white text-balance">
-                        Combine the <span className="font-semibold">Pieces</span>
+                            Combine the <span className="font-semibold">Pieces</span>
                         </h1>
                         <h1 className="tracking-tight text-4xl md:text-5xl font-light text-white mb-4 text-balance">
-                        Establish your Community
+                            Establish your Community
                         </h1>
                     </motion.div>
 
@@ -191,7 +195,7 @@ export function HeroSection() {
                             className="bg-transparent hover:bg-white text-white hover:text-blue-900 border-2 border-white/80 px-8 py-5 text-lg backdrop-blur-sm"
                             onClick={scrollToMarketplace}
                         >
-                        Discover Available Plugins
+                            Discover Available Plugins
                         </Button>
                     </motion.div>
                 </div>

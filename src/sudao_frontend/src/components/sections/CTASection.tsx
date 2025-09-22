@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import windowSrc from "@/assets/images/window.png";
 
 export function CTASection() {
     return (
@@ -19,7 +20,7 @@ export function CTASection() {
 
                     {/* Window Light Effect */}
                     <motion.img
-                        src="/src/assets/images/window.png"
+                        src={windowSrc}
                         alt="Window"
                         className="absolute center bottom-0 w-[90rem] h-auto"
                         initial={{ y: 20, opacity: 0 }}

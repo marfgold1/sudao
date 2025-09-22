@@ -3,6 +3,7 @@ import type React from "react"
 import { Button } from "@/components/ui/button"
 import { Link } from "react-router-dom"
 import { motion } from "framer-motion"
+import four_0_four from "@/assets/images/404.png";
 
 const NotFound: React.FC = () => {
     return (
@@ -18,7 +19,7 @@ const NotFound: React.FC = () => {
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.6, delay: 0.2 }}
                         >
-                            <img src="/src/assets/images/404.png" alt="404 Chars" className="w-full h-full object-contain" />
+                            <img src={four_0_four} alt="404 Chars" className="w-full h-full object-contain" />
                         </motion.div>
                     </div>
 

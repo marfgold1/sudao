@@ -38,7 +38,10 @@
         "src/sudao_frontend/assets"
       ],
       "type": "assets",
-      "workspace": "sudao_frontend"
+      "workspace": "sudao_frontend",
+      "declarations": {
+        "bindings": []
+      }
     }
   },
   "defaults": {

@@ -14,6 +14,10 @@ import { useAgents } from "@/hooks/useAgents"
 import BuildDAO from "@/pages/BuildDAO"
 import { toast } from "react-toastify"
 import { useEffect } from "react"
+import au_1 from "@/assets/images/au_1.png";
+import au_2 from "@/assets/images/au_2.png";
+import yippie from "@/assets/images/yippie.png";
+import ghost from "@/assets/images/ghost.png";
 
 const chartData = [
     { month: "Mar 2025", value: 50, date: "Mar 15, 2025", amount: "50 ICP", change: "+5 ICP" },
@@ -29,7 +33,7 @@ const chartData = [
 const FloatingOrb = ({ className, delay = 0 }: { className?: string; delay?: number }) => (
     <motion.div
         className={`absolute rounded-full bg-gradient-to-br from-blue-400/30 to-cyan-400/30 blur-sm ${className}`}
-            animate={{
+        animate={{
             y: [0, -20, 0],
             x: [0, 10, 0],
             scale: [1, 1.1, 1],
@@ -99,22 +103,22 @@ export default function HomeDAO() {
     const location = useLocation();
     const [showTreasuryTooltip, setShowTreasuryTooltip] = useState(false);
     const [copied, setCopied] = useState(false);
-    
+
     const { daoInfo, isLoading, error, deploymentInfo } = useDAO();
     const { canisterIds } = useAgents();
     const { balance: treasuryBalance, loading: treasuryLoading } = useTreasury(canisterIds.daoBe);
-    
+
     // Check if user has dismissed the BuildDAO component
     const hasUserDismissedBuildDAO = location.state?.initialIcpAmount !== undefined;
-    
+
     // Check if initial investment has been completed
     const hasInitialInvestmentCompleted = deploymentInfo?.initialInvestmentCompleted || false;
-    
+
     console.log('[HomeDAO] Deployment info:', deploymentInfo);
     console.log('[HomeDAO] Initial investment completed:', hasInitialInvestmentCompleted);
     console.log('[HomeDAO] User dismissed BuildDAO:', hasUserDismissedBuildDAO);
     console.log('[HomeDAO] Should show BuildDAO:', deploymentInfo && !hasInitialInvestmentCompleted && !hasUserDismissedBuildDAO);
-    
+
     // Show success message if investment was just completed
     useEffect(() => {
         if (location.state?.investmentSuccess && location.state?.amount) {
@@ -123,38 +127,38 @@ export default function HomeDAO() {
             window.history.replaceState({}, document.title);
         }
     }, [location.state]);
-    
+
     // Show BuildDAO for incomplete deployments or if initial investment not completed
     if (deploymentInfo && !hasInitialInvestmentCompleted && !hasUserDismissedBuildDAO) {
         console.log('[HomeDAO] Showing BuildDAO component');
         return <BuildDAO />;
     }
-    
+
     console.log('[HomeDAO] Showing main DAO home page');
-    
+
     // Real DAO address from canister IDs
     const fullDaoAddress = canisterIds.daoBe || "Not deployed";
     const displayAddress = fullDaoAddress; // Show full address instead of trimmed
-    
+
     // Real launch date from deployment info
-    const launchDate = deploymentInfo?.createdAt ? 
+    const launchDate = deploymentInfo?.createdAt ?
         new Date(Number(deploymentInfo.createdAt) / 1000000).toLocaleDateString('en-US', {
             year: 'numeric',
-            month: 'long', 
+            month: 'long',
             day: 'numeric'
         }) : "Not deployed";
-    
+
     // Real treasury balance
-    const treasuryAmount = treasuryLoading ? "Loading..." : 
+    const treasuryAmount = treasuryLoading ? "Loading..." :
         treasuryBalance ? `${treasuryBalance.icp.toFixed(2)} ICP` : "0.00 ICP";
-    
+
     console.log('[HomeDAO] Treasury balance object:', treasuryBalance);
     console.log('[HomeDAO] Treasury amount display:', treasuryAmount);
-    
+
     // Fallback data
     const daoTitle = daoInfo?.name || "Community Collective";
     const daoDescription = daoInfo?.description || "A decentralized autonomous organization empowering communities through collaborative decision-making, transparent governance, and shared resource management.";
-    
+
     const handleCopy = async () => {
         try {
             if (fullDaoAddress !== "Not deployed") {
@@ -166,7 +170,7 @@ export default function HomeDAO() {
             console.error('Failed to copy:', err);
         }
     };
-    
+
     return (
         <div className="min-h-screen bg-blue-500 pt-[4.5rem]">
             {/* Hero Section */}
@@ -183,69 +187,69 @@ export default function HomeDAO() {
                 <Sparkle className="bottom-32 right-1/4" delay={0.5} />
 
                 <div className="container mx-auto text-center relative z-10">
-                <motion.p
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.6 }}
-                    className="text-blue-300 uppercase tracking-wider mb-6"
-                >
-                    Welcome to your community
-                </motion.p>
+                    <motion.p
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.6 }}
+                        className="text-blue-300 uppercase tracking-wider mb-6"
+                    >
+                        Welcome to your community
+                    </motion.p>
 
-                <motion.h1
-                    initial={{ opacity: 0, y: 30 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.8, delay: 0.2 }}
-                    className="text-4xl md:text-5xl font-bold text-white mb-6 text-balance"
-                >
-                    {isLoading ? (
-                        <div className="flex items-center justify-center">
-                            <div className="animate-pulse bg-blue-300/30 h-12 w-96 rounded"></div>
-                        </div>
-                    ) : error ? (
-                        <span className="text-blue-200">
-                            {daoTitle}
-                            <span className="text-xs ml-2 opacity-60">(offline mode)</span>
-                        </span>
-                    ) : (
-                        daoTitle
-                    )}
-                </motion.h1>
-
-                <motion.p
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.6, delay: 0.4 }}
-                    className="text-blue-200 text-lg max-w-3xl mx-auto mb-10 leading-relaxed"
-                >
-                    {isLoading ? (
-                        <div className="space-y-2">
-                            <div className="animate-pulse bg-blue-300/30 h-4 w-full rounded"></div>
-                            <div className="animate-pulse bg-blue-300/30 h-4 w-3/4 mx-auto rounded"></div>
-                        </div>
-                    ) : error ? (
-                        <span>
-                            {daoDescription}
-                            <span className="block text-xs mt-2 opacity-60">
-                                * Unable to fetch latest DAO information. Showing cached data.
+                    <motion.h1
+                        initial={{ opacity: 0, y: 30 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.8, delay: 0.2 }}
+                        className="text-4xl md:text-5xl font-bold text-white mb-6 text-balance"
+                    >
+                        {isLoading ? (
+                            <div className="flex items-center justify-center">
+                                <div className="animate-pulse bg-blue-300/30 h-12 w-96 rounded"></div>
+                            </div>
+                        ) : error ? (
+                            <span className="text-blue-200">
+                                {daoTitle}
+                                <span className="text-xs ml-2 opacity-60">(offline mode)</span>
                             </span>
-                        </span>
-                    ) : (
-                        daoDescription
-                    )}
-                </motion.p>
+                        ) : (
+                            daoTitle
+                        )}
+                    </motion.h1>
 
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.6, delay: 0.6 }}
-                >
-                    <Link to={`/dao/${daoId}/transaction`}>
-                        <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3">
-                        Contribute Now
-                        </Button>
-                    </Link>
-                </motion.div>
+                    <motion.p
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.6, delay: 0.4 }}
+                        className="text-blue-200 text-lg max-w-3xl mx-auto mb-10 leading-relaxed"
+                    >
+                        {isLoading ? (
+                            <div className="space-y-2">
+                                <div className="animate-pulse bg-blue-300/30 h-4 w-full rounded"></div>
+                                <div className="animate-pulse bg-blue-300/30 h-4 w-3/4 mx-auto rounded"></div>
+                            </div>
+                        ) : error ? (
+                            <span>
+                                {daoDescription}
+                                <span className="block text-xs mt-2 opacity-60">
+                                    * Unable to fetch latest DAO information. Showing cached data.
+                                </span>
+                            </span>
+                        ) : (
+                            daoDescription
+                        )}
+                    </motion.p>
+
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.6, delay: 0.6 }}
+                    >
+                        <Link to={`/dao/${daoId}/transaction`}>
+                            <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3">
+                                Contribute Now
+                            </Button>
+                        </Link>
+                    </motion.div>
                 </div>
             </section>
 
@@ -269,7 +273,7 @@ export default function HomeDAO() {
                                     <div className="space-x-4 flex items-center">
                                         <div className="flex items-center justify-center">
                                             <img
-                                                src="/src/assets/images/au_1.png"
+                                                src={au_1}
                                                 alt="DAO Address"
                                             />
                                         </div>
@@ -279,9 +283,9 @@ export default function HomeDAO() {
                                             </div>
                                             <div className="flex items-center gap-2">
                                                 <span className="text-sm text-blue-200 font-mono">{displayAddress}</span>
-                                                <Button 
-                                                    size="sm" 
-                                                    variant="ghost" 
+                                                <Button
+                                                    size="sm"
+                                                    variant="ghost"
                                                     className="h-6 w-6 p-0 text-blue-300 hover:text-blue-900 hover:bg-blue-200/20 relative"
                                                     onClick={handleCopy}
                                                 >
@@ -304,7 +308,7 @@ export default function HomeDAO() {
                                     <div className="space-x-4 flex items-center">
                                         <div className="flex items-center justify-center">
                                             <img
-                                                src="/src/assets/images/au_2.png"
+                                                src={au_2}
                                                 alt="Launched"
                                             />
                                         </div>
@@ -317,7 +321,7 @@ export default function HomeDAO() {
                                     </div>
 
                                     <motion.img
-                                        src="/src/assets/images/yippie.png"
+                                        src={yippie}
                                         alt="Yippie Icon"
                                         draggable="false"
                                         className="absolute bottom-0 left-12 w-[16rem] h-auto opacity-70"
@@ -343,7 +347,7 @@ export default function HomeDAO() {
                                 <CardHeader>
                                     <CardTitle className="flex items-center gap-2 text-lg text-blue-200 relative">
                                         Community Treasury
-                                        <div 
+                                        <div
                                             className="relative"
                                             onMouseEnter={() => setShowTreasuryTooltip(true)}
                                             onMouseLeave={() => setShowTreasuryTooltip(false)}
@@ -435,12 +439,12 @@ export default function HomeDAO() {
                             <CardContent className="py-16 text-center">
                                 <div className="mb-6 relative">
                                     <motion.img
-                                        src="/src/assets/images/ghost.png"
+                                        src={ghost}
                                         alt="Empty state mascot"
                                         draggable="false"
                                         className="w-32 h-32 mx-auto relative z-10"
-                                        initial={{ 
-                                            x: -500, 
+                                        initial={{
+                                            x: -500,
                                             y: 100,
                                             opacity: 0.6,
                                             scale: 0.7
@@ -461,8 +465,8 @@ export default function HomeDAO() {
                                         viewport={{ once: true, margin: "-50px" }}
                                     />
                                 </div>
-                                
-                                <motion.h3 
+
+                                <motion.h3
                                     className="text-2xl font-bold mb-1 leading-tight"
                                     initial={{ opacity: 0, y: 20 }}
                                     whileInView={{ opacity: 1, y: 0 }}
@@ -471,8 +475,8 @@ export default function HomeDAO() {
                                 >
                                     Seems a bit empty here...
                                 </motion.h3>
-                                
-                                <motion.p 
+
+                                <motion.p
                                     className="text-muted-foreground mb-6"
                                     initial={{ opacity: 0, y: 20 }}
                                     whileInView={{ opacity: 1, y: 0 }}
@@ -481,7 +485,7 @@ export default function HomeDAO() {
                                 >
                                     Start exploring plugins to unlock new features for your DAO.
                                 </motion.p>
-                                
+
                                 <motion.div
                                     initial={{ opacity: 0, y: 20 }}
                                     whileInView={{ opacity: 1, y: 0 }}

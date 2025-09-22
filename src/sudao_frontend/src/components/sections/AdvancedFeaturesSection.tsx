@@ -1,4 +1,11 @@
 import { motion } from "framer-motion";
+import c1_1 from "@/assets/images/c1_1.png";
+import c1_2 from "@/assets/images/c1_2.png";
+import c2_1 from "@/assets/images/c2_1.png";
+import c2_2 from "@/assets/images/c2_2.png";
+import c3 from "@/assets/images/c3.png";
+import c4_1 from "@/assets/images/c4_1.png";
+import c4_2 from "@/assets/images/c4_2.png";
 
 export function AdvancedFeaturesSection() {
     return (
@@ -17,7 +24,7 @@ export function AdvancedFeaturesSection() {
                         MADE FOR YOU
                     </h2>
                     <p className="text-slate-300 text-lg">
-                    We created these features for you to reach from the tip of your fingers
+                        We created these features for you to reach from the tip of your fingers
                     </p>
                 </motion.div>
 
@@ -33,10 +40,10 @@ export function AdvancedFeaturesSection() {
                         >
                             <h1 className="font-bold text-2xl pb-1">COMMENTS AND DISCUSSIONS</h1>
                             <p>Engage your members via built‑in conversation tools</p>
-                            
+
                             {/* Left decorative image */}
                             <motion.img
-                                src="/src/assets/images/c1_2.png"
+                                src={c1_2}
                                 alt="Chat interface"
                                 className="absolute bottom-8 left-12 w-[16rem] h-auto opacity-70"
                                 initial={{ y: 20, opacity: 0 }}
@@ -44,10 +51,10 @@ export function AdvancedFeaturesSection() {
                                 whileHover={{ y: -5, opacity: 1 }}
                                 transition={{ duration: 0.3 }}
                             />
-                            
+
                             {/* Right decorative image */}
                             <motion.img
-                                src="/src/assets/images/c1_1.png"
+                                src={c1_1}
                                 alt="Chat bubbles"
                                 className="absolute bottom-0 right-4 w-[32rem] h-auto opacity-80"
                                 initial={{ y: 20, opacity: 0 }}
@@ -66,13 +73,13 @@ export function AdvancedFeaturesSection() {
                         >
                             {/* Blurry circle decoration */}
                             <div className="absolute -top-20 -left-20 w-60 h-60 bg-gradient-to-br from-blue-800 to-blue-700 rounded-full blur-xl opacity-60"></div>
-                            
+
                             <h1 className="font-bold text-xl pb-1 z-20 relative">NOTIFICATIONS</h1>
                             <h3 className="z-20 relative">Keep everyone in the loop—proposal updates, new funds, votes.</h3>
 
                             {/* Left decorative image */}
                             <motion.img
-                                src="/src/assets/images/c2_1.png"
+                                src={c2_1}
                                 alt="Chat interface"
                                 className="absolute bottom-4 left-8 w-[22rem] h-auto opacity-70"
                                 initial={{ y: 20, opacity: 0 }}
@@ -80,10 +87,10 @@ export function AdvancedFeaturesSection() {
                                 whileHover={{ y: -5, opacity: 1 }}
                                 transition={{ duration: 0.3 }}
                             />
-                            
+
                             {/* Right decorative image */}
                             <motion.img
-                                src="/src/assets/images/c2_2.png"
+                                src={c2_2}
                                 alt="Chat bubbles"
                                 className="absolute bottom-0 right-0 w-[6rem] h-auto opacity-80"
                                 initial={{ y: 20, opacity: 0 }}
@@ -111,7 +118,7 @@ export function AdvancedFeaturesSection() {
 
                             {/* Left decorative image */}
                             <motion.img
-                                src="/src/assets/images/c3.png"
+                                src={c3}
                                 alt="Chat interface"
                                 className="absolute bottom-[-2rem] center w-[22rem] h-auto opacity-70"
                                 initial={{ y: 20, opacity: 0 }}
@@ -130,14 +137,14 @@ export function AdvancedFeaturesSection() {
                         >
                             {/* Blurry circle decoration */}
                             <div className="absolute -bottom-16 -left-20 w-60 h-60 bg-gradient-to-tr from-blue-400 to-blue-300 rounded-full blur-xl opacity-80"></div>
-                            
+
                             <h1 className="font-bold text-xl pb-1 z-20 relative">FULL STATISTICS</h1>
                             <h3 className="z-20 relative">Easy dashboard with Treasury health,</h3>
                             <h3 className="z-20 relative">vote turnout, and member data.</h3>
 
                             {/* Left decorative image */}
                             <motion.img
-                                src="/src/assets/images/c4_1.png"
+                                src={c4_1}
                                 alt="Chat interface"
                                 className="absolute bottom-4 left-12 w-[18rem] h-auto opacity-70"
                                 initial={{ y: 20, opacity: 0 }}
@@ -145,10 +152,10 @@ export function AdvancedFeaturesSection() {
                                 whileHover={{ y: -5, opacity: 1 }}
                                 transition={{ duration: 0.3 }}
                             />
-                            
+
                             {/* Right decorative image */}
                             <motion.img
-                                src="/src/assets/images/c4_2.png"
+                                src={c4_2}
                                 alt="Chat bubbles"
                                 className="absolute bottom-0 right-0 w-[30rem] h-auto opacity-80"
                                 initial={{ y: 20, opacity: 0 }}

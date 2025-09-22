@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
+import logoIc from "@/assets/images/logo_ic.png";
 
 export function InternetComputerSection() {
     return (
@@ -15,7 +16,7 @@ export function InternetComputerSection() {
                     <div className="flex items-center justify-center mb-8">
                         <div className="flex items-center space-x-4">
                             <img
-                                src="/src/assets/images/logo_ic.png"
+                                src={logoIc}
                                 alt="Logo Internet Computer"
                                 className="w-[32rem] h-auto"
                             />
@@ -33,7 +34,7 @@ export function InternetComputerSection() {
                     </p>
 
                     <a href="https://internetcomputer.org" target="_blank">
-                        <Button 
+                        <Button
                             className="bg-slate-800 hover:bg-slate-700 text-white px-8 py-4 rounded-lg">
                             Learn More About ICP
                         </Button>
