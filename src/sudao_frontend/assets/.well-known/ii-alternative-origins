@@ -1,10 +1,8 @@
 {
   "alternativeOrigins": [
-    "https://your-canister-id.icp0.io",
-    "https://your-canister-id.raw.icp0.io",
-    "https://your-canister-id.ic0.app",
-    "https://your-canister-id.raw.ic0.app",
-    "https://your-canister-id.icp0.icp-api.io",
-    "https://your-canister-id.icp-api.io"
+    "https://yle7e-4qaaa-aaaac-a4c3a-cai.icp0.io",
+    "https://yle7e-4qaaa-aaaac-a4c3a-cai.raw.icp0.io",
+    "https://sudao.org",
+    "https://www.sudao.org"
   ]
 }

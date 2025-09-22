@@ -31,6 +31,14 @@
     "sudao_proposal": {
       "main": "src/sudao_proposal/main.mo",
       "type": "motoko"
+    },
+    "sudao_frontend": {
+      "source": [
+        "src/sudao_frontend/dist",
+        "src/sudao_frontend/assets"
+      ],
+      "type": "assets",
+      "workspace": "sudao_frontend"
     }
   },
   "defaults": {
