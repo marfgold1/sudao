@@ -1,27 +1,31 @@
 import { Card, CardContent } from "@/components/ui/card"
 import { motion } from "framer-motion"
+import pf_1 from "@/assets/images/pf_1.png"
+import pf_2 from "@/assets/images/pf_2.png"
+import pf_3 from "@/assets/images/pf_3.png"
+import pf_4 from "@/assets/images/pf_4.png"
 
 const features = [
     {
         title: "Discover Plugins",
         description:
-        "From the SUDAO’s Community, plugin can be made by anyone! As simple as uploading your own code through us.",
-        icon: "/src/assets/images/pf_1.png",
+            "From the SUDAO’s Community, plugin can be made by anyone! As simple as uploading your own code through us.",
+        icon: pf_1,
     },
     {
         title: "Install to your DAO",
         description: "Securely purchase plugins with ICP tokens",
-        icon: "/src/assets/images/pf_2.png",
+        icon: pf_2,
     },
     {
         title: "Use & Earn",
         description: "DAOs get instant functionality. Developers earn recurring revenue each time their plugin is used.",
-        icon: "/src/assets/images/pf_3.png",
+        icon: pf_3,
     },
     {
         title: "Evolve Together",
         description: "Community-driven ratings and updates ensure the best tools rise to the top.",
-        icon: "/src/assets/images/pf_4.png",
+        icon: pf_4,
     },
 ]
 
@@ -52,7 +56,7 @@ export function FeaturesSection() {
                 <motion.div
                     initial="initial"
                     whileInView="animate"
-                    viewport={{ once: true }} 
+                    viewport={{ once: true }}
                     className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
                 >
                     {features.map((feature, index) => (
@@ -69,7 +73,7 @@ export function FeaturesSection() {
                                     <div className="w-full">
                                         <h3 className="text-2xl text-white mb-3">{feature.title}</h3>
                                         <p className="text-blue-200 text-sm leading-relaxed mb-4">{feature.description}</p>
-                                        
+
                                         <motion.img
                                             initial={{ y: 20, opacity: 0 }}
                                             whileInView={{ y: 0, opacity: 0.85 }}
