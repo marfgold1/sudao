@@ -35,9 +35,14 @@ const NavbarSUDAO: React.FC = () => {
             >
                 <div className="flex items-center justify-between">
                     <div className="flex items-center">
-                        <div className="w-10 h-10">
-                            <img src={Logo} />
-                        </div>
+                        <Link  
+                            to="/" 
+                            onClick={handleLinkClick}
+                        >
+                            <div className="w-10 h-10">
+                                <img src={Logo} />
+                            </div>
+                        </Link>
                     </div>
 
                     <div className="hidden md:flex items-center justify-center space-x-10">
@@ -73,7 +78,7 @@ const NavbarSUDAO: React.FC = () => {
                             className="transition-colors text-slate-400 hover:text-blue-200"
                             target="_blank"
                         >
-                            Documentation
+                            Docs
                         </a>
                     </div>
 

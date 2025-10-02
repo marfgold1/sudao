@@ -1,23 +1,30 @@
-/* Customize the scrollbar */
 ::-webkit-scrollbar {
-  width: 5px;
-  height: 10px;
-  border-radius: 12px;
+  width: 9px;
+  background-color: transparent;
 }
 
-/* Track */
 ::-webkit-scrollbar-track {
-  background: white;
-  margin-left: 1rem;
+  background: transparent;
+  border-radius: 10px;
 }
 
-/* Handle */
 ::-webkit-scrollbar-thumb {
-  background: #b4b7c4;
-  border-radius: 12px;
+  background-color: rgba(255, 255, 255, .2);
+  border-radius: 10px;
+  border: 2px solid #1e1e1e;
 }
 
-/* Handle on hover */
 ::-webkit-scrollbar-thumb:hover {
-  background: #292F3B;
+  background-color: #444444;
+}
+
+::-webkit-scrollbar-button {
+  /* Make the button area transparent by matching it to the track color */
+  background-color: #1e1e1e;
+  border-radius: 10px; /* Ensures the chevrons appear sharp at the ends */
+  height: 5px;
+  
+  /* THIS IS THE TRICK: Set the internal arrow glyph (^) color to match the slider/thumb */
+  color: rgba(255, 255, 255, .2);
+  -webkit-appearance: none;
 }
