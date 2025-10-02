@@ -95,3 +95,47 @@
   position: relative;
   z-index: 50;
 }
+
+/* ------------------------------------------- */
+/* Shiny Metal Glare Effect */
+/* ------------------------------------------- */
+
+/* Define the Glare Animation Keyframes */
+@keyframes glare-sweep {
+  /* Start far to the left, invisible */
+  0% {
+    transform: translateX(-100%) skewX(-30deg);
+  }
+  /* Sweep across quickly */
+  50% {
+    transform: translateX(100%) skewX(-30deg);
+  }
+  /* End far to the right, invisible (and reset to start for next hover) */
+  100% {
+    transform: translateX(100%) skewX(-30deg);
+  }
+}
+
+/* Apply the effect only to the glare span */
+.glare-effect {
+  /* The core of the shine: a white to transparent gradient, angled */
+  background: linear-gradient(
+    to right, 
+    transparent 0%, 
+    rgba(255, 255, 255, 0.5) 40%, /* The white streak */
+    rgba(255, 255, 255, 0.5) 60%, 
+    transparent 100%
+  );
+  /* The skew makes it look like a strip of light */
+  transform: skewX(-30deg) translateX(-100%);
+  opacity: 0; /* Hidden by default */
+  /* Ensure the background covers the whole area */
+  width: 150%; 
+}
+
+/* Safest selector if Framer Motion doesn't add a specific class */
+.motion-button:hover .glare-effect, 
+button:hover .glare-effect {
+    opacity: 1;
+    animation: glare-sweep 1.5s ease-in-out; 
+}
